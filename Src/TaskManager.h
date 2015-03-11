@@ -5,6 +5,7 @@
 
 #define MT_MAX_THREAD_COUNT (32)
 #define MT_SCHEDULER_STACK_SIZE (16384)
+#define MT_FIBER_STACK_SIZE (16384)
 
 namespace MT
 {
@@ -27,12 +28,15 @@ namespace MT
 
 	struct TaskDesc
 	{
+		MT::Fiber activeFiber;
+
 		TTaskEntryPoint taskFunc;
 		void* userData;
 
 		TaskDesc()
 			: taskFunc(nullptr)
 			, userData(nullptr)
+			, activeFiber(nullptr)
 		{
 
 		}
@@ -44,13 +48,15 @@ namespace MT
 		}
 	};
 
+	class TaskManager;
+
 	struct ThreadContext
 	{
+		MT::TaskManager* taskManager;
 		MT::Thread thread;
 		MT::Fiber schedulerFiber;
 		MT::ConcurrentQueue<MT::TaskDesc> queue[TaskGroup::COUNT];
 		MT::Event* queueEmptyEvent[TaskGroup::COUNT];
-
 		MT::Event hasNewEvents;
 		MT::TaskGroup::Type activeGroup;
 
@@ -66,13 +72,22 @@ namespace MT
 	};
 
 
+
+
 	class TaskManager
 	{
 		uint32 newTaskThreadIndex;
 
+		int32 fibersCount;
 		int32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 		ThreadGroupEvents groupDoneEvents[TaskGroup::COUNT];
+
+		MT::ConcurrentQueue<MT::Fiber> freeFibers;
+
+
+		MT::Fiber RequestFiber();
+		void ReleaseFiber(MT::Fiber fiber);
 
 
 	public:
@@ -99,7 +114,9 @@ namespace MT
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 
 		static uint32 MT_CALL_CONV SchedulerThreadMain( void* userData );
-		static void ExecuteTask (MT::TaskDesc & taskDesc);
+		static void MT_CALL_CONV FiberMain(void* userData);
+
+		static void ExecuteTask (MT::TaskManager* taskManager, MT::TaskDesc & taskDesc);
 
 	};
 }
