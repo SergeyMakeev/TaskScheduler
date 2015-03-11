@@ -3,7 +3,7 @@
 #include "Platform.h"
 #include "ConcurrentQueue.h"
 
-#define MT_MAX_THREAD_COUNT (1)
+#define MT_MAX_THREAD_COUNT (4)
 #define MT_MAX_FIBERS_COUNT (128)
 #define MT_SCHEDULER_STACK_SIZE (16384)
 #define MT_FIBER_STACK_SIZE (16384)
@@ -14,7 +14,10 @@
 
 namespace MT
 {
-
+	//
+	// Task group
+	//
+	// Application can wait until whole group was finished.
 	namespace TaskGroup
 	{
 		enum Type
@@ -32,29 +35,51 @@ namespace MT
 	struct ThreadContext;
 	class TaskManager;
 
-
 	typedef void (MT_CALL_CONV *TTaskEntryPoint)(MT::ThreadContext & context, void* userData);
 
+	//
+	// Fiber task status
+	//
+	// Task can be completed for several reasons.
+	// For example task was done or someone call Yield from the Task body.
+	namespace FiberTaskStatus
+	{
+		enum Type
+		{
+			UNKNOWN = 0,
+			RUNNED = 1,
+			YIELDED = 2,
+			FINISHED = 3,
+		};
+	}
 
+	//
+	// Fiber context
+	//
+	// Context passed to fiber main function
 	struct FiberContext
 	{
+		// pointer to active task attached to this fiber
 		TaskDesc * activeTask;
+
+		// active thread context
 		ThreadContext * activeContext;
+
+		// active task status
+		FiberTaskStatus::Type taskStatus;
 
 		FiberContext()
 			: activeTask(nullptr)
 			, activeContext(nullptr)
+			, taskStatus(FiberTaskStatus::UNKNOWN)
 		{}
 	};
 
-
-	struct ThreadGroupEvents
-	{
-		MT::Event threadQueueEmpty[MT_MAX_THREAD_COUNT];
-		ThreadGroupEvents();
-	};
-
-
+	//
+	// Fiber descriptor
+	//
+	// Hold pointer to fiber and pointer to fiber context
+	//
 	struct FiberDesc
 	{
 		MT::Fiber fiber;
@@ -76,12 +101,18 @@ namespace MT
 		}
 	};
 
-
+	//
+	// Task description
+	//
 	struct TaskDesc
 	{
+		//Active fiber description. Not valid until scheduler attach fiber to task
 		FiberDesc activeFiber;
 
+		//Task entry point
 		TTaskEntryPoint taskFunc;
+
+		//Task user data (task context)
 		void* userData;
 
 		TaskDesc()
@@ -101,33 +132,67 @@ namespace MT
 	};
 
 
+	//
+	// Thread (Scheduler fiber) context
+	//
 	struct ThreadContext
 	{
+		//Pointer to task manager
 		MT::TaskManager* taskManager;
+
+		//Thread
 		MT::Thread thread;
+
+		//Scheduler fiber
 		MT::Fiber schedulerFiber;
+
+		//Task queues. Divided by different groups
 		MT::ConcurrentQueue<MT::TaskDesc> queue[TaskGroup::COUNT];
+
+		//Queue is empty events
 		MT::Event* queueEmptyEvent[TaskGroup::COUNT];
-		MT::Event hasNewEvents;
+
+		//New task was arrived event
+		MT::Event hasNewTasksEvent;
+
+		//Active task group to schedule
 		MT::TaskGroup::Type activeGroup;
 
 		ThreadContext();
+
 		void Yield();
 	};
 
 
-
-
+	//
+	// Task manager
+	//
 	class TaskManager
 	{
+
+		// Transposed thread queue events. Used inside WaitGroup implementation.
+		struct ThreadGroupEvents
+		{
+			MT::Event threadQueueEmpty[MT_MAX_THREAD_COUNT];
+			
+			ThreadGroupEvents();
+		};
+
+		// Thread index to new task
 		uint32 newTaskThreadIndex;
 
-		int32 fibersCount;
+
+		// Threads created by task manager
 		int32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
+
+		//Per group events that the work in group completed in all threads
 		ThreadGroupEvents groupDoneEvents[TaskGroup::COUNT];
 
+		//Fibers pool
 		MT::ConcurrentQueue<FiberDesc> freeFibers;
+
+		//Fibers context
 		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
 		FiberDesc RequestFiber();
@@ -139,7 +204,7 @@ namespace MT
 		TaskManager();
 		~TaskManager();
 
-		
+
 		template<typename T, int size>
 		void RunTasks(TaskGroup::Type taskGroup, const T(&taskDesc)[size])
 		{
@@ -151,13 +216,13 @@ namespace MT
 				//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
 				context.queue[taskGroup].Push(taskDesc[i]);
 				context.queueEmptyEvent[taskGroup]->Reset();
-				context.hasNewEvents.Signal();
+				context.hasNewTasksEvent.Signal();
 			}
 		}
 
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 
-		static uint32 MT_CALL_CONV SchedulerThreadMain( void* userData );
+		static uint32 MT_CALL_CONV ThreadMain( void* userData );
 		static void MT_CALL_CONV FiberMain(void* userData);
 
 		static void ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc);
