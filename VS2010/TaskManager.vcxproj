@@ -79,11 +79,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\ConcurrentQueue.h" />
+    <ClInclude Include="..\Src\Debug.h" />
+    <ClInclude Include="..\Src\Interlocked.h" />
     <ClInclude Include="..\Src\Platform.h" />
     <ClInclude Include="..\Src\TaskManager.h" />
     <ClInclude Include="..\Src\types.h" />
-    <ClInclude Include="Assert.h" />
-    <ClInclude Include="Interlocked.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\main.cpp" />

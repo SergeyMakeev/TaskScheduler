@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include "types.h"
-#include "Assert.h"
+#include "Debug.h"
 
 #define MT_CALL_CONV __stdcall
 #define INLINE __forceinline

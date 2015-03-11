@@ -19,10 +19,10 @@
     <ClInclude Include="..\Src\types.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Interlocked.h">
+    <ClInclude Include="..\Src\Debug.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Assert.h">
+    <ClInclude Include="..\Src\Interlocked.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
