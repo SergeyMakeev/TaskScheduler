@@ -63,29 +63,29 @@ namespace MT
 
 	uint32 TaskManager::SchedulerThreadMain( void* userData )
 	{
-		ThreadContext * context = (ThreadContext *)userData;
-		context->schedulerFiber = MT::ConvertCurrentThreadToFiber();
+		ThreadContext& context = *(ThreadContext*)(userData);
+		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
 		for(;;)
 		{
 			MT::TaskDesc taskDesc;
-			if (context->queue[context->activeGroup].TryPop(taskDesc))
+			if (context.queue[context.activeGroup].TryPop(taskDesc))
 			{
 				//there is a new task
 				ExecuteTask(taskDesc);
 			} else
 			{
-				context->queueEmptyEvent[context->activeGroup]->Signal();
+				context.queueEmptyEvent[context.activeGroup]->Signal();
 
 				//Try to find new task group to execute
 				bool groupFound = false;
 				for (int j = 1; j < MT::TaskGroup::COUNT; j++)
 				{
-					uint32 groupIndex = ((uint32)context->activeGroup + 1) % MT::TaskGroup::COUNT;
-					if (context->queue[groupIndex].TryPop(taskDesc))
+					uint32 groupIndex = ((uint32)context.activeGroup + 1) % MT::TaskGroup::COUNT;
+					if (context.queue[groupIndex].TryPop(taskDesc))
 					{
 						groupFound = true;
-						context->activeGroup = (MT::TaskGroup::Type)groupIndex;
+						context.activeGroup = (MT::TaskGroup::Type)groupIndex;
 						ExecuteTask(taskDesc);
 						break;
 					}
@@ -95,8 +95,8 @@ namespace MT
 				if (groupFound == false)
 				{
 					//all tasks was done. wait 2 seconds
-					context->hasNewEvents.Reset();
-					context->hasNewEvents.Wait(2000);
+					context.hasNewEvents.Reset();
+					context.hasNewEvents.Wait(2000);
 				}
 
 			}

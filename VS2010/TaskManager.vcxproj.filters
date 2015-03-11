@@ -19,6 +19,12 @@
     <ClInclude Include="..\Src\types.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Interlocked.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Assert.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\main.cpp">
