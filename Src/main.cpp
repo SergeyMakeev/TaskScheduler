@@ -6,9 +6,13 @@
 #include "TaskManager.h"
 
 
-void MT_CALL_CONV TaskEntryPoint(void* userData)
+void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
 {
-	Sleep(3000);
+	Sleep(1000);
+
+	context.Yield();
+
+	Sleep(1000);
 	userData;
 }
 
