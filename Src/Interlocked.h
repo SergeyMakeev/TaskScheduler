@@ -1,5 +1,4 @@
 #pragma once
-#include "Platform.h"
 
 namespace MT
 {
@@ -8,22 +7,22 @@ namespace MT
 	{
 		volatile long value;
 	public:
-		INLINE long Add(int sum) 
+		void Add(int sum) 
 		{
-			return InterlockedAdd(&value, sum);
+			InterlockedExchangeAdd(&value, sum);
 		}
 
-		INLINE void Inc()
+		void Inc()
 		{
 			InterlockedIncrement(&value);
 		}
 
-		INLINE void Dec()
+		void Dec()
 		{
 			InterlockedDecrement(&value);
 		}
 
-		INLINE void Get()
+		int Get()
 		{
 			return value;
 		}
@@ -32,7 +31,6 @@ namespace MT
 		{
 			value = val;
 		}
-
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
