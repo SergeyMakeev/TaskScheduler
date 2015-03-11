@@ -70,19 +70,37 @@ namespace MT
 
 	public:
 
+		Event()
+		{
+			static_assert(sizeof(Event) == sizeof(::HANDLE), "sizeof(Event) is invalid");
+			eventHandle = NULL;
+		}
+
 		Event(EventReset::Type resetType, bool initialState)
 		{
-			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
-			BOOL bInitialState = initialState ? TRUE : FALSE;
-			eventHandle = ::CreateEvent(NULL, bManualReset, bInitialState, NULL);
+			eventHandle = NULL;
+			Create(resetType, initialState);
 		}
 
 		~Event()
 		{
 			CloseHandle(eventHandle);
+			eventHandle = NULL;
 		}
 
-		void Set()
+		void Create(EventReset::Type resetType, bool initialState)
+		{
+			if (eventHandle != NULL)
+			{
+				CloseHandle(eventHandle);
+			}
+
+			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
+			BOOL bInitialState = initialState ? TRUE : FALSE;
+			eventHandle = ::CreateEvent(NULL, bManualReset, bInitialState, NULL);
+		}
+
+		void Signal()
 		{
 			SetEvent(eventHandle);
 		}
@@ -98,6 +116,15 @@ namespace MT
 			return (res == WAIT_OBJECT_0);
 		}
 	};
+
+	inline bool WaitForMultipleEvents(Event * eventsArray, uint32 size, uint32 milliseconds)
+	{
+		//can cast Event to ::HANDLE because sizeof(HANDLE) == sizeof(Event)
+		DWORD res = WaitForMultipleObjects(size, (::HANDLE *)&eventsArray[0], TRUE, milliseconds);
+		return (res == WAIT_OBJECT_0);
+	}
+
+	
 
 
 	class Guard;
