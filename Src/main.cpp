@@ -10,9 +10,9 @@ void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
 {
 	Sleep(1000);
 
-	context.Yield();
+	//context.Yield();
 
-	Sleep(1000);
+	//Sleep(1000);
 	userData;
 }
 

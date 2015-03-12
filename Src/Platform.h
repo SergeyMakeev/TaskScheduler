@@ -9,6 +9,7 @@
 
 #define MT_CALL_CONV __stdcall
 
+#define ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
 
 namespace MT
 {
@@ -53,7 +54,7 @@ namespace MT
 		::SetThreadAffinityMask(thread, dwThreadAffinityMask);
 	}
 
-	inline uint32 GetNumberOfProcessors()
+	inline uint32 GetNumberOfHardwareThreads()
 	{
 		SYSTEM_INFO sysinfo;
 		::GetSystemInfo( &sysinfo );

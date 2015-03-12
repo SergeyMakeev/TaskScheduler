@@ -12,14 +12,14 @@ namespace MT
 			InterlockedExchangeAdd(&value, sum);
 		}
 
-		void Inc()
+		int Inc()
 		{
-			InterlockedIncrement(&value);
+			return InterlockedIncrement(&value);
 		}
 
-		void Dec()
+		int Dec()
 		{
-			InterlockedDecrement(&value);
+			return InterlockedDecrement(&value);
 		}
 
 		int Get()

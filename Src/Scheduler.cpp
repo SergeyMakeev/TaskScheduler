@@ -2,6 +2,7 @@
 #include "Assert.h"
 
 
+//TODO: Split to files. One file - one class.
 
 namespace MT
 {
@@ -9,27 +10,13 @@ namespace MT
 		: hasNewTasksEvent(EventReset::MANUAL, true)
 		, taskScheduler(nullptr)
 		, thread(nullptr)
-		, activeGroup(MT::TaskGroup::GROUP_0)
 		, schedulerFiber(nullptr)
 	{
-		for (int i = 0; i < TaskGroup::COUNT; i++)
-		{
-			queueEmptyEvent[i] = nullptr;
-		}
 	}
-
 
 	void ThreadContext::Yield()
 	{
 		MT::SwitchToFiber(schedulerFiber);
-	}
-
-	TaskScheduler::ThreadGroupEvents::ThreadGroupEvents()
-	{
-		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
-		{
-			threadQueueEmpty[i].Create(MT::EventReset::MANUAL, true);
-		}
 	}
 
 
@@ -38,7 +25,7 @@ namespace MT
 	{
 
 		//query number of processor
-		threadsCount = MT::GetNumberOfProcessors() - 2;
+		threadsCount = MT::GetNumberOfHardwareThreads() - 2;
 		if (threadsCount <= 0)
 		{
 			threadsCount = 1;
@@ -49,28 +36,31 @@ namespace MT
 			threadsCount = MT_MAX_THREAD_COUNT;
 		}
 
-		//create fiber pool
+		// create fiber pool
 		for (int32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
 		{
 			MT::Fiber fiber = MT::CreateFiber(MT_FIBER_STACK_SIZE, FiberMain, &fiberContext[i]);
-			freeFibers.Push(FiberDesc(fiber, &fiberContext[i]));
+			availableFibers.Push(FiberExecutionContext(fiber, &fiberContext[i]));
 		}
 
-		//create worker thread pool
+		// create group done events
+		for (int32 i = 0; i < TaskGroup::COUNT; i++)
+		{
+			groupIsDoneEvents[i].Create(MT::EventReset::MANUAL, true);
+			groupCurrentlyRunningTaskCount[i].Set(0);
+		}
+
+		// create worker thread pool
 		for (int32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].taskScheduler = this;
 			threadContext[i].thread = MT::CreateSuspendedThread(MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
-			MT::SetThreadProcessor(threadContext[i].thread, i);
 
-			//
-			for (int j = 0; j < TaskGroup::COUNT; j++)
-			{
-				threadContext[i].queueEmptyEvent[j] = &groupDoneEvents[j].threadQueueEmpty[i];
-			}
+			// bind thread to processor
+			MT::SetThreadProcessor(threadContext[i].thread, i);
 		}
 
-		//run worker threads
+		// run worker threads
 		for (int32 i = 0; i < threadsCount; i++)
 		{
 			MT::ResumeThread(threadContext[i].thread);
@@ -81,19 +71,19 @@ namespace MT
 	{
 	}
 
-	FiberDesc TaskScheduler::RequestFiber()
+	MT::FiberExecutionContext TaskScheduler::RequestFiber()
 	{
-		FiberDesc fiber = FiberDesc::Empty();
-		if (!freeFibers.TryPop(fiber))
+		MT::FiberExecutionContext fiber = MT::FiberExecutionContext::Empty();
+		if (!availableFibers.TryPop(fiber))
 		{
 			ASSERT(false, "Fibers pool is empty");
 		}
 		return fiber;
 	}
 
-	void TaskScheduler::ReleaseFiber(FiberDesc fiberDesc)
+	void TaskScheduler::ReleaseFiber(MT::FiberExecutionContext fiberExecutionContext)
 	{
-		freeFibers.Push(fiberDesc);
+		availableFibers.Push(fiberExecutionContext);
 	}
 
 
@@ -113,13 +103,19 @@ namespace MT
 			if (taskDesc.activeFiber.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
 			{
 				//task was done
+				int groupTaskCount = context.taskScheduler->groupCurrentlyRunningTaskCount[taskDesc.taskGroup].Dec();
+				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+				if (groupTaskCount == 0)
+				{
+					context.taskScheduler->groupIsDoneEvents[taskDesc.taskGroup].Signal();
+				}
+
 				//releasing task fiber
 				context.taskScheduler->ReleaseFiber(taskDesc.activeFiber);
-				taskDesc.activeFiber = FiberDesc::Empty();
+				taskDesc.activeFiber = MT::FiberExecutionContext::Empty();
 			} else
 			{
 				//task was yielded, save task and fiber to yielded queue
-				taskDesc.activeFiber.fiberContext->taskStatus = FiberTaskStatus::YIELDED;
 			}
 
 		}
@@ -150,36 +146,16 @@ namespace MT
 		for(;;)
 		{
 			MT::TaskDesc taskDesc;
-			if (context.queue[context.activeGroup].TryPop(taskDesc))
+			if (context.queue.TryPop(taskDesc))
 			{
 				//there is a new task
 				ExecuteTask(context, taskDesc);
 			} else
 			{
-				context.queueEmptyEvent[context.activeGroup]->Signal();
-
-				//Try to find new task group to execute
-				bool groupFound = false;
-				for (int j = 1; j < MT::TaskGroup::COUNT; j++)
-				{
-					uint32 groupIndex = ((uint32)context.activeGroup + 1) % MT::TaskGroup::COUNT;
-					if (context.queue[groupIndex].TryPop(taskDesc))
-					{
-						groupFound = true;
-						context.activeGroup = (MT::TaskGroup::Type)groupIndex;
-						ExecuteTask(context, taskDesc);
-						break;
-					}
-				}
-
 				//TODO: can try to steal tasks from other threads
-				if (groupFound == false)
-				{
-					//all tasks was done. wait 2 seconds
-					context.hasNewTasksEvent.Reset();
-					context.hasNewTasksEvent.Wait(2000);
-				}
-
+				//all tasks was done. wait 2 seconds
+				context.hasNewTasksEvent.Reset();
+				context.hasNewTasksEvent.Wait(2000);
 			}
 		}
 
@@ -188,7 +164,12 @@ namespace MT
 
 	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{
-		return MT::WaitForMultipleEvents(&groupDoneEvents[group].threadQueueEmpty[0], threadsCount, milliseconds);
+		return groupIsDoneEvents[group].Wait(milliseconds);
+	}
+
+	bool TaskScheduler::WaitAll(uint32 milliseconds)
+	{
+		return MT::WaitForMultipleEvents(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
 	}
 
 }

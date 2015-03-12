@@ -27,7 +27,9 @@ namespace MT
 			GROUP_1 = 1,
 			GROUP_2 = 2,
 
-			COUNT = 3
+			COUNT,
+
+			GROUP_UNDEFINED
 		};
 	}
 
@@ -49,8 +51,7 @@ namespace MT
 		{
 			UNKNOWN = 0,
 			RUNNED = 1,
-			YIELDED = 2,
-			FINISHED = 3,
+			FINISHED = 2,
 		};
 	}
 
@@ -69,24 +70,29 @@ namespace MT
 		// active task status
 		FiberTaskStatus::Type taskStatus;
 
+		// number of child tasks spawned
+		MT::InterlockedInt childTasksCount;
+
 		FiberContext()
 			: activeTask(nullptr)
 			, activeContext(nullptr)
 			, taskStatus(FiberTaskStatus::UNKNOWN)
-		{}
+		{
+			childTasksCount.Set(0);
+		}
 	};
 
 	//
-	// Fiber descriptor
+	// Fiber execution context
 	//
 	// Hold pointer to fiber and pointer to fiber context
 	//
-	struct FiberDesc
+	struct FiberExecutionContext
 	{
 		MT::Fiber fiber;
 		MT::FiberContext * fiberContext;
 
-		FiberDesc(MT::Fiber _fiber, MT::FiberContext * _fiberContext)
+		FiberExecutionContext(MT::Fiber _fiber, MT::FiberContext * _fiberContext)
 			: fiber(_fiber)
 			, fiberContext(_fiberContext)
 		{}
@@ -96,9 +102,9 @@ namespace MT
 			return (fiber != nullptr && fiberContext != nullptr);
 		}
 
-		static FiberDesc Empty()
+		static FiberExecutionContext Empty()
 		{
-			return FiberDesc(nullptr, nullptr);
+			return FiberExecutionContext(nullptr, nullptr);
 		}
 	};
 
@@ -107,8 +113,10 @@ namespace MT
 	//
 	struct TaskDesc
 	{
-		//Active fiber description. Not valid until scheduler attach fiber to task
-		FiberDesc activeFiber;
+		//Execution context. Not valid until scheduler attach fiber to task
+		FiberExecutionContext activeFiber;
+
+		TaskGroup::Type taskGroup;
 
 		//Task entry point
 		TTaskEntryPoint taskFunc;
@@ -119,7 +127,8 @@ namespace MT
 		TaskDesc()
 			: taskFunc(nullptr)
 			, userData(nullptr)
-			, activeFiber(FiberDesc::Empty())
+			, taskGroup(TaskGroup::GROUP_UNDEFINED)
+			, activeFiber(FiberExecutionContext::Empty())
 		{
 
 		}
@@ -127,7 +136,8 @@ namespace MT
 		TaskDesc(TTaskEntryPoint _taskEntry, void* _userData)
 			: taskFunc(_taskEntry)
 			, userData(_userData)
-			, activeFiber(FiberDesc::Empty())
+			, taskGroup(TaskGroup::GROUP_UNDEFINED)
+			, activeFiber(FiberExecutionContext::Empty())
 		{
 		}
 	};
@@ -138,26 +148,20 @@ namespace MT
 	//
 	struct ThreadContext
 	{
-		//Pointer to task manager
+		// pointer to task manager
 		MT::TaskScheduler* taskScheduler;
 
-		//Thread
+		// thread
 		MT::Thread thread;
 
-		//Scheduler fiber
+		// scheduler fiber
 		MT::Fiber schedulerFiber;
 
-		//Task queues. Divided by different groups
-		MT::ConcurrentQueue<MT::TaskDesc> queue[TaskGroup::COUNT];
+		// task queue awaiting execution
+		MT::ConcurrentQueue<MT::TaskDesc> queue;
 
-		//Queue is empty events
-		MT::Event* queueEmptyEvent[TaskGroup::COUNT];
-
-		//New task was arrived event
+		// new task was arrived to queue event
 		MT::Event hasNewTasksEvent;
-
-		//Active task group to schedule
-		MT::TaskGroup::Type activeGroup;
 
 		ThreadContext();
 
@@ -171,14 +175,6 @@ namespace MT
 	class TaskScheduler
 	{
 
-		// Transposed thread queue events. Used inside WaitGroup implementation.
-		struct ThreadGroupEvents
-		{
-			MT::Event threadQueueEmpty[MT_MAX_THREAD_COUNT];
-			
-			ThreadGroupEvents();
-		};
-
 		// Thread index for new task
 		uint32 roundRobinThreadIndex;
 
@@ -186,17 +182,19 @@ namespace MT
 		int32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
-		//Per group events that the work in group completed in all threads
-		ThreadGroupEvents groupDoneEvents[TaskGroup::COUNT];
+		// Per group events that is completed
+		MT::Event groupIsDoneEvents[TaskGroup::COUNT];
 
-		//Fibers pool
-		MT::ConcurrentQueue<FiberDesc> freeFibers;
+		MT::InterlockedInt groupCurrentlyRunningTaskCount[TaskGroup::COUNT];
 
-		//Fibers context
+		// Fibers pool
+		MT::ConcurrentQueue<FiberExecutionContext> availableFibers;
+
+		// Fibers context
 		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
-		FiberDesc RequestFiber();
-		void ReleaseFiber(FiberDesc fiberDesc);
+		FiberExecutionContext RequestFiber();
+		void ReleaseFiber(FiberExecutionContext fiberExecutionContext);
 
 
 	public:
@@ -214,13 +212,20 @@ namespace MT
 				roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
 
 				//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
-				context.queue[taskGroup].Push(taskDesc[i]);
-				context.queueEmptyEvent[taskGroup]->Reset();
+				MT::TaskDesc desc = taskDesc[i];
+				desc.taskGroup = taskGroup;
+
+				context.queue.Push(desc);
+				
+				groupIsDoneEvents[taskGroup].Reset();
+				groupCurrentlyRunningTaskCount[taskGroup].Inc();
+
 				context.hasNewTasksEvent.Signal();
 			}
 		}
 
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
+		bool WaitAll(uint32 milliseconds);
 
 		static uint32 MT_CALL_CONV ThreadMain( void* userData );
 		static void MT_CALL_CONV FiberMain(void* userData);
