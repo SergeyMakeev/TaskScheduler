@@ -8,10 +8,23 @@ namespace MT
 {
 	ThreadContext::ThreadContext()
 		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
+		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
 		, thread(nullptr)
 		, schedulerFiber(nullptr)
 	{
+	}
+
+	static const int THREAD_CLOSE_TIMEOUT_MS = 1000;
+
+	ThreadContext::~ThreadContext()
+	{
+		if (thread != NULL)
+		{
+			ASSERT(state == ThreadState::EXIT, "ThreadContext has invalid state");
+			CloseThread(thread, THREAD_CLOSE_TIMEOUT_MS);
+			thread = NULL;
+		}
 	}
 
 
@@ -88,6 +101,11 @@ namespace MT
 
 	TaskScheduler::~TaskScheduler()
 	{
+		for (int32 i = 0; i < threadsCount; i++)
+		{
+			threadContext[i].state = ThreadState::EXIT;
+			threadContext[i].hasNewTasksEvent.Signal();
+		}
 	}
 
 	MT::FiberExecutionContext TaskScheduler::RequestExecutionContext()
@@ -205,17 +223,17 @@ namespace MT
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
-		for(;;)
+		while(context.state != ThreadState::EXIT)
 		{
 			MT::TaskDesc taskDesc;
 			if (context.queue.TryPop(taskDesc))
 			{
 				//there is a new task
 				ExecuteTask(context, taskDesc);
-			} else
+			} 
+			else
 			{
 				//TODO: can try to steal tasks from other threads
-				//all tasks was done. wait 2 seconds
 				context.hasNewTasksEvent.Wait(2000);
 			}
 		}
@@ -264,7 +282,7 @@ namespace MT
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
-		return MT::WaitForMultipleEvents(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
+		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
 	}
 
 }

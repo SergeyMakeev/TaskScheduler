@@ -42,6 +42,26 @@ namespace MT
 		::ResumeThread(thread);
 	}
 
+	inline bool IsThreadAlive(MT::Thread thread)
+	{
+		DWORD exitCode;
+		BOOL result = ::GetExitCodeThread( thread, &exitCode );
+		return result && exitCode == STILL_ACTIVE;
+	}
+
+	inline bool CloseThread(MT::Thread thread, int waitTimeOutMS)
+	{
+		if (thread == NULL)
+			return true;
+
+		if (WAIT_OBJECT_0 != WaitForSingleObject(thread, waitTimeOutMS))
+		{
+			TerminateThread(thread, -1);
+		}
+
+		return CloseHandle(thread) == TRUE;
+	}
+
 	inline MT::Fiber ConvertCurrentThreadToFiber()
 	{
 		LPVOID fiber = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
@@ -121,17 +141,18 @@ namespace MT
 			DWORD res = WaitForSingleObject(eventHandle, milliseconds);
 			return (res == WAIT_OBJECT_0);
 		}
+
+		bool Check()
+		{
+			return Wait(0);
+		}
+
+		static inline bool WaitAll(Event * eventsArray, uint32 size, uint32 milliseconds)
+		{
+			DWORD res = WaitForMultipleObjects(size, (::HANDLE *)&eventsArray[0], TRUE, milliseconds);
+			return (res == WAIT_OBJECT_0);
+		}
 	};
-
-	inline bool WaitForMultipleEvents(Event * eventsArray, uint32 size, uint32 milliseconds)
-	{
-		//can cast Event to ::HANDLE because sizeof(HANDLE) == sizeof(Event)
-		DWORD res = WaitForMultipleObjects(size, (::HANDLE *)&eventsArray[0], TRUE, milliseconds);
-		return (res == WAIT_OBJECT_0);
-	}
-
-	
-
 
 	class ScopedGuard;
 
@@ -185,8 +206,6 @@ namespace MT
 			criticalSection.Leave();
 		}
 	};
-
-	
 
 }
 
