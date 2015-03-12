@@ -116,7 +116,7 @@ namespace MT
 		TaskDesc* parentTask;
 
 		// Number of child tasks spawned
-		MT::InterlockedInt childTasksCount;
+		MT::AtomicInt childTasksCount;
 
 
 		//
@@ -208,7 +208,7 @@ namespace MT
 		// Per group events that is completed
 		MT::Event groupIsDoneEvents[TaskGroup::COUNT];
 
-		MT::InterlockedInt groupCurrentlyRunningTaskCount[TaskGroup::COUNT];
+		MT::AtomicInt groupCurrentlyRunningTaskCount[TaskGroup::COUNT];
 
 		// Fibers pool
 		MT::ConcurrentQueueLIFO<FiberExecutionContext> availableFibers;

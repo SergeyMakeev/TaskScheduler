@@ -2,7 +2,6 @@
 
 #include "types.h"
 #include "Debug.h"
-#include "Interlocked.h"
 
 #define MT_CALL_CONV __stdcall
 
@@ -187,6 +186,50 @@ namespace MT
 
 		friend class MT::ScopedGuard;
 	};
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	class AtomicInt
+	{
+		volatile long value;
+	public:
+
+		AtomicInt()
+		{
+		}
+
+		AtomicInt(int v)
+			: value(v)
+		{
+		}
+
+		void Add(int sum) 
+		{
+			InterlockedExchangeAdd(&value, sum);
+		}
+
+		int Inc()
+		{
+			return InterlockedIncrement(&value);
+		}
+
+		int Dec()
+		{
+			return InterlockedDecrement(&value);
+		}
+
+		int Get()
+		{
+			return value;
+		}
+
+		void Set(int val)
+		{
+			value = val;
+		}
+	};
+
 
 
 
