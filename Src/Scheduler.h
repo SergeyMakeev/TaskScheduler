@@ -179,9 +179,8 @@ namespace MT
 			ThreadGroupEvents();
 		};
 
-		// Thread index to new task
-		uint32 newTaskThreadIndex;
-
+		// Thread index for new task
+		uint32 roundRobinThreadIndex;
 
 		// Threads created by task manager
 		int32 threadsCount;
@@ -211,8 +210,8 @@ namespace MT
 		{
 			for (int i = 0; i < size; i++)
 			{
-				ThreadContext & context = threadContext[newTaskThreadIndex];
-				newTaskThreadIndex = (newTaskThreadIndex + 1) % (uint32)threadsCount;
+				ThreadContext & context = threadContext[roundRobinThreadIndex];
+				roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
 
 				//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
 				context.queue[taskGroup].Push(taskDesc[i]);

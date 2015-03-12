@@ -34,7 +34,7 @@ namespace MT
 
 
 	TaskScheduler::TaskScheduler()
-		: newTaskThreadIndex(0)
+		: roundRobinThreadIndex(0)
 	{
 
 		//query number of processor

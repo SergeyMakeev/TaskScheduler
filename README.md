@@ -27,3 +27,20 @@ Infamous Second Son : Engine Postmortem
 http://adruab.net/wp-images/GDC14_infamous_second_son_engine_postmortem.pdf
 
 Multithreading the Entire Destiny Engine - GDC 2015
+????
+
+Molecule Engine - Building a load-balanced task scheduler
+https://molecularmusings.wordpress.com/2012/04/05/building-a-load-balanced-task-scheduler-part-1-basics/
+
+Intel Threading Building Blocks - Scheduling Algorithm
+https://www.threadingbuildingblocks.org/docs/help/reference/task_scheduler/scheduling_algorithm.htm
+
+CILK/CILK++ and Reducers
+http://www.slideshare.net/yunmingzhang/yunming-zhang-presentations
+
+Task Scheduling Strategies
+http://www.1024cores.net/home/scalable-architecture/task-scheduling-strategies
+
+Implementing a Work-Stealing Task Scheduler on the ARM11 MPCore
+http://www.rtcgroup.com/arm/2007/presentations/211%20-%20Implementing%20a%20Work-Stealing%20Task%20Scheduler.pdf
+
