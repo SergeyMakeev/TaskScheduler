@@ -1,7 +1,6 @@
 #include "Tests.h"
-#include "../Test/UnitTest++/UnitTest++.h"
-
-#include "Scheduler.h"
+#include "../../TestFramework/UnitTest++/UnitTest++.h"
+#include "../Scheduler.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

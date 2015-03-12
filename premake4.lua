@@ -53,11 +53,11 @@ end
 project "UnitTest++"
 	kind "StaticLib"
 	files {
-		"Test/UnitTest++/**.*", 
+		"TestFramework/UnitTest++/**.*", 
 	}
 
 	excludes {
-		"Test/UnitTest++/Posix/**.*"
+		"TestFramework/UnitTest++/Posix/**.*"
 	}
 
 
