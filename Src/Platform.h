@@ -1,8 +1,5 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 #include "types.h"
 #include "Debug.h"
 #include "Interlocked.h"
@@ -10,6 +7,12 @@
 #define MT_CALL_CONV __stdcall
 
 #define ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
+
+#if _MSC_VER
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 
 namespace MT
 {
@@ -33,7 +36,7 @@ namespace MT
 	inline MT::Thread CreateSuspendedThread(size_t stackSize, TThreadStartFunc entryPoint, void* userData)
 	{
 		LPTHREAD_START_ROUTINE pEntryPoint = (LPTHREAD_START_ROUTINE)entryPoint;
-		HANDLE thread = ::CreateThread( NULL, stackSize, pEntryPoint, userData, CREATE_SUSPENDED, NULL );	
+		HANDLE thread = ::CreateThread( NULL, stackSize, pEntryPoint, userData, CREATE_SUSPENDED, NULL );
 		return thread;
 	}
 
@@ -163,8 +166,8 @@ namespace MT
 		CriticalSection( const CriticalSection & ) {}
 		CriticalSection& operator=( const CriticalSection &) {}
 
-		void Enter() 
-		{ 
+		void Enter()
+		{
 			::EnterCriticalSection( &criticalSection );
 		}
 		void Leave()
@@ -186,6 +189,45 @@ namespace MT
 	};
 
 
+
+}
+
+
+#elif __GNUC__
+
+//GCC posix system
+
+#include <pthread.h>
+
+
+namespace MT
+{
+    typedef pthread_t Thread;
+
+	inline MT::Thread CreateSuspendedThread(size_t stackSize, TThreadStartFunc entryPoint, void* userData)
+	{
+		LPTHREAD_START_ROUTINE pEntryPoint = (LPTHREAD_START_ROUTINE)entryPoint;
+
+		pthread_t thread;
+
+        //int res = ::pthread_create( &thread, nullptr, stackSize, pEntryPoint, userData, CREATE_SUSPENDED, NULL );
+		return 0;
+	}
+
+
+}
+
+#else
+
+#error "Platform not specified"
+
+#endif
+
+
+
+namespace MT
+{
+
 	class ScopedGuard
 	{
 		MT::CriticalSection & criticalSection;
@@ -206,12 +248,6 @@ namespace MT
 			criticalSection.Leave();
 		}
 	};
-
 }
-
-
-
-
-
 
 
