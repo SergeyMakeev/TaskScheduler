@@ -4,6 +4,7 @@
 
 #include "Platform.h"
 #include "Scheduler.h"
+#include "Tests.h"
 
 
 void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
@@ -18,6 +19,8 @@ void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
 
 int main(int argc, char **argv)
 {
+	Tests::RunAll();
+
 	argc;	argv;
 
 	MT::TaskScheduler taskScheduler;

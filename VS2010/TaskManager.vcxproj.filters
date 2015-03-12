@@ -5,6 +5,9 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{dfb08095-2822-45e8-9e97-c9cc22f79132}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\ConcurrentQueue.h">
@@ -25,6 +28,9 @@
     <ClInclude Include="..\Src\Scheduler.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Tests.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\main.cpp">
@@ -32,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="..\Src\Scheduler.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tests.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{8532d556-7b68-49d6-8fca-85f1fc6c4864}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Win32\TimeHelpers.cpp">
+      <Filter>Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="AssertException.cpp" />
+    <ClCompile Include="Checks.cpp" />
+    <ClCompile Include="CompositeTestReporter.cpp" />
+    <ClCompile Include="CurrentTest.cpp" />
+    <ClCompile Include="DeferredTestReporter.cpp" />
+    <ClCompile Include="DeferredTestResult.cpp" />
+    <ClCompile Include="MemoryOutStream.cpp" />
+    <ClCompile Include="ReportAssert.cpp" />
+    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="TestDetails.cpp" />
+    <ClCompile Include="TestList.cpp" />
+    <ClCompile Include="TestReporter.cpp" />
+    <ClCompile Include="TestReporterStdout.cpp" />
+    <ClCompile Include="TestResults.cpp" />
+    <ClCompile Include="TestRunner.cpp" />
+    <ClCompile Include="TimeConstraint.cpp" />
+    <ClCompile Include="XmlTestReporter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Win32\TimeHelpers.h">
+      <Filter>Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="AssertException.h" />
+    <ClInclude Include="CheckMacros.h" />
+    <ClInclude Include="Checks.h" />
+    <ClInclude Include="CompositeTestReporter.h" />
+    <ClInclude Include="..\config.h" />
+    <ClInclude Include="CurrentTest.h" />
+    <ClInclude Include="DeferredTestReporter.h" />
+    <ClInclude Include="DeferredTestResult.h" />
+    <ClInclude Include="ExceptionMacros.h" />
+    <ClInclude Include="ExecuteTest.h" />
+    <ClInclude Include="HelperMacros.h" />
+    <ClInclude Include="MemoryOutStream.h" />
+    <ClInclude Include="ReportAssert.h" />
+    <ClInclude Include="ReportAssertImpl.h" />
+    <ClInclude Include="Test.h" />
+    <ClInclude Include="TestDetails.h" />
+    <ClInclude Include="TestList.h" />
+    <ClInclude Include="TestMacros.h" />
+    <ClInclude Include="TestReporter.h" />
+    <ClInclude Include="TestReporterStdout.h" />
+    <ClInclude Include="TestResults.h" />
+    <ClInclude Include="TestRunner.h" />
+    <ClInclude Include="TestSuite.h" />
+    <ClInclude Include="TimeConstraint.h" />
+    <ClInclude Include="TimeHelpers.h" />
+    <ClInclude Include="..\unittestpp.h" />
+    <ClInclude Include="XmlTestReporter.h" />
+  </ItemGroup>
+</Project>
