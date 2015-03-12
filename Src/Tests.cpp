@@ -84,7 +84,6 @@ namespace DeepSubtaskQueue
 	{
 		*(int*)userData = 1;
 	}
-
 }
 
 // Checks one simple task
@@ -104,6 +103,36 @@ TEST(DeepSubtaskQueue)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+namespace SubtaskGroup
+{
+	static MT::TaskGroup::Type sourceGroup = MT::TaskGroup::GROUP_1;
+	static MT::TaskGroup::Type resultGroup = MT::TaskGroup::GROUP_UNDEFINED;
+
+	void MT_CALL_CONV Subtask(MT::FiberContext& context, void*)
+	{
+		resultGroup = context.activeTask->taskGroup;
+	}
+
+	void MT_CALL_CONV Task(MT::FiberContext& context, void*)
+	{
+		MT::TaskDesc task(Subtask, 0);
+		context.RunSubtasks(&task, 1);
+	}
+}
+
+// Checks one simple task
+TEST(SubtaskGroup)
+{
+	MT::TaskScheduler scheduler;
+
+	MT::TaskDesc task(SubtaskGroup::Task, 0);
+	scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+
+	CHECK(scheduler.WaitAll(200));
+	CHECK_EQUAL(SubtaskGroup::sourceGroup, SubtaskGroup::resultGroup);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int Tests::RunAll()
 {
