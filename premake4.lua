@@ -24,11 +24,11 @@ solution "TaskScheduler"
 
 -- CONFIGURATIONS
 
-configuration "*-Release"
+configuration "Release"
 	defines { "NDEBUG" }
 	flags { "Symbols", optimization_flags }
 
-configuration "*-Debug"
+configuration "Debug"
 	defines { "_DEBUG" }
 	flags { "Symbols" }
 
