@@ -15,16 +15,9 @@ namespace MT
 	{
 	}
 
-	static const int THREAD_CLOSE_TIMEOUT_MS = 1000;
-
 	ThreadContext::~ThreadContext()
 	{
-		if (thread != NULL)
-		{
-			ASSERT(state == ThreadState::EXIT, "ThreadContext has invalid state");
-			CloseThread(thread, THREAD_CLOSE_TIMEOUT_MS);
-			thread = NULL;
-		}
+		ASSERT(thread == NULL, "Thread is not stopped!")
 	}
 
 
@@ -99,12 +92,20 @@ namespace MT
 		}
 	}
 
+	static const int THREAD_CLOSE_TIMEOUT_MS = 200;
+
 	TaskScheduler::~TaskScheduler()
 	{
 		for (int32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].state = ThreadState::EXIT;
 			threadContext[i].hasNewTasksEvent.Signal();
+		}
+
+		for (int32 i = 0; i < threadsCount; i++)
+		{
+			CloseThread(threadContext[i].thread, THREAD_CLOSE_TIMEOUT_MS);
+			threadContext[i].thread = NULL;
 		}
 	}
 
