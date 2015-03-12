@@ -44,3 +44,5 @@ http://www.1024cores.net/home/scalable-architecture/task-scheduling-strategies
 Implementing a Work-Stealing Task Scheduler on the ARM11 MPCore
 http://www.rtcgroup.com/arm/2007/presentations/211%20-%20Implementing%20a%20Work-Stealing%20Task%20Scheduler.pdf
 
+Lost Planet graphics course for 3D game fan of Nishikawa Zenji
+http://game.watch.impress.co.jp/docs/20070131/3dlp.htm

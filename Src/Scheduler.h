@@ -10,7 +10,7 @@
 namespace MT
 {
 
-	const uint32 MT_MAX_THREAD_COUNT = 4;
+	const uint32 MT_MAX_THREAD_COUNT = 16;
 	const uint32 MT_MAX_FIBERS_COUNT = 128;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 16384;
 	const uint32 MT_FIBER_STACK_SIZE = 16384;
@@ -72,9 +72,6 @@ namespace MT
 		// active task status
 		FiberTaskStatus::Type taskStatus;
 
-		// number of child tasks spawned
-		MT::InterlockedInt childTasksCount;
-
 		FiberContext();
 
 		void RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count);
@@ -112,9 +109,17 @@ namespace MT
 	//
 	struct TaskDesc
 	{
-		//Execution context. Not valid until scheduler attach fiber to task
-		FiberExecutionContext activeFiber;
+		// Execution context. Not valid until scheduler attach fiber to task
+		FiberExecutionContext executionContext;
 
+		// Parent task pointer. Valid only for subtask
+		TaskDesc* parentTask;
+
+		// Number of child tasks spawned
+		MT::InterlockedInt childTasksCount;
+
+
+		//
 		TaskGroup::Type taskGroup;
 
 		//Task entry point
@@ -126,8 +131,10 @@ namespace MT
 		TaskDesc()
 			: taskFunc(nullptr)
 			, userData(nullptr)
+			, parentTask(nullptr)
+			, childTasksCount(0)
 			, taskGroup(TaskGroup::GROUP_UNDEFINED)
-			, activeFiber(FiberExecutionContext::Empty())
+			, executionContext(FiberExecutionContext::Empty())
 		{
 
 		}
@@ -135,8 +142,10 @@ namespace MT
 		TaskDesc(TTaskEntryPoint _taskEntry, void* _userData)
 			: taskFunc(_taskEntry)
 			, userData(_userData)
+			, parentTask(nullptr)
+			, childTasksCount(0)
 			, taskGroup(TaskGroup::GROUP_UNDEFINED)
-			, activeFiber(FiberExecutionContext::Empty())
+			, executionContext(FiberExecutionContext::Empty())
 		{
 		}
 	};
@@ -191,10 +200,16 @@ namespace MT
 		// Fibers context
 		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
-		FiberExecutionContext RequestFiber();
-		void ReleaseFiber(FiberExecutionContext fiberExecutionContext);
+		FiberExecutionContext RequestExecutionContext();
+		void ReleaseExecutionContext(FiberExecutionContext fiberExecutionContext);
 
-		void RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, const MT::TaskDesc * parentTask);
+		void RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask);
+
+
+		static uint32 MT_CALL_CONV ThreadMain( void* userData );
+		static void MT_CALL_CONV FiberMain(void* userData);
+
+		static void ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc);
 
 	public:
 
@@ -206,10 +221,6 @@ namespace MT
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
 
-		static uint32 MT_CALL_CONV ThreadMain( void* userData );
-		static void MT_CALL_CONV FiberMain(void* userData);
-
-		static void ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc);
 
 	};
 }

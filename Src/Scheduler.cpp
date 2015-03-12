@@ -20,17 +20,19 @@ namespace MT
 		, activeContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
 	{
-		childTasksCount.Set(0);
 	}
 
 	void FiberContext::RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count)
 	{
 		ASSERT(activeContext, "Sanity check failed!");
 
-		MT::TaskDesc * parentTask = activeTask;
+		// ATTENTION !
+		// copy current task description to stack.
+		//  pointer to parentTask alive until all child task finished
+		MT::TaskDesc parentTask = *activeTask;
 
 		//add subtask to scheduler
-		activeContext->taskScheduler->RunTasksImpl(parentTask->taskGroup, taskDescArr, count, parentTask);
+		activeContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
 
 		//switch to scheduler
 		MT::SwitchToFiber(activeContext->schedulerFiber);
@@ -88,7 +90,7 @@ namespace MT
 	{
 	}
 
-	MT::FiberExecutionContext TaskScheduler::RequestFiber()
+	MT::FiberExecutionContext TaskScheduler::RequestExecutionContext()
 	{
 		MT::FiberExecutionContext fiber = MT::FiberExecutionContext::Empty();
 		if (!availableFibers.TryPop(fiber))
@@ -98,7 +100,7 @@ namespace MT
 		return fiber;
 	}
 
-	void TaskScheduler::ReleaseFiber(MT::FiberExecutionContext fiberExecutionContext)
+	void TaskScheduler::ReleaseExecutionContext(MT::FiberExecutionContext fiberExecutionContext)
 	{
 		availableFibers.Push(fiberExecutionContext);
 	}
@@ -106,36 +108,79 @@ namespace MT
 
 	void TaskScheduler::ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc)
 	{
-		if (taskDesc.taskFunc != nullptr)
+		taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
+		ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
+
+		taskDesc.executionContext.fiberContext->activeTask = &taskDesc;
+		taskDesc.executionContext.fiberContext->activeContext = &context;
+
+		MT::TaskDesc currentTask = taskDesc;
+		for(;;)
 		{
-			taskDesc.activeFiber = context.taskScheduler->RequestFiber();
-			ASSERT(taskDesc.activeFiber.IsValid(), "Can't get fiber");
+			ASSERT(currentTask.taskFunc != nullptr, "Invalid task function pointer");
+			ASSERT(currentTask.executionContext.fiberContext, "Invalid execution context.");
 
-			taskDesc.activeFiber.fiberContext->activeTask = &taskDesc;
-			taskDesc.activeFiber.fiberContext->activeContext = &context;
+			// update task status
+			currentTask.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
-			taskDesc.activeFiber.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
-			MT::SwitchToFiber(taskDesc.activeFiber.fiber);
+			// run current task code
+			MT::SwitchToFiber(currentTask.executionContext.fiber);
 
-			if (taskDesc.activeFiber.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
+			// if task was done
+			if (currentTask.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
 			{
-				//task was done
-				int groupTaskCount = context.taskScheduler->groupCurrentlyRunningTaskCount[taskDesc.taskGroup].Dec();
+				TaskGroup::Type taskGroup = currentTask.taskGroup;
+
+				//update group status
+				int groupTaskCount = context.taskScheduler->groupCurrentlyRunningTaskCount[taskGroup].Dec();
 				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 				if (groupTaskCount == 0)
 				{
-					context.taskScheduler->groupIsDoneEvents[taskDesc.taskGroup].Signal();
+					context.taskScheduler->groupIsDoneEvents[taskGroup].Signal();
 				}
 
 				//releasing task fiber
-				context.taskScheduler->ReleaseFiber(taskDesc.activeFiber);
-				taskDesc.activeFiber = MT::FiberExecutionContext::Empty();
+				context.taskScheduler->ReleaseExecutionContext(currentTask.executionContext);
+				currentTask.executionContext = MT::FiberExecutionContext::Empty();
+
+				//
+				if (currentTask.parentTask != nullptr)
+				{
+					int childTasksCount = currentTask.parentTask->childTasksCount.Dec();
+					ASSERT(childTasksCount >= 0, "Sanity check failed!");
+
+					if (childTasksCount == 0)
+					{
+						// this is a last child task. restore parent task
+
+						MT::TaskDesc * parent = currentTask.parentTask;
+
+						// WARNING!! Thread context can changed here! Set actual current thread context.
+						parent->executionContext.fiberContext->activeContext = &context;
+
+						// copy parent to current task.
+						// can't just use pointer, because parent pointer is pointer on fiber stack
+						currentTask = *parent;
+					} else
+					{
+						// child task still not finished
+						// exiting
+						break;
+					}
+				} else
+				{
+					// no parent task
+					// exiting
+					break;
+				}
 			} else
 			{
-				//task was yielded
+				// current task was yielded, due to spawn subtask
+				// exiting
+				break;
 			}
 
-		}
+		} // while(currentTask)
 	}
 
 
@@ -178,16 +223,23 @@ namespace MT
 		return 0;
 	}
 
-	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, const MT::TaskDesc * parentTask)
+	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask)
 	{
-		for (uint32 i = 0; i < count; i++)
+		if (parentTask)
+		{
+			parentTask->childTasksCount.Add(count);
+		}
+
+		int startIndex = ((int)count - 1);
+		for (int i = startIndex; i >= 0; i--)
 		{
 			ThreadContext & context = threadContext[roundRobinThreadIndex];
 			roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
 
-			//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
+			//TODO: can be write more effective implementation here, just split to threads BEFORE submitting tasks to queue
 			MT::TaskDesc desc = taskDescArr[i];
 			desc.taskGroup = taskGroup;
+			desc.parentTask = parentTask;
 
 			context.queue.Push(desc);
 

@@ -7,6 +7,16 @@ namespace MT
 	{
 		volatile long value;
 	public:
+
+		InterlockedInt()
+		{
+		}
+
+		InterlockedInt(int v)
+			: value(v)
+		{
+		}
+
 		void Add(int sum) 
 		{
 			InterlockedExchangeAdd(&value, sum);
