@@ -3,17 +3,18 @@
 #include "Platform.h"
 #include "ConcurrentQueue.h"
 
-#define MT_MAX_THREAD_COUNT (4)
-#define MT_MAX_FIBERS_COUNT (128)
-#define MT_SCHEDULER_STACK_SIZE (16384)
-#define MT_FIBER_STACK_SIZE (16384)
-
 #ifdef Yield
 #undef Yield
 #endif
 
 namespace MT
 {
+
+	const uint32 MT_MAX_THREAD_COUNT = 4;
+	const uint32 MT_MAX_FIBERS_COUNT = 128;
+	const uint32 MT_SCHEDULER_STACK_SIZE = 16384;
+	const uint32 MT_FIBER_STACK_SIZE = 16384;
+
 	//
 	// Task group
 	//
@@ -33,7 +34,7 @@ namespace MT
 
 	struct TaskDesc;
 	struct ThreadContext;
-	class TaskManager;
+	class TaskScheduler;
 
 	typedef void (MT_CALL_CONV *TTaskEntryPoint)(MT::ThreadContext & context, void* userData);
 
@@ -138,7 +139,7 @@ namespace MT
 	struct ThreadContext
 	{
 		//Pointer to task manager
-		MT::TaskManager* taskManager;
+		MT::TaskScheduler* taskScheduler;
 
 		//Thread
 		MT::Thread thread;
@@ -165,9 +166,9 @@ namespace MT
 
 
 	//
-	// Task manager
+	// Task scheduler
 	//
-	class TaskManager
+	class TaskScheduler
 	{
 
 		// Transposed thread queue events. Used inside WaitGroup implementation.
@@ -201,8 +202,8 @@ namespace MT
 
 	public:
 
-		TaskManager();
-		~TaskManager();
+		TaskScheduler();
+		~TaskScheduler();
 
 
 		template<typename T, int size>

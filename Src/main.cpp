@@ -3,7 +3,7 @@
 #include <set>
 
 #include "Platform.h"
-#include "TaskManager.h"
+#include "Scheduler.h"
 
 
 void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 {
 	argc;	argv;
 
-	MT::TaskManager taskManager;
+	MT::TaskScheduler taskScheduler;
 
 	MT::TaskDesc tasks[4];
 	tasks[0] = MT::TaskDesc(TaskEntryPoint, (void*)3);
@@ -28,13 +28,13 @@ int main(int argc, char **argv)
 	tasks[2] = MT::TaskDesc(TaskEntryPoint, (void*)5);
 	tasks[3] = MT::TaskDesc(TaskEntryPoint, (void*)6);
 
-	taskManager.RunTasks(MT::TaskGroup::GROUP_0, tasks);
+	taskScheduler.RunTasks(MT::TaskGroup::GROUP_0, tasks);
 
 	for(;;)
 	{
 		printf("Wait until all tasks is finished\n");
 
-		bool isDone = taskManager.WaitGroup(MT::TaskGroup::GROUP_0, 2000);
+		bool isDone = taskScheduler.WaitGroup(MT::TaskGroup::GROUP_0, 2000);
 		if (isDone)
 		{
 			printf("All tasks finished\n");

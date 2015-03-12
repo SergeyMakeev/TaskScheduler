@@ -82,12 +82,12 @@
     <ClInclude Include="..\Src\Debug.h" />
     <ClInclude Include="..\Src\Interlocked.h" />
     <ClInclude Include="..\Src\Platform.h" />
-    <ClInclude Include="..\Src\TaskManager.h" />
+    <ClInclude Include="..\Src\Scheduler.h" />
     <ClInclude Include="..\Src\types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\main.cpp" />
-    <ClCompile Include="..\Src\TaskManager.cpp" />
+    <ClCompile Include="..\Src\Scheduler.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

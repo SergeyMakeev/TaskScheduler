@@ -1,4 +1,4 @@
-#include "TaskManager.h"
+#include "Scheduler.h"
 #include "Assert.h"
 
 
@@ -7,7 +7,7 @@ namespace MT
 {
 	ThreadContext::ThreadContext()
 		: hasNewTasksEvent(EventReset::MANUAL, true)
-		, taskManager(nullptr)
+		, taskScheduler(nullptr)
 		, thread(nullptr)
 		, activeGroup(MT::TaskGroup::GROUP_0)
 		, schedulerFiber(nullptr)
@@ -24,7 +24,7 @@ namespace MT
 		MT::SwitchToFiber(schedulerFiber);
 	}
 
-	TaskManager::ThreadGroupEvents::ThreadGroupEvents()
+	TaskScheduler::ThreadGroupEvents::ThreadGroupEvents()
 	{
 		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
 		{
@@ -33,7 +33,7 @@ namespace MT
 	}
 
 
-	TaskManager::TaskManager()
+	TaskScheduler::TaskScheduler()
 		: newTaskThreadIndex(0)
 	{
 
@@ -59,7 +59,7 @@ namespace MT
 		//create worker thread pool
 		for (int32 i = 0; i < threadsCount; i++)
 		{
-			threadContext[i].taskManager = this;
+			threadContext[i].taskScheduler = this;
 			threadContext[i].thread = MT::CreateSuspendedThread(MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
 			MT::SetThreadProcessor(threadContext[i].thread, i);
 
@@ -77,11 +77,11 @@ namespace MT
 		}
 	}
 
-	TaskManager::~TaskManager()
+	TaskScheduler::~TaskScheduler()
 	{
 	}
 
-	FiberDesc TaskManager::RequestFiber()
+	FiberDesc TaskScheduler::RequestFiber()
 	{
 		FiberDesc fiber = FiberDesc::Empty();
 		if (!freeFibers.TryPop(fiber))
@@ -91,17 +91,17 @@ namespace MT
 		return fiber;
 	}
 
-	void TaskManager::ReleaseFiber(FiberDesc fiberDesc)
+	void TaskScheduler::ReleaseFiber(FiberDesc fiberDesc)
 	{
 		freeFibers.Push(fiberDesc);
 	}
 
 
-	void TaskManager::ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc)
+	void TaskScheduler::ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc)
 	{
 		if (taskDesc.taskFunc != nullptr)
 		{
-			taskDesc.activeFiber = context.taskManager->RequestFiber();
+			taskDesc.activeFiber = context.taskScheduler->RequestFiber();
 			ASSERT(taskDesc.activeFiber.IsValid(), "Can't get fiber");
 
 			taskDesc.activeFiber.fiberContext->activeTask = &taskDesc;
@@ -114,7 +114,7 @@ namespace MT
 			{
 				//task was done
 				//releasing task fiber
-				context.taskManager->ReleaseFiber(taskDesc.activeFiber);
+				context.taskScheduler->ReleaseFiber(taskDesc.activeFiber);
 				taskDesc.activeFiber = FiberDesc::Empty();
 			} else
 			{
@@ -126,7 +126,7 @@ namespace MT
 	}
 
 
-	void TaskManager::FiberMain(void* userData)
+	void TaskScheduler::FiberMain(void* userData)
 	{
 		MT::FiberContext& context = *(MT::FiberContext*)(userData);
 
@@ -141,10 +141,10 @@ namespace MT
 	}
 
 
-	uint32 TaskManager::ThreadMain( void* userData )
+	uint32 TaskScheduler::ThreadMain( void* userData )
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
-		ASSERT(context.taskManager, "Task manager must be not null!");
+		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
 		for(;;)
@@ -186,7 +186,7 @@ namespace MT
 		return 0;
 	}
 
-	bool TaskManager::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
+	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{
 		return MT::WaitForMultipleEvents(&groupDoneEvents[group].threadQueueEmpty[0], threadsCount, milliseconds);
 	}

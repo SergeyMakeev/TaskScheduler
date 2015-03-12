@@ -24,13 +24,14 @@ namespace MT
 
 		void Push(const T & item)
 		{
-			MT::Guard guard(criticalSection);
+			MT::ScopedGuard guard(criticalSection);
+
 			queue.push_back(item);
 		}
 
 		bool TryPop(T & item)
 		{
-			MT::Guard guard(criticalSection);
+			MT::ScopedGuard guard(criticalSection);
 
 			if (queue.empty())
 			{

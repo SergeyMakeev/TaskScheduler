@@ -13,9 +13,6 @@
     <ClInclude Include="..\Src\Platform.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\TaskManager.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\types.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -25,12 +22,15 @@
     <ClInclude Include="..\Src\Interlocked.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Scheduler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\TaskManager.cpp">
+    <ClCompile Include="..\Src\Scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

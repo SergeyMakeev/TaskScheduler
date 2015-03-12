@@ -1,12 +1,14 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
 #include "types.h"
 #include "Debug.h"
 #include "Interlocked.h"
 
 #define MT_CALL_CONV __stdcall
-#define INLINE __forceinline
+
 
 namespace MT
 {
@@ -130,7 +132,7 @@ namespace MT
 	
 
 
-	class Guard;
+	class ScopedGuard;
 
 	class CriticalSection
 	{
@@ -158,27 +160,26 @@ namespace MT
 			::DeleteCriticalSection( &criticalSection );
 		}
 
-		friend class MT::Guard;
+		friend class MT::ScopedGuard;
 	};
 
 
-	class Guard
+	class ScopedGuard
 	{
 		MT::CriticalSection & criticalSection;
 
 
-		Guard( const Guard & ) : criticalSection(*((MT::CriticalSection*)nullptr)) {}
-		Guard& operator=( const Guard &) {}
-
+		ScopedGuard( const ScopedGuard & ) : criticalSection(*((MT::CriticalSection*)nullptr)) {}
+		ScopedGuard& operator=( const ScopedGuard &) {}
 
 	public:
 
-		Guard(MT::CriticalSection & cs) : criticalSection(cs)
+		ScopedGuard(MT::CriticalSection & cs) : criticalSection(cs)
 		{
 			criticalSection.Enter();
 		}
 
-		~Guard()
+		~ScopedGuard()
 		{
 			criticalSection.Leave();
 		}
