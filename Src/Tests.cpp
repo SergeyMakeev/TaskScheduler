@@ -51,6 +51,60 @@ TEST(RunLongTaskAndNotFinish)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+namespace DeepSubtaskQueue
+{
+	template<size_t N>
+	void MT_CALL_CONV Fibonacci(MT::FiberContext& context, void* userData)
+	{
+		int& result = *(int*)userData;
+
+		MT::TaskDesc tasks[2];
+
+		int a = -100;
+		tasks[0] = MT::TaskDesc(Fibonacci<N - 1>, &a);
+
+		int b = -100;
+		tasks[1] = MT::TaskDesc(Fibonacci<N - 2>, &b);
+
+		context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+
+		result = a + b;
+	}
+
+	template<>
+	void MT_CALL_CONV Fibonacci<0>(MT::FiberContext& context, void* userData)
+	{
+		*(int*)userData = 0;
+	}
+
+	template<>
+	void MT_CALL_CONV Fibonacci<1>(MT::FiberContext& context, void* userData)
+	{
+		*(int*)userData = 1;
+	}
+
+}
+
+// Checks one simple task
+TEST(DeepSubtaskQueue)
+{
+	MT::TaskScheduler scheduler;
+
+	int result = 0;
+	MT::TaskDesc task(DeepSubtaskQueue::Fibonacci<13>, &result);
+
+	scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+
+	CHECK(scheduler.WaitAll(200));
+
+	CHECK_EQUAL(result, 233);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 int Tests::RunAll()
 {
 	return UnitTest::RunAllTests();
