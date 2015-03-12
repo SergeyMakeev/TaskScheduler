@@ -9,7 +9,7 @@ namespace SimpleTask
 {
 	static int sourceData = 0xFF33FF;
 	static int resultData = 0;
-	void MT_CALL_CONV Run(MT::FiberContext& context, void* userData)
+	void MT_CALL_CONV Run(MT::FiberContext&, void* userData)
 	{
 		resultData = *(int*)userData;
 	}
@@ -33,7 +33,7 @@ TEST(RunOneSimpleTask)
 namespace LongTask
 {
 	static int timeLimitMS = 100;
-	void MT_CALL_CONV Run(MT::FiberContext& context, void* userData)
+	void MT_CALL_CONV Run(MT::FiberContext&, void*)
 	{
 		Sleep(timeLimitMS * 2);
 	}
@@ -74,13 +74,13 @@ namespace DeepSubtaskQueue
 	}
 
 	template<>
-	void MT_CALL_CONV Fibonacci<0>(MT::FiberContext& context, void* userData)
+	void MT_CALL_CONV Fibonacci<0>(MT::FiberContext&, void* userData)
 	{
 		*(int*)userData = 0;
 	}
 
 	template<>
-	void MT_CALL_CONV Fibonacci<1>(MT::FiberContext& context, void* userData)
+	void MT_CALL_CONV Fibonacci<1>(MT::FiberContext&, void* userData)
 	{
 		*(int*)userData = 1;
 	}

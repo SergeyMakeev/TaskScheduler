@@ -8,7 +8,7 @@
 
 
 
-void MT_CALL_CONV SubTaskEntryPoint(MT::FiberContext & context, void* userData)
+void MT_CALL_CONV SubTaskEntryPoint(MT::FiberContext&, void* userData)
 {
 	int v = (int)userData;
 

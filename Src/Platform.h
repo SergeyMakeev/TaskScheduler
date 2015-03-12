@@ -56,7 +56,7 @@ namespace MT
 
 		if (WAIT_OBJECT_0 != WaitForSingleObject(thread, waitTimeOutMS))
 		{
-			TerminateThread(thread, -1);
+			TerminateThread(thread, 1);
 		}
 
 		return CloseHandle(thread) == TRUE;
