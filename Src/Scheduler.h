@@ -199,7 +199,7 @@ namespace MT
 		friend struct MT::FiberContext;
 
 		// Thread index for new task
-		uint32 roundRobinThreadIndex;
+		MT::AtomicInt roundRobinThreadIndex;
 
 		// Threads created by task manager
 		int32 threadsCount;

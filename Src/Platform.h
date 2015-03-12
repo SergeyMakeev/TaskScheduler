@@ -195,7 +195,7 @@ namespace MT
 		volatile long value;
 	public:
 
-		AtomicInt()
+		AtomicInt() : value(0)
 		{
 		}
 

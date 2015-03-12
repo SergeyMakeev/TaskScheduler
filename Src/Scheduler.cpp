@@ -252,9 +252,9 @@ namespace MT
 		int startIndex = ((int)count - 1);
 		for (int i = startIndex; i >= 0; i--)
 		{
-			ThreadContext & context = threadContext[roundRobinThreadIndex];
-			roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
-
+			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
+			ThreadContext & context = threadContext[bucketIndex];
+			
 			//TODO: can be write more effective implementation here, just split to threads BEFORE submitting tasks to queue
 			MT::TaskDesc desc = taskDescArr[i];
 			desc.taskGroup = taskGroup;
