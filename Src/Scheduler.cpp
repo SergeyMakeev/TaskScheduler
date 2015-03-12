@@ -7,16 +7,33 @@
 namespace MT
 {
 	ThreadContext::ThreadContext()
-		: hasNewTasksEvent(EventReset::MANUAL, true)
+		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, taskScheduler(nullptr)
 		, thread(nullptr)
 		, schedulerFiber(nullptr)
 	{
 	}
 
-	void ThreadContext::Yield()
+
+	FiberContext::FiberContext()
+		: activeTask(nullptr)
+		, activeContext(nullptr)
+		, taskStatus(FiberTaskStatus::UNKNOWN)
 	{
-		MT::SwitchToFiber(schedulerFiber);
+		childTasksCount.Set(0);
+	}
+
+	void FiberContext::RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count)
+	{
+		ASSERT(activeContext, "Sanity check failed!");
+
+		MT::TaskDesc * parentTask = activeTask;
+
+		//add subtask to scheduler
+		activeContext->taskScheduler->RunTasksImpl(parentTask->taskGroup, taskDescArr, count, parentTask);
+
+		//switch to scheduler
+		MT::SwitchToFiber(activeContext->schedulerFiber);
 	}
 
 
@@ -39,14 +56,14 @@ namespace MT
 		// create fiber pool
 		for (int32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
 		{
-			MT::Fiber fiber = MT::CreateFiber(MT_FIBER_STACK_SIZE, FiberMain, &fiberContext[i]);
-			availableFibers.Push(FiberExecutionContext(fiber, &fiberContext[i]));
+			MT::Fiber fiber = MT::CreateFiber( MT_FIBER_STACK_SIZE, FiberMain, &fiberContext[i] );
+			availableFibers.Push( FiberExecutionContext(fiber, &fiberContext[i]) );
 		}
 
 		// create group done events
 		for (int32 i = 0; i < TaskGroup::COUNT; i++)
 		{
-			groupIsDoneEvents[i].Create(MT::EventReset::MANUAL, true);
+			groupIsDoneEvents[i].Create( MT::EventReset::MANUAL, true );
 			groupCurrentlyRunningTaskCount[i].Set(0);
 		}
 
@@ -54,7 +71,7 @@ namespace MT
 		for (int32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].taskScheduler = this;
-			threadContext[i].thread = MT::CreateSuspendedThread(MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
+			threadContext[i].thread = MT::CreateSuspendedThread( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
 
 			// bind thread to processor
 			MT::SetThreadProcessor(threadContext[i].thread, i);
@@ -115,7 +132,7 @@ namespace MT
 				taskDesc.activeFiber = MT::FiberExecutionContext::Empty();
 			} else
 			{
-				//task was yielded, save task and fiber to yielded queue
+				//task was yielded
 			}
 
 		}
@@ -129,7 +146,7 @@ namespace MT
 		for(;;)
 		{
 			ASSERT(context.activeTask, "Invalid task in fiber context");
-			context.activeTask->taskFunc( *context.activeContext, context.activeTask->userData );
+			context.activeTask->taskFunc( context, context.activeTask->userData );
 			context.taskStatus = FiberTaskStatus::FINISHED;
 			MT::SwitchToFiber(context.activeContext->schedulerFiber);
 		}
@@ -154,13 +171,39 @@ namespace MT
 			{
 				//TODO: can try to steal tasks from other threads
 				//all tasks was done. wait 2 seconds
-				context.hasNewTasksEvent.Reset();
 				context.hasNewTasksEvent.Wait(2000);
 			}
 		}
 
 		return 0;
 	}
+
+	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, const MT::TaskDesc * parentTask)
+	{
+		for (uint32 i = 0; i < count; i++)
+		{
+			ThreadContext & context = threadContext[roundRobinThreadIndex];
+			roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
+
+			//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
+			MT::TaskDesc desc = taskDescArr[i];
+			desc.taskGroup = taskGroup;
+
+			context.queue.Push(desc);
+
+			groupIsDoneEvents[taskGroup].Reset();
+			groupCurrentlyRunningTaskCount[taskGroup].Inc();
+
+			context.hasNewTasksEvent.Signal();
+		}
+	}
+
+
+	void TaskScheduler::RunTasks(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count)
+	{
+		RunTasksImpl(taskGroup, taskDescArr, count, nullptr);
+	}
+
 
 	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{

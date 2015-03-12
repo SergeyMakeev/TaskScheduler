@@ -7,9 +7,17 @@
 #include "Tests.h"
 
 
-void MT_CALL_CONV TaskEntryPoint(MT::ThreadContext & context, void* userData)
+void MT_CALL_CONV TaskEntryPoint(MT::FiberContext & context, void* userData)
 {
 	Sleep(1000);
+
+/*
+	MT::TaskDesc tasks[2];
+	tasks[0] = MT::TaskDesc(TaskEntryPoint, (void*)6);
+	tasks[1] = MT::TaskDesc(TaskEntryPoint, (void*)7);
+
+	context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+*/
 
 	//context.Yield();
 
@@ -31,7 +39,7 @@ int main(int argc, char **argv)
 	tasks[2] = MT::TaskDesc(TaskEntryPoint, (void*)5);
 	tasks[3] = MT::TaskDesc(TaskEntryPoint, (void*)6);
 
-	taskScheduler.RunTasks(MT::TaskGroup::GROUP_0, tasks);
+	taskScheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
 	for(;;)
 	{

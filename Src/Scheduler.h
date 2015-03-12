@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Platform.h"
-#include "ConcurrentQueue.h"
+#include "ConcurrentQueueLIFO.h"
 
 #ifdef Yield
 #undef Yield
@@ -36,9 +36,11 @@ namespace MT
 
 	struct TaskDesc;
 	struct ThreadContext;
+	struct FiberContext;
+
 	class TaskScheduler;
 
-	typedef void (MT_CALL_CONV *TTaskEntryPoint)(MT::ThreadContext & context, void* userData);
+	typedef void (MT_CALL_CONV *TTaskEntryPoint)(MT::FiberContext & context, void* userData);
 
 	//
 	// Fiber task status
@@ -73,13 +75,10 @@ namespace MT
 		// number of child tasks spawned
 		MT::InterlockedInt childTasksCount;
 
-		FiberContext()
-			: activeTask(nullptr)
-			, activeContext(nullptr)
-			, taskStatus(FiberTaskStatus::UNKNOWN)
-		{
-			childTasksCount.Set(0);
-		}
+		FiberContext();
+
+		void RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count);
+
 	};
 
 	//
@@ -158,14 +157,12 @@ namespace MT
 		MT::Fiber schedulerFiber;
 
 		// task queue awaiting execution
-		MT::ConcurrentQueue<MT::TaskDesc> queue;
+		MT::ConcurrentQueueLIFO<MT::TaskDesc> queue;
 
 		// new task was arrived to queue event
 		MT::Event hasNewTasksEvent;
 
 		ThreadContext();
-
-		void Yield();
 	};
 
 
@@ -174,6 +171,7 @@ namespace MT
 	//
 	class TaskScheduler
 	{
+		friend struct MT::FiberContext;
 
 		// Thread index for new task
 		uint32 roundRobinThreadIndex;
@@ -188,7 +186,7 @@ namespace MT
 		MT::InterlockedInt groupCurrentlyRunningTaskCount[TaskGroup::COUNT];
 
 		// Fibers pool
-		MT::ConcurrentQueue<FiberExecutionContext> availableFibers;
+		MT::ConcurrentQueueLIFO<FiberExecutionContext> availableFibers;
 
 		// Fibers context
 		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
@@ -196,33 +194,14 @@ namespace MT
 		FiberExecutionContext RequestFiber();
 		void ReleaseFiber(FiberExecutionContext fiberExecutionContext);
 
+		void RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, const MT::TaskDesc * parentTask);
 
 	public:
 
 		TaskScheduler();
 		~TaskScheduler();
 
-
-		template<typename T, int size>
-		void RunTasks(TaskGroup::Type taskGroup, const T(&taskDesc)[size])
-		{
-			for (int i = 0; i < size; i++)
-			{
-				ThreadContext & context = threadContext[roundRobinThreadIndex];
-				roundRobinThreadIndex = (roundRobinThreadIndex + 1) % (uint32)threadsCount;
-
-				//TODO: can be write more effective implementation here, just split to threads before submitting tasks to queue
-				MT::TaskDesc desc = taskDesc[i];
-				desc.taskGroup = taskGroup;
-
-				context.queue.Push(desc);
-				
-				groupIsDoneEvents[taskGroup].Reset();
-				groupCurrentlyRunningTaskCount[taskGroup].Inc();
-
-				context.hasNewTasksEvent.Signal();
-			}
-		}
+		void RunTasks(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count);
 
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);

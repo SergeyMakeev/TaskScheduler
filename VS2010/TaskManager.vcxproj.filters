@@ -10,9 +10,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Src\ConcurrentQueue.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\Platform.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -26,6 +23,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Scheduler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\ConcurrentQueueLIFO.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Tests.h">

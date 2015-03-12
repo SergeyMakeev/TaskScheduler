@@ -6,19 +6,19 @@ namespace MT
 
 	//TODO: This is very naive implementation, rewrite to multiple producer, multiple consumer lockless queue
 	template<typename T>
-	class ConcurrentQueue
+	class ConcurrentQueueLIFO
 	{
 		MT::CriticalSection criticalSection;
 		std::vector<T> queue;
 
 	public:
 
-		ConcurrentQueue()
+		ConcurrentQueueLIFO()
 		{
 			queue.reserve(256);
 		}
 
-		~ConcurrentQueue()
+		~ConcurrentQueueLIFO()
 		{
 		}
 

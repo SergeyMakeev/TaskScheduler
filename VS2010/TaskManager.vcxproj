@@ -78,7 +78,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Src\ConcurrentQueue.h" />
+    <ClInclude Include="..\Src\ConcurrentQueueLIFO.h" />
     <ClInclude Include="..\Src\Debug.h" />
     <ClInclude Include="..\Src\Interlocked.h" />
     <ClInclude Include="..\Src\Platform.h" />
