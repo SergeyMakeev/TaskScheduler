@@ -97,19 +97,6 @@ namespace SubtaskGroup
 		CHECK_EQUAL(SubtaskGroup::sourceGroup, SubtaskGroup::resultGroup);
 	}
 
-	// Checks many simple task with subtasks
-	TEST(ManyTasksOneSubtask)
-	{
-		MT::TaskScheduler scheduler;
-
-		for (int i = 0; i < 100000; ++i)
-		{
-			MT::TaskDesc task(SubtaskGroup::Task, 0);
-			scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
-			CHECK(scheduler.WaitAll(200));
-		}
-	}
-
 	// Checks task with multiple subtasks
 	TEST(OneTaskManySubtasks)
 	{
@@ -120,6 +107,25 @@ namespace SubtaskGroup
 
 		CHECK(scheduler.WaitAll(100));
 	}
+
+	// Checks many simple task with subtasks
+	TEST(ManyTasksOneSubtask)
+	{
+		MT::TaskScheduler scheduler;
+
+		bool waitAllOK = true;
+
+		for (int i = 0; i < 100000 && waitAllOK; ++i)
+		{
+			MT::TaskDesc task(SubtaskGroup::Task, 0);
+			scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+			waitAllOK = waitAllOK && scheduler.WaitAll(200);
+		}
+
+		CHECK(waitAllOK);
+	}
+
+
 }
 ///
 
