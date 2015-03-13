@@ -16,8 +16,6 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace DxtCompress
 {
-
-
 	struct TaskParams
 	{
 		uint32 width;
@@ -36,12 +34,9 @@ namespace DxtCompress
 	{
 		const TaskParams & params = *(TaskParams*)userData;
 
-		int blkHeight = params.height >> 2;
-		int blkWidth = params.width >> 2;
-
-		for (int blkY = 0; blkY < blkHeight; blkY++)
+		for (uint32 blkY = 0; blkY < params.blkHeight; blkY++)
 		{
-			for (int blkX = 0; blkX < blkWidth; blkX++)
+			for (uint32 blkX = 0; blkX < params.blkWidth; blkX++)
 			{
 				// 16 pixels of input
 				uint32 pixels[4*4];
@@ -67,7 +62,7 @@ namespace DxtCompress
 				}
 
 				// 8 bytes of output
-				int blockIndex = blkY * blkWidth + blkX;
+				int blockIndex = blkY * params.blkWidth + blkX;
 				uint8 * dxtBlock = &params.dstBlocks[blockIndex*8];
 
 				// compress the 4x4 block using DXT1 compression
@@ -116,6 +111,16 @@ namespace DxtCompress
 
 		free(taskParams.dstBlocks);
 	}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+	// dxt compressor complex test
+	TEST(RunComplexDxtCompress)
+	{
+	}
+*/
+
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
