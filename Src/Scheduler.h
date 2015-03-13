@@ -112,15 +112,6 @@ namespace MT
 	//
 	struct TaskDesc
 	{
-		// Execution context. Not valid until scheduler attach fiber to task
-		FiberExecutionContext executionContext;
-
-		// Parent task pointer. Valid only for subtask
-		TaskDesc* parentTask;
-
-		//
-		TaskGroup::Type taskGroup;
-
 		//Task entry point
 		TTaskEntryPoint taskFunc;
 
@@ -145,6 +136,27 @@ namespace MT
 			, executionContext(FiberExecutionContext::Empty())
 		{
 		}
+
+
+		TaskGroup::Type GetGroup() const
+		{
+			return taskGroup;
+		}
+
+	private:
+
+		friend struct FiberContext;
+		friend class TaskScheduler;
+
+		// Execution context. Not valid until scheduler attach fiber to task
+		FiberExecutionContext executionContext;
+
+		// Parent task pointer. Valid only for subtask
+		TaskDesc* parentTask;
+
+		//
+		TaskGroup::Type taskGroup;
+
 	};
 
 

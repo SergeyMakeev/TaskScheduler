@@ -240,6 +240,8 @@ namespace MT
 		for(;;)
 		{
 			ASSERT(context.currentTask, "Invalid task in fiber context");
+			ASSERT(context.currentTask->taskFunc, "Invalid task function");
+			ASSERT(context.currentTask->taskGroup < TaskGroup::COUNT, "Invalid task group");
 			ASSERT(context.threadContext, "Invalid thread context");
 			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 

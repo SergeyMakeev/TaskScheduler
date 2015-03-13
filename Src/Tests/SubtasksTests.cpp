@@ -64,7 +64,7 @@ namespace SubtaskGroup
 
 	void MT_CALL_CONV Subtask(MT::FiberContext& context, void*)
 	{
-		resultGroup = context.currentTask->taskGroup;
+		resultGroup = context.currentTask->GetGroup();
 	}
 
 	void MT_CALL_CONV Task(MT::FiberContext& context, void*)
