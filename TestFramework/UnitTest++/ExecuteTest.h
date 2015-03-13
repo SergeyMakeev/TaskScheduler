@@ -1,6 +1,7 @@
 #ifndef UNITTEST_EXECUTE_TEST_H
 #define UNITTEST_EXECUTE_TEST_H
 
+#include <time.h> 
 #include "Config.h"
 #include "ExceptionMacros.h"
 #include "TestDetails.h"
@@ -31,9 +32,13 @@ void ExecuteTest(T& testObject, TestDetails const& details, bool isMockTest)
 #endif
 #ifndef UNITTEST_POSIX
 		UT_TRY({ 
-			printf("Test: %s\n", details.testName);
-			testObject.RunImpl(); 
+			printf("Test: %s", details.testName);
 
+			clock_t t = clock();
+			testObject.RunImpl(); 
+			t = clock() - t;
+
+			printf(" - %3.2f seconds\n", (float)t/CLOCKS_PER_SEC);
 		})
 #else
 		UT_TRY

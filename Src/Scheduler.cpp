@@ -30,7 +30,7 @@ namespace MT
 	{
 	}
 
-	void FiberContext::RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count)
+	void FiberContext::RunSubtasksAndYield(const MT::TaskDesc * taskDescArr, uint32 count)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 

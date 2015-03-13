@@ -32,7 +32,7 @@ void MT_CALL_CONV TaskEntryPoint(MT::FiberContext & context, void* userData)
 	tasks[0] = MT::TaskDesc(SubTaskEntryPoint, (void*)10);
 	tasks[1] = MT::TaskDesc(SubTaskEntryPoint, (void*)11);
 
-	context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+	context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 
 	printf ("E = %d\n", v);
 }

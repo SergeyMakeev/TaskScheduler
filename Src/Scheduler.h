@@ -80,7 +80,7 @@ namespace MT
 
 		FiberContext();
 
-		void RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count);
+		void RunSubtasksAndYield(const MT::TaskDesc * taskDescArr, uint32 count);
 	};
 
 	//

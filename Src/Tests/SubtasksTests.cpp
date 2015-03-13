@@ -21,7 +21,7 @@ namespace DeepSubtaskQueue
 		int b = -100;
 		tasks[1] = MT::TaskDesc(Fibonacci<N - 2>, &b);
 
-		context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 
 		result = a + b;
 	}
@@ -70,7 +70,7 @@ namespace SubtaskGroup
 	void MT_CALL_CONV Task(MT::FiberContext& context, void*)
 	{
 		MT::TaskDesc task(Subtask, 0);
-		context.RunSubtasks(&task, 1);
+		context.RunSubtasksAndYield(&task, 1);
 	}
 
 	void MT_CALL_CONV TaskWithManySubtasks(MT::FiberContext& context, void*)
@@ -80,7 +80,7 @@ namespace SubtaskGroup
 		{
 			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
 
-			context.RunSubtasks(&task, 1);
+			context.RunSubtasksAndYield(&task, 1);
 
 			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
 
@@ -148,14 +148,14 @@ namespace TaskSubtaskCombo
 	{
 		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum1, userData), MT::TaskDesc(Function_Sum1, userData) };
 		context.threadContext->taskScheduler->RunTasks(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
-		context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 	}
 
 	void MT_CALL_CONV Function_Sum16(MT::FiberContext& context, void* userData)
 	{
 		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum4, userData), MT::TaskDesc(Function_Sum4, userData) };
 		context.threadContext->taskScheduler->RunTasks(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
-		context.RunSubtasks(&tasks[0], ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 	}
 
 	void MT_CALL_CONV RootTask_Sum256(MT::FiberContext& context, void* userData)
@@ -163,7 +163,7 @@ namespace TaskSubtaskCombo
 		for (int i = 0; i < 16; ++i)
 		{
 			MT::TaskDesc task(Function_Sum16, userData);
-			context.RunSubtasks(&task, 1);
+			context.RunSubtasksAndYield(&task, 1);
 		}
 	}
 

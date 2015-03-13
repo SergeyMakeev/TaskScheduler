@@ -8,6 +8,7 @@ namespace EmbeddedImage
 {
 	#include "LenaColor.h"
 	#include "LenaColorDXT1.h"
+	#include "HeaderDDS.h"
 }
 
 
@@ -183,7 +184,7 @@ namespace DxtCompress
 			} // block iterator
 		} // block iterator
 
-		context.RunSubtasks(subTasksArray, blockCount);
+		context.RunSubtasksAndYield(subTasksArray, blockCount);
 	}
 
 	// dxt compressor complex test
@@ -208,8 +209,8 @@ namespace DxtCompress
 		memset(taskParams.dstBlocks, 0x0, dxtBlocksTotalSize);
 
 		MT::TaskScheduler scheduler;
-		MT::TaskDesc task(DxtCompress::ComplexRun, &taskParams);
 
+		MT::TaskDesc task(DxtCompress::ComplexRun, &taskParams);
 		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
 
 		CHECK(scheduler.WaitAll(30000));
