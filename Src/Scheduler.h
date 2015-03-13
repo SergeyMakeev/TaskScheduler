@@ -64,10 +64,10 @@ namespace MT
 	struct FiberContext
 	{
 		// pointer to active task attached to this fiber
-		TaskDesc * activeTask;
+		TaskDesc * currentTask;
 
 		// active thread context
-		ThreadContext * activeContext;
+		ThreadContext * threadContext;
 
 		// active task status
 		FiberTaskStatus::Type taskStatus;
@@ -182,6 +182,8 @@ namespace MT
 
 		// new task was arrived to queue event
 		MT::Event hasNewTasksEvent;
+
+		uint32 debugThreadId;
 
 		// whether thread is alive
 		volatile ThreadState::Type state;

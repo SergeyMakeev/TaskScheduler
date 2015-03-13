@@ -7,7 +7,7 @@ inline void ThrowException()
 	*p = 3;
 };
 
-#define REPORT_ASSERT( condition, description ) ThrowException();
+#define REPORT_ASSERT( condition, description ) OutputDebugStringA(description);ThrowException();
 
 #define ASSERT( condition, description ) { if ( !(condition) ) { REPORT_ASSERT( #condition, description ) } }
 #define VERIFY( condition, description, operation ) { if ( !(condition) ) { { REPORT_ASSERT( #condition, description ) }; operation; } }

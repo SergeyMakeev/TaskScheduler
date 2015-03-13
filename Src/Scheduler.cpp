@@ -11,6 +11,7 @@ namespace MT
 		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
 		, thread(nullptr)
+		, debugThreadId(0)
 		, schedulerFiber(nullptr)
 	{
 	}
@@ -22,26 +23,26 @@ namespace MT
 
 
 	FiberContext::FiberContext()
-		: activeTask(nullptr)
-		, activeContext(nullptr)
+		: currentTask(nullptr)
+		, threadContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
 	{
 	}
 
 	void FiberContext::RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count)
 	{
-		ASSERT(activeContext, "Sanity check failed!");
+		ASSERT(threadContext, "Sanity check failed!");
 
 		// ATTENTION !
 		// copy current task description to stack.
 		//  pointer to parentTask alive until all child task finished
-		MT::TaskDesc parentTask = *activeTask;
+		MT::TaskDesc parentTask = *currentTask;
 
 		//add subtask to scheduler
-		activeContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
+		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
 
 		//switch to scheduler
-		MT::SwitchToFiber(activeContext->schedulerFiber);
+		MT::SwitchToFiber(threadContext->schedulerFiber);
 	}
 
 
@@ -130,8 +131,8 @@ namespace MT
 		taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
 		ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
 
-		taskDesc.executionContext.fiberContext->activeTask = &taskDesc;
-		taskDesc.executionContext.fiberContext->activeContext = &context;
+		taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
+		taskDesc.executionContext.fiberContext->threadContext = &context;
 
 		MT::TaskDesc currentTask = taskDesc;
 		for(;;)
@@ -175,7 +176,7 @@ namespace MT
 						MT::TaskDesc * parent = currentTask.parentTask;
 
 						// WARNING!! Thread context can changed here! Set actual current thread context.
-						parent->executionContext.fiberContext->activeContext = &context;
+						parent->executionContext.fiberContext->threadContext = &context;
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
@@ -209,10 +210,13 @@ namespace MT
 
 		for(;;)
 		{
-			ASSERT(context.activeTask, "Invalid task in fiber context");
-			context.activeTask->taskFunc( context, context.activeTask->userData );
+			ASSERT(context.currentTask, "Invalid task in fiber context");
+			ASSERT(context.threadContext, "Invalid thread context");
+			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Sanity check failed");
+
+			context.currentTask->taskFunc( context, context.currentTask->userData );
 			context.taskStatus = FiberTaskStatus::FINISHED;
-			MT::SwitchToFiber(context.activeContext->schedulerFiber);
+			MT::SwitchToFiber(context.threadContext->schedulerFiber);
 		}
 
 	}
@@ -222,6 +226,7 @@ namespace MT
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
+		context.debugThreadId = MT::GetCurrentThreadId();
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
 		while(context.state != ThreadState::EXIT)

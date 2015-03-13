@@ -76,6 +76,11 @@ namespace MT
 		::SetThreadAffinityMask(thread, dwThreadAffinityMask);
 	}
 
+	inline uint32 GetCurrentThreadId()
+	{
+		return ::GetCurrentThreadId();
+	}
+
 	inline uint32 GetNumberOfHardwareThreads()
 	{
 		SYSTEM_INFO sysinfo;
