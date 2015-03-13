@@ -42,6 +42,8 @@ namespace DeepSubtaskQueue
 // Checks one simple task
 TEST(DeepSubtaskQueue)
 {
+	printf("DeepSubtaskQueue\n");
+
 	MT::TaskScheduler scheduler;
 
 	int result = 0;
@@ -77,6 +79,8 @@ namespace SubtaskGroup
 // Checks one simple task
 TEST(SubtaskGroup)
 {
+	printf("SubtaskGroup\n");
+
 	MT::TaskScheduler scheduler;
 
 	MT::TaskDesc task(SubtaskGroup::Task, 0);

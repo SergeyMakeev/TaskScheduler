@@ -18,6 +18,8 @@ namespace SimpleTask
 	// Checks one simple task
 	TEST(RunOneSimpleTask)
 	{
+		printf("RunOneSimpleTask\n");
+
 		MT::TaskScheduler scheduler;
 		MT::TaskDesc task(SimpleTask::Run, &SimpleTask::sourceData);
 
@@ -44,6 +46,8 @@ namespace ALotOfTasks
 	// Checks one simple task
 	TEST(ALotOfTasks)
 	{
+		printf("ALotOfTasks\n");
+
 		MT::TaskScheduler scheduler;
 
 		MT::AtomicInt counter;

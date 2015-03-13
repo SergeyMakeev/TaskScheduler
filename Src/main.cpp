@@ -39,6 +39,8 @@ void MT_CALL_CONV TaskEntryPoint(MT::FiberContext & context, void* userData)
 
 int main(int argc, char **argv)
 {
+	printf("started\n");
+
 	Tests::RunAll();
 
 	argc;	argv;

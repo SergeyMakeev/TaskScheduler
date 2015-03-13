@@ -17,6 +17,8 @@ namespace NotFinishedTaskDestroy
 // Checks one simple task
 TEST(NotFinishedTaskDestroy)
 {
+	printf("NotFinishedTaskDestroy\n");
+
 	MT::TaskScheduler scheduler;
 	MT::TaskDesc task(NotFinishedTaskDestroy::Run, nullptr);
 
