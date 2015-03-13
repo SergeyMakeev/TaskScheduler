@@ -75,10 +75,12 @@ namespace MT
 		// Number of subtask fiber spawned
 		MT::AtomicInt subtaskFibersCount;
 
+		// prevent false sharing between threads
+		uint8 cacheline[64];
+
 		FiberContext();
 
 		void RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count);
-
 	};
 
 	//
@@ -196,6 +198,9 @@ namespace MT
 
 		// whether thread is alive
 		MT::AtomicInt state;
+
+		// prevent false sharing between threads
+		uint8 cacheline[64];
 
 		ThreadContext();
 		~ThreadContext();

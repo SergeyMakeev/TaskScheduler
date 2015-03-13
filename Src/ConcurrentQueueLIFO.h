@@ -8,7 +8,7 @@ namespace MT
 	template<typename T>
 	class ConcurrentQueueLIFO
 	{
-		MT::CriticalSection criticalSection;
+		MT::Mutex mutex;
 		std::vector<T> queue;
 
 	public:
@@ -24,14 +24,14 @@ namespace MT
 
 		void Push(const T & item)
 		{
-			MT::ScopedGuard guard(criticalSection);
+			MT::ScopedGuard guard(mutex);
 
 			queue.push_back(item);
 		}
 
 		bool TryPop(T & item)
 		{
-			MT::ScopedGuard guard(criticalSection);
+			MT::ScopedGuard guard(mutex);
 
 			if (queue.empty())
 			{
@@ -44,7 +44,7 @@ namespace MT
 
 		bool IsEmpty()
 		{
-			MT::ScopedGuard guard(criticalSection);
+			MT::ScopedGuard guard(mutex);
 
 			return queue.empty();
 		}
