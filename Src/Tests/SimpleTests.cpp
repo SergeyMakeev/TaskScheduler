@@ -58,7 +58,7 @@ namespace ALotOfTasks
 
 		int timeout = (TASK_COUNT * TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
 
-		CHECK(scheduler.WaitAll(timeout));
+		CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
 		CHECK_EQUAL(TASK_COUNT, counter.Get());
 	}
 }
