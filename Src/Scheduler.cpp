@@ -33,6 +33,7 @@ namespace MT
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 
+
 		// ATTENTION !
 		// copy current task description to stack.
 		//  pointer to parentTask alive until all child task finished
@@ -40,6 +41,8 @@ namespace MT
 
 		//add subtask to scheduler
 		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
+
+		ASSERT(threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 		//switch to scheduler
 		MT::SwitchToFiber(threadContext->schedulerFiber);
@@ -143,6 +146,9 @@ namespace MT
 			// update task status
 			currentTask.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
+			ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(taskDesc.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+
 			// run current task code
 			MT::SwitchToFiber(currentTask.executionContext.fiber);
 
@@ -175,8 +181,12 @@ namespace MT
 
 						MT::TaskDesc * parent = currentTask.parentTask;
 
+						ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+
 						// WARNING!! Thread context can changed here! Set actual current thread context.
 						parent->executionContext.fiberContext->threadContext = &context;
+
+						ASSERT(parent->executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
@@ -212,7 +222,7 @@ namespace MT
 		{
 			ASSERT(context.currentTask, "Invalid task in fiber context");
 			ASSERT(context.threadContext, "Invalid thread context");
-			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Sanity check failed");
+			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			context.currentTask->taskFunc( context, context.currentTask->userData );
 			context.taskStatus = FiberTaskStatus::FINISHED;
