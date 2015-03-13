@@ -35,6 +35,7 @@ namespace MT
 		ASSERT(threadContext, "Sanity check failed!");
 
 		ASSERT(currentTask, "Sanity check failed!");
+		ASSERT(currentTask->taskGroup < TaskGroup::COUNT, "Sanity check failed!");
 
 		// ATTENTION !
 		// copy current task description to stack.
@@ -271,13 +272,12 @@ namespace MT
 				taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
 				ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
 
+				taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
+				ASSERT(taskDesc.executionContext.fiberContext->currentTask->taskFunc, "Sanity check failed");
+
 				for(;;)
 				{
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
-					taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
-
-					ASSERT(taskDesc.executionContext.fiberContext->currentTask->taskFunc, "Sanity check failed");
-
 					taskDesc.executionContext.fiberContext->subtaskFibersCount.Inc();
 					bool canDropContext = ExecuteTask(context, taskDesc);
 					int subtaskCount = taskDesc.executionContext.fiberContext->subtaskFibersCount.Dec();
