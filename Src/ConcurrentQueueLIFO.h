@@ -42,6 +42,13 @@ namespace MT
 			return true;
 		}
 
+		bool IsEmpty()
+		{
+			MT::ScopedGuard guard(criticalSection);
+
+			return queue.empty();
+		}
+
 
 	};
 }

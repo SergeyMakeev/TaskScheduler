@@ -25,6 +25,7 @@ namespace MT
 	FiberContext::FiberContext()
 		: currentTask(nullptr)
 		, threadContext(nullptr)
+		, subtaskFibersCount(0)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
 	{
 	}
@@ -39,8 +40,12 @@ namespace MT
 		//  pointer to parentTask alive until all child task finished
 		MT::TaskDesc parentTask = *currentTask;
 
+		ASSERT(threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+
 		//add subtask to scheduler
 		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
+
+		//
 
 		ASSERT(threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
@@ -131,15 +136,12 @@ namespace MT
 	}
 
 
-	void TaskScheduler::ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc)
+	bool TaskScheduler::ExecuteTask (MT::ThreadContext& context, const MT::TaskDesc & taskDesc)
 	{
-		taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
-		ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
-
-		taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
+		bool canDropExecutionContext = false;
 
 		MT::TaskDesc currentTask = taskDesc;
-		for(;;)
+		for(int iteration = 0;;iteration++)
 		{
 			ASSERT(currentTask.taskFunc != nullptr, "Invalid task function pointer");
 			ASSERT(currentTask.executionContext.fiberContext, "Invalid execution context.");
@@ -160,6 +162,8 @@ namespace MT
 			{
 				TaskGroup::Type taskGroup = currentTask.taskGroup;
 
+				ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+
 				//update group status
 				int groupTaskCount = context.taskScheduler->groupCurrentlyRunningTaskCount[taskGroup].Dec();
 				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
@@ -168,20 +172,27 @@ namespace MT
 					context.taskScheduler->groupIsDoneEvents[taskGroup].Signal();
 				}
 
-				//releasing task fiber
-				context.taskScheduler->ReleaseExecutionContext(currentTask.executionContext);
-				currentTask.executionContext = MT::FiberExecutionContext::Empty();
-				ASSERT(currentTask.executionContext.fiber == nullptr, "Sanity check failed");
+				//raise up releasing task fiber flag
+				canDropExecutionContext = true;
+
+				//
+				if (iteration > 0)
+				{
+					context.taskScheduler->ReleaseExecutionContext(currentTask.executionContext);
+					currentTask.executionContext = MT::FiberExecutionContext::Empty();
+					ASSERT(currentTask.executionContext.fiber == nullptr, "Sanity check failed");
+				}
+
 
 				//
 				if (currentTask.parentTask != nullptr)
 				{
-					int childTasksCount = currentTask.parentTask->childTasksCount.Dec();
-					ASSERT(childTasksCount >= 0, "Sanity check failed!");
+					int subTasksCount = currentTask.parentTask->executionContext.fiberContext->subtaskFibersCount.Dec();
+					ASSERT(subTasksCount >= 0, "Sanity check failed!");
 
-					if (childTasksCount == 0)
+					if (subTasksCount == 0)
 					{
-						// this is a last child task. restore parent task
+						// this is a last subtask. restore parent task
 
 						MT::TaskDesc * parent = currentTask.parentTask;
 
@@ -197,7 +208,7 @@ namespace MT
 						currentTask = *parent;
 					} else
 					{
-						// child task still not finished
+						// subtask still not finished
 						// exiting
 						break;
 					}
@@ -209,12 +220,14 @@ namespace MT
 				}
 			} else
 			{
-				// current task was yielded, due to spawn subtask
+				// current task was yielded, due to subtask spawn
 				// exiting
 				break;
 			}
 
 		} // while(currentTask)
+
+		return canDropExecutionContext;
 	}
 
 
@@ -229,6 +242,7 @@ namespace MT
 			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			context.currentTask->taskFunc( context, context.currentTask->userData );
+
 			context.taskStatus = FiberTaskStatus::FINISHED;
 			MT::SwitchToFiber(context.threadContext->schedulerFiber);
 		}
@@ -249,7 +263,39 @@ namespace MT
 			if (context.queue.TryPop(taskDesc))
 			{
 				//there is a new task
-				ExecuteTask(context, taskDesc);
+
+				taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
+				ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
+
+				for(;;)
+				{
+					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
+					taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
+					taskDesc.executionContext.fiberContext->subtaskFibersCount.Inc();
+					bool canDropContext = ExecuteTask(context, taskDesc);
+					int subtaskCount = taskDesc.executionContext.fiberContext->subtaskFibersCount.Dec();
+					ASSERT(subtaskCount >= 0, "Sanity check failed");
+
+					bool taskIsFinished = (taskDesc.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED);
+
+					if (canDropContext)
+					{
+						context.taskScheduler->ReleaseExecutionContext(taskDesc.executionContext);
+						taskDesc.executionContext = MT::FiberExecutionContext::Empty();
+						ASSERT(taskDesc.executionContext.fiber == nullptr, "Sanity check failed");
+					}
+
+					// if subtasks still exist, drop current task execution. current task will be resumed when last subtask finished
+					if (subtaskCount > 0 || taskIsFinished)
+					{
+						break;
+					}
+
+					// no subtasks and status is not finished, this mean all subtasks already finished before parent return from ExecuteTask
+					// continue task execution
+				}
+				
+
 			} 
 			else
 			{
@@ -263,9 +309,11 @@ namespace MT
 
 	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask)
 	{
+		ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+
 		if (parentTask)
 		{
-			parentTask->childTasksCount.Add(count);
+			parentTask->executionContext.fiberContext->subtaskFibersCount.Add(count);
 		}
 
 		int startIndex = ((int)count - 1);
@@ -303,6 +351,18 @@ namespace MT
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
 		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
+	}
+
+	bool TaskScheduler::IsEmpty()
+	{
+		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
+		{
+			if (!threadContext[i].queue.IsEmpty())
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 }

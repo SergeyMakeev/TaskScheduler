@@ -10,7 +10,7 @@
 namespace MT
 {
 
-	const uint32 MT_MAX_THREAD_COUNT = 16;
+	const uint32 MT_MAX_THREAD_COUNT = 8;
 	const uint32 MT_MAX_FIBERS_COUNT = 128;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 16384;
 	const uint32 MT_FIBER_STACK_SIZE = 16384;
@@ -72,6 +72,9 @@ namespace MT
 		// active task status
 		FiberTaskStatus::Type taskStatus;
 
+		// Number of subtask fiber spawned
+		MT::AtomicInt subtaskFibersCount;
+
 		FiberContext();
 
 		void RunSubtasks(const MT::TaskDesc * taskDescArr, uint32 count);
@@ -115,10 +118,6 @@ namespace MT
 		// Parent task pointer. Valid only for subtask
 		TaskDesc* parentTask;
 
-		// Number of child tasks spawned
-		MT::AtomicInt childTasksCount;
-
-
 		//
 		TaskGroup::Type taskGroup;
 
@@ -132,7 +131,6 @@ namespace MT
 			: taskFunc(nullptr)
 			, userData(nullptr)
 			, parentTask(nullptr)
-			, childTasksCount(0)
 			, taskGroup(TaskGroup::GROUP_UNDEFINED)
 			, executionContext(FiberExecutionContext::Empty())
 		{
@@ -143,7 +141,6 @@ namespace MT
 			: taskFunc(_taskEntry)
 			, userData(_userData)
 			, parentTask(nullptr)
-			, childTasksCount(0)
 			, taskGroup(TaskGroup::GROUP_UNDEFINED)
 			, executionContext(FiberExecutionContext::Empty())
 		{
@@ -227,7 +224,7 @@ namespace MT
 		static uint32 MT_CALL_CONV ThreadMain( void* userData );
 		static void MT_CALL_CONV FiberMain(void* userData);
 
-		static void ExecuteTask (MT::ThreadContext& context, MT::TaskDesc & taskDesc);
+		static bool ExecuteTask (MT::ThreadContext& context, const MT::TaskDesc & taskDesc);
 
 	public:
 
@@ -238,6 +235,8 @@ namespace MT
 
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
+
+		bool IsEmpty();
 
 
 	};
