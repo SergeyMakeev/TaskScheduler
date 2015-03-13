@@ -279,11 +279,11 @@ namespace MT
 			desc.taskGroup = taskGroup;
 			desc.parentTask = parentTask;
 
-			context.queue.Push(desc);
-
 			groupIsDoneEvents[taskGroup].Reset();
 			groupCurrentlyRunningTaskCount[taskGroup].Inc();
-
+			
+			context.queue.Push(desc);
+			
 			context.hasNewTasksEvent.Signal();
 		}
 	}
