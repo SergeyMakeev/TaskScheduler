@@ -209,6 +209,9 @@ namespace MT
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
 						taskInProgress = *parent;
+
+						parent->executionContext.fiberContext->currentTask = &taskInProgress;
+
 					} else
 					{
 						// subtask still not finished
@@ -302,6 +305,9 @@ namespace MT
 					// no subtasks and status is not finished, this mean all subtasks already finished before parent return from ExecuteTask
 					// continue task execution
 				}
+
+				if (taskDesc.executionContext.fiberContext)
+					taskDesc.executionContext.fiberContext->currentTask = nullptr;
 				
 
 			} 

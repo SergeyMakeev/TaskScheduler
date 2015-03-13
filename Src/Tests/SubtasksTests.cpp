@@ -78,7 +78,12 @@ namespace SubtaskGroup
 		MT::TaskDesc task(Subtask, 0);
 		for (int i = 0; i < 2; ++i)
 		{
+			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
+
 			context.RunSubtasks(&task, 1);
+
+			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
+
 			Sleep(1);
 		}
 	}
