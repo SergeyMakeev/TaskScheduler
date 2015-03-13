@@ -32,7 +32,7 @@ namespace SimpleTask
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace ALotOfTasks
 {
-	static int TASK_COUNT = 1000;
+	static const int TASK_COUNT = 1000;
 
 	void MT_CALL_CONV TaskFunction(MT::FiberContext&, void* userData)
 	{
@@ -46,15 +46,14 @@ namespace ALotOfTasks
 	{
 		MT::TaskScheduler scheduler;
 
-		std::vector<MT::TaskDesc> tasks;
-		tasks.resize(TASK_COUNT);
-
 		MT::AtomicInt counter;
 
-		for (size_t i = 0; i < tasks.size(); ++i)
+		MT::TaskDesc tasks[TASK_COUNT];
+
+		for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
 			tasks[i] = MT::TaskDesc(TaskFunction, &counter);
 
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks.front(), tasks.size());
+		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(1000));
 		

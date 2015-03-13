@@ -34,9 +34,11 @@ configuration "Debug"
 
 configuration "x32"
 	libdirs { "$(DXSDK_DIR)/Lib/x86" }
+        buildoptions { "/wd4127"  }
 
 configuration "x64"
 	libdirs { "$(DXSDK_DIR)/Lib/x64" }
+        buildoptions { "/wd4127"  }
 
 
 --  give each configuration/platform a unique output directory
@@ -50,18 +52,7 @@ end
 
 -- SUBPROJECTS
 
-project "UnitTest++"
-	kind "StaticLib"
-	files {
-		"TestFramework/UnitTest++/**.*", 
-	}
-
-	excludes {
-		"TestFramework/UnitTest++/Posix/**.*"
-	}
-
-
- project "TaskScheduler"
+project "TaskScheduler"
  	flags {"NoPCH"}
  	kind "ConsoleApp"
  	files {
@@ -71,3 +62,17 @@ project "UnitTest++"
 	links {
 		"UnitTest++"
 	}
+
+
+project "UnitTest++"
+	kind "StaticLib"
+	defines { "_CRT_SECURE_NO_WARNINGS" }
+	files {
+		"TestFramework/UnitTest++/**.*", 
+	}
+
+	excludes {
+		"TestFramework/UnitTest++/Posix/**.*"
+	}
+
+

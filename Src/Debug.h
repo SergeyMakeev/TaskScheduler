@@ -1,25 +1,13 @@
 #pragma once
 
+// __debugbreak is msvc only, so throw null pointer exception
+inline void ThrowException()
+{
+	char * p = nullptr;
+	*p = 3;
+};
 
-
-#if _MSC_VER
-
-#define DEBUG_BREAK __debugbreak()
-
-#elif __GNUC__
-
-//#define DEBUG_BREAK raise(SIGTRAP)
-#define DEBUG_BREAK
-
-#else
-
-#error "Platform not specified"
-
-#endif
-
-
-
-#define REPORT_ASSERT( condition, description ) DEBUG_BREAK;
+#define REPORT_ASSERT( condition, description ) ThrowException();
 
 #define ASSERT( condition, description ) { if ( !(condition) ) { REPORT_ASSERT( #condition, description ) } }
 #define VERIFY( condition, description, operation ) { if ( !(condition) ) { { REPORT_ASSERT( #condition, description ) }; operation; } }
