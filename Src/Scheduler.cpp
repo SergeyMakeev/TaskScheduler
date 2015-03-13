@@ -102,7 +102,7 @@ namespace MT
 	{
 		for (int32 i = 0; i < threadsCount; i++)
 		{
-			threadContext[i].state = ThreadState::EXIT;
+			threadContext[i].state.Set(ThreadState::EXIT);
 			threadContext[i].hasNewTasksEvent.Signal();
 		}
 
@@ -240,7 +240,7 @@ namespace MT
 		context.debugThreadId = MT::GetCurrentThreadId();
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
-		while(context.state != ThreadState::EXIT)
+		while(context.state.Get() != ThreadState::EXIT)
 		{
 			MT::TaskDesc taskDesc;
 			if (context.queue.TryPop(taskDesc))

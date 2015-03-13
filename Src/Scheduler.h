@@ -186,7 +186,7 @@ namespace MT
 		uint32 debugThreadId;
 
 		// whether thread is alive
-		volatile ThreadState::Type state;
+		MT::AtomicInt state;
 
 		ThreadContext();
 		~ThreadContext();

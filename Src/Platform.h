@@ -229,9 +229,9 @@ namespace MT
 			return value;
 		}
 
-		void Set(int val)
+		int Set(int val)
 		{
-			value = val;
+			return InterlockedExchange(&value, val); 
 		}
 	};
 
