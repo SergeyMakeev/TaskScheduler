@@ -59,8 +59,13 @@ project "TaskScheduler"
  		"Src/**.*", 
  	}
 
+	includedirs
+	{
+		"Squish"
+	}
+
 	links {
-		"UnitTest++"
+		"UnitTest++", "Squish"
 	}
 
 
@@ -73,6 +78,19 @@ project "UnitTest++"
 
 	excludes {
 		"TestFramework/UnitTest++/Posix/**.*"
+	}
+
+
+project "Squish"
+	kind "StaticLib"
+	defines { "_CRT_SECURE_NO_WARNINGS" }
+	files {
+		"Squish/**.*", 
+	}
+
+	includedirs
+	{
+		"Squish"
 	}
 
 
