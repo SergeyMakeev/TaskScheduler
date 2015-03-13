@@ -34,6 +34,7 @@ namespace MT
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 
+		ASSERT(currentTask, "Sanity check failed!");
 
 		// ATTENTION !
 		// copy current task description to stack.
@@ -140,27 +141,27 @@ namespace MT
 	{
 		bool canDropExecutionContext = false;
 
-		MT::TaskDesc currentTask = taskDesc;
+		MT::TaskDesc taskInProgress = taskDesc;
 		for(int iteration = 0;;iteration++)
 		{
-			ASSERT(currentTask.taskFunc != nullptr, "Invalid task function pointer");
-			ASSERT(currentTask.executionContext.fiberContext, "Invalid execution context.");
+			ASSERT(taskInProgress.taskFunc != nullptr, "Invalid task function pointer");
+			ASSERT(taskInProgress.executionContext.fiberContext, "Invalid execution context.");
 
-			currentTask.executionContext.fiberContext->threadContext = &context;
+			taskInProgress.executionContext.fiberContext->threadContext = &context;
 
 			// update task status
-			currentTask.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
+			taskInProgress.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
 			ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
-			ASSERT(currentTask.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			// run current task code
-			MT::SwitchToFiber(currentTask.executionContext.fiber);
+			MT::SwitchToFiber(taskInProgress.executionContext.fiber);
 
 			// if task was done
-			if (currentTask.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
+			if (taskInProgress.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
 			{
-				TaskGroup::Type taskGroup = currentTask.taskGroup;
+				TaskGroup::Type taskGroup = taskInProgress.taskGroup;
 
 				ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
@@ -178,23 +179,24 @@ namespace MT
 				//
 				if (iteration > 0)
 				{
-					context.taskScheduler->ReleaseExecutionContext(currentTask.executionContext);
-					currentTask.executionContext = MT::FiberExecutionContext::Empty();
-					ASSERT(currentTask.executionContext.fiber == nullptr, "Sanity check failed");
+					taskInProgress.executionContext.fiberContext->currentTask = nullptr;
+					context.taskScheduler->ReleaseExecutionContext(taskInProgress.executionContext);
+					taskInProgress.executionContext = MT::FiberExecutionContext::Empty();
+					ASSERT(taskInProgress.executionContext.fiber == nullptr, "Sanity check failed");
 				}
 
 
 				//
-				if (currentTask.parentTask != nullptr)
+				if (taskInProgress.parentTask != nullptr)
 				{
-					int subTasksCount = currentTask.parentTask->executionContext.fiberContext->subtaskFibersCount.Dec();
+					int subTasksCount = taskInProgress.parentTask->executionContext.fiberContext->subtaskFibersCount.Dec();
 					ASSERT(subTasksCount >= 0, "Sanity check failed!");
 
 					if (subTasksCount == 0)
 					{
 						// this is a last subtask. restore parent task
 
-						MT::TaskDesc * parent = currentTask.parentTask;
+						MT::TaskDesc * parent = taskInProgress.parentTask;
 
 						ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
@@ -205,7 +207,7 @@ namespace MT
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
-						currentTask = *parent;
+						taskInProgress = *parent;
 					} else
 					{
 						// subtask still not finished
@@ -225,7 +227,7 @@ namespace MT
 				break;
 			}
 
-		} // while(currentTask)
+		} // loop
 
 		return canDropExecutionContext;
 	}
@@ -271,6 +273,9 @@ namespace MT
 				{
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
 					taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
+
+					ASSERT(taskDesc.executionContext.fiberContext->currentTask->taskFunc, "Sanity check failed");
+
 					taskDesc.executionContext.fiberContext->subtaskFibersCount.Inc();
 					bool canDropContext = ExecuteTask(context, taskDesc);
 					int subtaskCount = taskDesc.executionContext.fiberContext->subtaskFibersCount.Dec();
@@ -280,6 +285,7 @@ namespace MT
 
 					if (canDropContext)
 					{
+						taskDesc.executionContext.fiberContext->currentTask = nullptr;
 						context.taskScheduler->ReleaseExecutionContext(taskDesc.executionContext);
 						taskDesc.executionContext = MT::FiberExecutionContext::Empty();
 						ASSERT(taskDesc.executionContext.fiber == nullptr, "Sanity check failed");
