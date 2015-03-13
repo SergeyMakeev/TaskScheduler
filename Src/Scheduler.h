@@ -219,7 +219,7 @@ namespace MT
 		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
 		FiberExecutionContext RequestExecutionContext();
-		void ReleaseExecutionContext(FiberExecutionContext fiberExecutionContext);
+		void ReleaseExecutionContext(const MT::FiberExecutionContext & fiberExecutionContext);
 
 		void RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask);
 

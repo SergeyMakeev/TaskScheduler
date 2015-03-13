@@ -22,6 +22,7 @@ namespace MT
 
 	inline void SwitchToFiber(MT::Fiber fiber)
 	{
+		ASSERT(fiber != nullptr, "Invalid fiber to switch");
 		::SwitchToFiber( (LPVOID)fiber );
 	}
 

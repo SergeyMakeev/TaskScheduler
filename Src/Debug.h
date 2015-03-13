@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 // __debugbreak is msvc only, so throw null pointer exception
 inline void ThrowException()
 {

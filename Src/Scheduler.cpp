@@ -123,8 +123,10 @@ namespace MT
 		return fiber;
 	}
 
-	void TaskScheduler::ReleaseExecutionContext(MT::FiberExecutionContext fiberExecutionContext)
+	void TaskScheduler::ReleaseExecutionContext(const MT::FiberExecutionContext & fiberExecutionContext)
 	{
+		ASSERT(fiberExecutionContext.fiber != nullptr, "Invalid execution fiber in execution context");
+		ASSERT(fiberExecutionContext.fiberContext != nullptr, "Invalid fiber context in execution context");
 		availableFibers.Push(fiberExecutionContext);
 	}
 
@@ -169,6 +171,7 @@ namespace MT
 				//releasing task fiber
 				context.taskScheduler->ReleaseExecutionContext(currentTask.executionContext);
 				currentTask.executionContext = MT::FiberExecutionContext::Empty();
+				ASSERT(currentTask.executionContext.fiber == nullptr, "Sanity check failed");
 
 				//
 				if (currentTask.parentTask != nullptr)
