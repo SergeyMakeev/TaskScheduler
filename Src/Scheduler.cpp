@@ -135,7 +135,6 @@ namespace MT
 		ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
 
 		taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
-		taskDesc.executionContext.fiberContext->threadContext = &context;
 
 		MT::TaskDesc currentTask = taskDesc;
 		for(;;)
@@ -143,11 +142,13 @@ namespace MT
 			ASSERT(currentTask.taskFunc != nullptr, "Invalid task function pointer");
 			ASSERT(currentTask.executionContext.fiberContext, "Invalid execution context.");
 
+			currentTask.executionContext.fiberContext->threadContext = &context;
+
 			// update task status
 			currentTask.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
 			ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
-			ASSERT(taskDesc.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(currentTask.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			// run current task code
 			MT::SwitchToFiber(currentTask.executionContext.fiber);
