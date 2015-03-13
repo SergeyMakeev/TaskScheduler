@@ -30,7 +30,11 @@ void ExecuteTest(T& testObject, TestDetails const& details, bool isMockTest)
 	{
 #endif
 #ifndef UNITTEST_POSIX
-		UT_TRY({ testObject.RunImpl(); })
+		UT_TRY({ 
+			printf("Test: %s\n", details.testName);
+			testObject.RunImpl(); 
+
+		})
 #else
 		UT_TRY
 		({

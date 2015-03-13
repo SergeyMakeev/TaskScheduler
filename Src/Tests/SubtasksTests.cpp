@@ -42,8 +42,6 @@ SUITE(SubtasksTests)
 //// Checks one simple task
 //TEST(DeepSubtaskQueue)
 //{
-//	printf("DeepSubtaskQueue\n");
-//
 //	MT::TaskScheduler scheduler;
 //
 //	int result = 0;
@@ -74,36 +72,56 @@ namespace SubtaskGroup
 		MT::TaskDesc task(Subtask, 0);
 		context.RunSubtasks(&task, 1);
 	}
-}
 
-// Checks one simple task
-TEST(SubtaskGroup)
-{
-	printf("SubtaskGroup\n");
-
-	MT::TaskScheduler scheduler;
-
-	MT::TaskDesc task(SubtaskGroup::Task, 0);
-	scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
-
-	CHECK(scheduler.WaitAll(200));
-
-	CHECK_EQUAL(SubtaskGroup::sourceGroup, SubtaskGroup::resultGroup);
-}
-
-// Checks one simple task
-TEST(SubsequentSubtasks)
-{
-	printf("SubsequentSubtasks\n");
-
-	MT::TaskScheduler scheduler;
-
-	while (true)
+	void MT_CALL_CONV TaskWithManySubtasks(MT::FiberContext& context, void*)
 	{
+		MT::TaskDesc task(Subtask, 0);
+		for (int i = 0; i < 10; ++i)
+		{
+			context.RunSubtasks(&task, 1);
+			Sleep(1);
+		}
+	}
+
+
+	// Checks one simple task
+	TEST(SubtaskGroup)
+	{
+		MT::TaskScheduler scheduler;
+
 		MT::TaskDesc task(SubtaskGroup::Task, 0);
 		scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+
 		CHECK(scheduler.WaitAll(200));
+
+		CHECK_EQUAL(SubtaskGroup::sourceGroup, SubtaskGroup::resultGroup);
+	}
+
+	// Checks many simple task with subtasks
+	TEST(ManyTasksOneSubtask)
+	{
+		MT::TaskScheduler scheduler;
+
+		for (int i = 0; i < 100000; ++i)
+		{
+			MT::TaskDesc task(SubtaskGroup::Task, 0);
+			scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+			CHECK(scheduler.WaitAll(200));
+		}
+	}
+
+	// Checks task with multiple subtasks
+	TEST(OneTaskManySubtasks)
+	{
+		MT::TaskScheduler scheduler;
+
+		MT::TaskDesc task(SubtaskGroup::TaskWithManySubtasks, 0);
+		scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+
+		CHECK(scheduler.WaitAll(100));
 	}
 }
+///
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
