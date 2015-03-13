@@ -379,4 +379,9 @@ namespace MT
 		return true;
 	}
 
+	int32 TaskScheduler::GetWorkerCount() const
+	{
+		return threadsCount;
+	}
+
 }

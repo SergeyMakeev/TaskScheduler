@@ -255,6 +255,8 @@ namespace MT
 
 		bool IsEmpty();
 
+		int32 GetWorkerCount() const;
+
 
 	};
 }

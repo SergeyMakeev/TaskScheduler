@@ -33,12 +33,13 @@ namespace SimpleTask
 namespace ALotOfTasks
 {
 	static const int TASK_COUNT = 1000;
+	static const int TASK_DURATION_MS = 1;
 
 	void MT_CALL_CONV TaskFunction(MT::FiberContext&, void* userData)
 	{
 		MT::AtomicInt& counter = *(MT::AtomicInt*)userData;
 		counter.Inc();
-		Sleep(1);
+		Time::SpinSleep(TASK_DURATION_MS * 1000);
 	}
 
 	// Checks one simple task
@@ -55,8 +56,9 @@ namespace ALotOfTasks
 
 		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
-		CHECK(scheduler.WaitAll(1000));
-		
+		int timeout = (TASK_COUNT * TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
+
+		CHECK(scheduler.WaitAll(timeout));
 		CHECK_EQUAL(TASK_COUNT, counter.Get());
 	}
 }
