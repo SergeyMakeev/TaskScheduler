@@ -10,6 +10,11 @@ namespace MT
 	{
 		::HANDLE eventHandle;
 
+	private:
+
+		Event(const Event&) {}
+		void operator=(const Event&) {}
+
 	public:
 
 		Event()

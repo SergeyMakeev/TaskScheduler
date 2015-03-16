@@ -3,6 +3,7 @@
 
 namespace MT
 {
+	class _Fiber;
 
 	class Thread
 	{
@@ -43,9 +44,12 @@ namespace MT
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
+			ASSERT(thread == nullptr, "Thread already started");
+
 			func = entryPoint;
 			funcData = userData;
 			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, 0, &threadId );
+			ASSERT(thread != nullptr, "Can't create thread");
 		}
 
 		void Stop()
@@ -56,7 +60,8 @@ namespace MT
 			}
 
 			::WaitForSingleObject(thread, INFINITE);
-			CloseHandle(thread);
+			BOOL res = CloseHandle(thread);
+			ASSERT(res == 0, "Can't close thread handle")
 			thread = nullptr;
 		}
 

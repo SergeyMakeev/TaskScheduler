@@ -12,18 +12,13 @@ namespace MT
 	{
 		::CRITICAL_SECTION criticalSection;
 
-		Mutex( const Mutex & ) {}
-		Mutex& operator=( const Mutex &) {}
+	private:
 
-		void Lock()
-		{
-			::EnterCriticalSection( &criticalSection );
-		}
-		void Unlock()
-		{
-			::LeaveCriticalSection( &criticalSection );
-		}
+		Mutex(const Mutex &) {}
+		void operator=(const Mutex &) {}
+
 	public:
+
 		Mutex()
 		{
 			::InitializeCriticalSection( &criticalSection );
@@ -35,6 +30,18 @@ namespace MT
 		}
 
 		friend class MT::ScopedGuard;
+
+	private:
+
+		void Lock()
+		{
+			::EnterCriticalSection( &criticalSection );
+		}
+		void Unlock()
+		{
+			::LeaveCriticalSection( &criticalSection );
+		}
+
 	};
 
 

@@ -19,9 +19,9 @@ namespace MT
 		{
 		}
 
-		void Add(int sum)
+		int Add(int sum)
 		{
-			InterlockedExchangeAdd(&value, sum);
+			return InterlockedExchangeAdd(&value, sum);
 		}
 
 		int Inc()

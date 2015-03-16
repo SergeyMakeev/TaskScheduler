@@ -1,4 +1,9 @@
-Multithreaded task manager experiments
+Multithreaded task scheduler experiments
+
+
+
+
+
 
 
 Useful reading:
