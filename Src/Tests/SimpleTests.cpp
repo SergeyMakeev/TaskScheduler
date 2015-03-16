@@ -1,5 +1,6 @@
 #include "Tests.h"
 #include "../../TestFramework/UnitTest++/UnitTest++.h"
+#include "../../TestFramework/UnitTest++/UnitTestTimer.h"
 #include "../Scheduler.h"
 
 SUITE(SimpleTests)

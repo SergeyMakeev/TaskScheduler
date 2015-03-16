@@ -1,10 +1,11 @@
 #pragma once
 
+#include <time.h> 
+
 #include "types.h"
 #include "Debug.h"
 
 typedef void (*TThreadEntryPoint)(void* userData);
-
 
 #define ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
 
@@ -55,5 +56,4 @@ namespace MT
 		}
 	};
 }
-
 
