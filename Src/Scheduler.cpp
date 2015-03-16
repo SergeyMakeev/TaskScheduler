@@ -11,7 +11,7 @@ namespace MT
 		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
 		, thread(nullptr)
-		, debugThreadId(0)
+		, threadId(0)
 		, schedulerFiber(nullptr)
 	{
 	}
@@ -42,14 +42,13 @@ namespace MT
 		//  pointer to parentTask alive until all child task finished
 		MT::TaskDesc parentTask = *currentTask;
 
-		ASSERT(threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+		ASSERT(threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 		//add subtask to scheduler
 		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
 
 		//
-
-		ASSERT(threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+		ASSERT(threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 		//switch to scheduler
 		MT::SwitchToFiber(threadContext->schedulerFiber);
@@ -153,8 +152,8 @@ namespace MT
 			// update task status
 			taskInProgress.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
-			ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
-			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(context.threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			// run current task code
 			MT::SwitchToFiber(taskInProgress.executionContext.fiber);
@@ -199,12 +198,12 @@ namespace MT
 
 						MT::TaskDesc * parent = taskInProgress.parentTask;
 
-						ASSERT(context.debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+						ASSERT(context.threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 						// WARNING!! Thread context can changed here! Set actual current thread context.
 						parent->executionContext.fiberContext->threadContext = &context;
 
-						ASSERT(parent->executionContext.fiberContext->threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+						ASSERT(parent->executionContext.fiberContext->threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
@@ -247,7 +246,7 @@ namespace MT
 			ASSERT(context.currentTask->taskFunc, "Invalid task function");
 			ASSERT(context.currentTask->taskGroup < TaskGroup::COUNT, "Invalid task group");
 			ASSERT(context.threadContext, "Invalid thread context");
-			ASSERT(context.threadContext->debugThreadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(context.threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
 
 			context.currentTask->taskFunc( context, context.currentTask->userData );
 
@@ -262,7 +261,7 @@ namespace MT
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
-		context.debugThreadId = MT::GetCurrentThreadId();
+		context.threadId = MT::GetCurrentThreadId();
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
 		while(context.state.Get() != ThreadState::EXIT)
@@ -351,7 +350,7 @@ namespace MT
 	}
 
 
-	void TaskScheduler::RunTasks(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count)
+	void TaskScheduler::RunAsync(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count)
 	{
 		RunTasksImpl(taskGroup, taskDescArr, count, nullptr);
 	}
@@ -382,6 +381,18 @@ namespace MT
 	int32 TaskScheduler::GetWorkerCount() const
 	{
 		return threadsCount;
+	}
+
+	bool TaskScheduler::IsWorkerThread(uint32 threadId) const
+	{
+		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
+		{
+			if (threadContext[i].threadId == threadId)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

@@ -47,7 +47,7 @@ TEST(DeepSubtaskQueue)
 	int result = 0;
 	MT::TaskDesc task(DeepSubtaskQueue::Fibonacci<12>, &result);
 
-	scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 	CHECK(scheduler.WaitAll(200));
 
@@ -95,7 +95,7 @@ namespace SubtaskGroup
 		MT::TaskScheduler scheduler;
 
 		MT::TaskDesc task(SubtaskGroup::Task, 0);
-		scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+		scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
 
 		CHECK(scheduler.WaitAll(200));
 
@@ -108,7 +108,7 @@ namespace SubtaskGroup
 		MT::TaskScheduler scheduler;
 
 		MT::TaskDesc task(SubtaskGroup::TaskWithManySubtasks, 0);
-		scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+		scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
 
 		CHECK(scheduler.WaitAll(100));
 	}
@@ -123,7 +123,7 @@ namespace SubtaskGroup
 		for (int i = 0; i < 100000 && waitAllOK; ++i)
 		{
 			MT::TaskDesc task(SubtaskGroup::Task, 0);
-			scheduler.RunTasks(SubtaskGroup::sourceGroup, &task, 1);
+			scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
 			waitAllOK = waitAllOK && scheduler.WaitAll(200);
 		}
 
@@ -147,14 +147,14 @@ namespace TaskSubtaskCombo
 	void MT_CALL_CONV Function_Sum4(MT::FiberContext& context, void* userData)
 	{
 		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum1, userData), MT::TaskDesc(Function_Sum1, userData) };
-		context.threadContext->taskScheduler->RunTasks(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
+		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
 		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 	}
 
 	void MT_CALL_CONV Function_Sum16(MT::FiberContext& context, void* userData)
 	{
 		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum4, userData), MT::TaskDesc(Function_Sum4, userData) };
-		context.threadContext->taskScheduler->RunTasks(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
+		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
 		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
 	}
 
@@ -175,7 +175,7 @@ namespace TaskSubtaskCombo
 		MT::AtomicInt sum;
 
 		MT::TaskDesc task(TaskSubtaskCombo::RootTask_Sum256, &sum);
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 		CHECK(scheduler.WaitAll(200));
 

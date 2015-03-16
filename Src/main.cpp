@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 	tasks[2] = MT::TaskDesc(TaskEntryPoint, (void*)5);
 	tasks[3] = MT::TaskDesc(TaskEntryPoint, (void*)6);
 
-	taskScheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
+	taskScheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
 	for(;;)
 	{

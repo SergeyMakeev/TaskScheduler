@@ -21,7 +21,7 @@ namespace SimpleTask
 		MT::TaskScheduler scheduler;
 		MT::TaskDesc task(SimpleTask::Run, &SimpleTask::sourceData);
 
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 		CHECK(scheduler.WaitAll(100));
 		CHECK_EQUAL(sourceData, resultData);
@@ -54,7 +54,7 @@ namespace ALotOfTasks
 		for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
 			tasks[i] = MT::TaskDesc(TaskFunction, &counter);
 
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
 		int timeout = (TASK_COUNT * TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
 

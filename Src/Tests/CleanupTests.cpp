@@ -20,7 +20,7 @@ TEST(NotFinishedTaskDestroy)
 	MT::TaskScheduler scheduler;
 	MT::TaskDesc task(NotFinishedTaskDestroy::Run, nullptr);
 
-	scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 	CHECK(!scheduler.WaitAll(NotFinishedTaskDestroy::timeLimitMS));
 }

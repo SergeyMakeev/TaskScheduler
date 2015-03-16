@@ -98,7 +98,7 @@ namespace DxtCompress
 		MT::TaskScheduler scheduler;
 		MT::TaskDesc task(DxtCompress::SimpleRun, &taskParams);
 
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 		CHECK(scheduler.WaitAll(30000));
 		CHECK_ARRAY_EQUAL(taskParams.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
@@ -211,7 +211,7 @@ namespace DxtCompress
 		MT::TaskScheduler scheduler;
 
 		MT::TaskDesc task(DxtCompress::ComplexRun, &taskParams);
-		scheduler.RunTasks(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 		CHECK(scheduler.WaitAll(30000));
 		CHECK_ARRAY_EQUAL(taskParams.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);

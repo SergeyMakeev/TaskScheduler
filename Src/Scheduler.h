@@ -194,7 +194,7 @@ namespace MT
 		// new task was arrived to queue event
 		MT::Event hasNewTasksEvent;
 
-		uint32 debugThreadId;
+		uint32 threadId;
 
 		// whether thread is alive
 		MT::AtomicInt state;
@@ -248,7 +248,7 @@ namespace MT
 		TaskScheduler();
 		~TaskScheduler();
 
-		void RunTasks(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count);
+		void RunAsync(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count);
 
 		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
@@ -256,6 +256,8 @@ namespace MT
 		bool IsEmpty();
 
 		int32 GetWorkerCount() const;
+
+		bool IsWorkerThread(uint32 threadId) const;
 
 
 	};
