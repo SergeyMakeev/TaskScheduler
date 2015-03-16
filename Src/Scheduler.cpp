@@ -358,11 +358,15 @@ namespace MT
 
 	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{
+		VERIFY(IsWorkerThread(MT::GetCurrentThreadId()) == false, "Can't use WaitGroup inside Task. Use MT::FiberContext.WaitGroupAndYield() instead.", return false);
+
 		return groupIsDoneEvents[group].Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
+		VERIFY(IsWorkerThread(MT::GetCurrentThreadId()) == false, "Can't use WaitAll inside Task. Use MT::FiberContext.WaitAllAndYield() instead.", return false);
+
 		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
 	}
 
