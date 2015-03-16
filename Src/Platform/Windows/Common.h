@@ -5,7 +5,10 @@
 
 #define MT_CALL_CONV __stdcall
 
-#include "ThreadWindows.h"
+#include "Thread.h"
+#include "Mutex.h"
+#include "Atomic.h"
+#include "Event.h"
 
 namespace MT
 {
@@ -41,150 +44,6 @@ namespace MT
 	}
 
 
-	//
-	//
-	//
-	class Event
-	{
-		::HANDLE eventHandle;
-
-	public:
-
-		Event()
-		{
-			static_assert(sizeof(Event) == sizeof(::HANDLE), "sizeof(Event) is invalid");
-			eventHandle = NULL;
-		}
-
-		Event(EventReset::Type resetType, bool initialState)
-		{
-			eventHandle = NULL;
-			Create(resetType, initialState);
-		}
-
-		~Event()
-		{
-			CloseHandle(eventHandle);
-			eventHandle = NULL;
-		}
-
-		void Create(EventReset::Type resetType, bool initialState)
-		{
-			if (eventHandle != NULL)
-			{
-				CloseHandle(eventHandle);
-			}
-
-			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
-			BOOL bInitialState = initialState ? TRUE : FALSE;
-			eventHandle = ::CreateEvent(NULL, bManualReset, bInitialState, NULL);
-		}
-
-		void Signal()
-		{
-			SetEvent(eventHandle);
-		}
-
-		void Reset()
-		{
-			ResetEvent(eventHandle);
-		}
-
-		bool Wait(uint32 milliseconds)
-		{
-			DWORD res = WaitForSingleObject(eventHandle, milliseconds);
-			return (res == WAIT_OBJECT_0);
-		}
-
-		bool Check()
-		{
-			return Wait(0);
-		}
-
-		static inline bool WaitAll(Event * eventsArray, uint32 size, uint32 milliseconds)
-		{
-			DWORD res = WaitForMultipleObjects(size, (::HANDLE *)&eventsArray[0], TRUE, milliseconds);
-			return (res == WAIT_OBJECT_0);
-		}
-	};
-
-	class ScopedGuard;
-
-	//
-	// 
-	//
-	class Mutex
-	{
-		::CRITICAL_SECTION criticalSection;
-
-		Mutex( const Mutex & ) {}
-		Mutex& operator=( const Mutex &) {}
-
-		void Lock()
-		{
-			::EnterCriticalSection( &criticalSection );
-		}
-		void Unlock()
-		{
-			::LeaveCriticalSection( &criticalSection );
-		}
-	public:
-		Mutex()
-		{
-			::InitializeCriticalSection( &criticalSection );
-		}
-
-		~Mutex()
-		{
-			::DeleteCriticalSection( &criticalSection );
-		}
-
-		friend class MT::ScopedGuard;
-	};
-
-
-	//
-	// Atomic int
-	//
-	class AtomicInt
-	{
-		volatile long value;
-	public:
-
-		AtomicInt() : value(0)
-		{
-		}
-
-		AtomicInt(int v)
-			: value(v)
-		{
-		}
-
-		void Add(int sum)
-		{
-			InterlockedExchangeAdd(&value, sum);
-		}
-
-		int Inc()
-		{
-			return InterlockedIncrement(&value);
-		}
-
-		int Dec()
-		{
-			return InterlockedDecrement(&value);
-		}
-
-		int Get()
-		{
-			return value;
-		}
-
-		int Set(int val)
-		{
-			return InterlockedExchange(&value, val); 
-		}
-	};
 
 }
 
