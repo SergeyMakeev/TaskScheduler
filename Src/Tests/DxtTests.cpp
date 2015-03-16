@@ -86,7 +86,7 @@ namespace DxtCompress
 		taskParams.stride = 384;
 		taskParams.srcPixels = (uint8 *)&EmbeddedImage::lenaColor[0];
 
-		ASSERT ((taskParams.width & 3) == 0 && (taskParams.height & 4) == 0, "Image size must be a multiple of 4");
+		ASSERT ((taskParams.width & 3) == 0 && (taskParams.height & 3) == 0, "Image size must be a multiple of 4");
 
 		taskParams.blkWidth = taskParams.width >> 2;
 		taskParams.blkHeight = taskParams.height >> 2;
