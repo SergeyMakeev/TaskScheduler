@@ -5,20 +5,23 @@
 SUITE(CleanupTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace NotFinishedTaskDestroy
+struct NotFinishedTaskDestroy
 {
-	static int timeLimitMS = 100;
-	void MT_CALL_CONV Run(MT::FiberContext&, void*)
+	TASK_METHODS(NotFinishedTaskDestroy)
+
+	static const int timeLimitMS = 100;
+	void Do(MT::FiberContext&)
 	{
 		Sleep(timeLimitMS * 2);
 	}
-}
+};
 
 // Checks one simple task
 TEST(NotFinishedTaskDestroy)
 {
 	MT::TaskScheduler scheduler;
-	MT::TaskDesc task(NotFinishedTaskDestroy::Run, nullptr);
+	
+	NotFinishedTaskDestroy task;
 
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 

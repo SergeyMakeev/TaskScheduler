@@ -24,17 +24,8 @@ namespace MT
 		, threadContext(nullptr)
 		, subtaskFibersCount(0)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
+		, fiber(nullptr)
 	{
-	}
-
-	void FiberContext::RunAsync(const MT::TaskDesc * taskDescArr, uint32 count)
-	{
-		ASSERT(threadContext, "Sanity check failed!");
-
-		ASSERT(currentTask, "Sanity check failed!");
-		ASSERT(currentTask->taskGroup < TaskGroup::COUNT, "Sanity check failed!");
-
-		threadContext->taskScheduler->RunTasksImpl(currentTask->taskGroup, taskDescArr, count, nullptr);
 	}
 
 	bool FiberContext::WaitGroupAndYield(MT::TaskGroup::Type group, uint32 milliseconds)
@@ -47,13 +38,12 @@ namespace MT
 		return threadContext->taskScheduler->WaitAll(milliseconds);
 	}
 
-
-	void FiberContext::RunSubtasksAndYield(const MT::TaskDesc * taskDescArr, uint32 count)
+	void FiberContext::RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, uint32 count)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 
 		ASSERT(currentTask, "Sanity check failed!");
-		ASSERT(currentTask->taskGroup < TaskGroup::COUNT, "Sanity check failed!");
+		ASSERT(taskGroup < TaskGroup::COUNT, "Sanity check failed!");
 
 		// ATTENTION !
 		// copy current task description to stack.
@@ -63,7 +53,7 @@ namespace MT
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//add subtask to scheduler
-		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
+		threadContext->taskScheduler->RunTasksImpl(taskGroup, taskDescArr, count, &parentTask);
 
 		//
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
@@ -92,8 +82,9 @@ namespace MT
 		// create fiber pool
 		for (int32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
 		{
-			MT::Fiber fiber = MT::CreateFiber( MT_FIBER_STACK_SIZE, FiberMain, &fiberContext[i] );
-			availableFibers.Push( FiberExecutionContext(fiber, &fiberContext[i]) );
+			MT::FiberContext& context = fiberContext[i];
+			context.fiber = MT::CreateFiber( MT_FIBER_STACK_SIZE, FiberMain, &context );
+			availableFibers.Push( &context );
 		}
 
 		// create group done events
@@ -126,9 +117,9 @@ namespace MT
 		}
 	}
 
-	MT::FiberExecutionContext TaskScheduler::RequestExecutionContext()
+	MT::FiberContext* TaskScheduler::RequestFiberContext()
 	{
-		MT::FiberExecutionContext fiber = MT::FiberExecutionContext::Empty();
+		MT::FiberContext *fiber = nullptr;
 		if (!availableFibers.TryPop(fiber))
 		{
 			ASSERT(false, "Fibers pool is empty");
@@ -136,11 +127,14 @@ namespace MT
 		return fiber;
 	}
 
-	void TaskScheduler::ReleaseExecutionContext(const MT::FiberExecutionContext & fiberExecutionContext)
+	void TaskScheduler::ReleaseFiberContext(MT::FiberContext* fiberContext)
 	{
-		ASSERT(fiberExecutionContext.fiber != nullptr, "Invalid execution fiber in execution context");
-		ASSERT(fiberExecutionContext.fiberContext != nullptr, "Invalid fiber context in execution context");
-		availableFibers.Push(fiberExecutionContext);
+		ASSERT(fiberContext != nullptr, "Can't release nullptr Fiber");
+
+		fiberContext->currentGroup = TaskGroup::GROUP_UNDEFINED;
+		fiberContext->currentTask = nullptr;
+
+		availableFibers.Push(fiberContext);
 	}
 
 
@@ -152,23 +146,23 @@ namespace MT
 		for(int iteration = 0;;iteration++)
 		{
 			ASSERT(taskInProgress.taskFunc != nullptr, "Invalid task function pointer");
-			ASSERT(taskInProgress.executionContext.fiberContext, "Invalid execution context.");
+			ASSERT(taskInProgress.fiberContext, "Invalid execution context.");
 
-			taskInProgress.executionContext.fiberContext->threadContext = &context;
+			taskInProgress.fiberContext->threadContext = &context;
 
 			// update task status
-			taskInProgress.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
+			taskInProgress.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
 			ASSERT(context.thread.IsCurrentThread(), "Thread context sanity check failed");
-			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
+			ASSERT(taskInProgress.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			// run current task code
-			MT::SwitchToFiber(taskInProgress.executionContext.fiber);
+			MT::SwitchToFiber(taskInProgress.fiberContext->fiber);
 
 			// if task was done
-			if (taskInProgress.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
+			if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
 			{
-				TaskGroup::Type taskGroup = taskInProgress.taskGroup;
+				TaskGroup::Type taskGroup = taskInProgress.fiberContext->currentGroup;
 
 				ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
@@ -186,17 +180,14 @@ namespace MT
 				//
 				if (iteration > 0)
 				{
-					taskInProgress.executionContext.fiberContext->currentTask = nullptr;
-					context.taskScheduler->ReleaseExecutionContext(taskInProgress.executionContext);
-					taskInProgress.executionContext = MT::FiberExecutionContext::Empty();
-					ASSERT(taskInProgress.executionContext.fiber == nullptr, "Sanity check failed");
+					context.taskScheduler->ReleaseTaskDescription(taskInProgress);
 				}
 
 
 				//
 				if (taskInProgress.parentTask != nullptr)
 				{
-					int subTasksCount = taskInProgress.parentTask->executionContext.fiberContext->subtaskFibersCount.Dec();
+					int subTasksCount = taskInProgress.parentTask->fiberContext->subtaskFibersCount.Dec();
 					ASSERT(subTasksCount >= 0, "Sanity check failed!");
 
 					if (subTasksCount == 0)
@@ -208,16 +199,15 @@ namespace MT
 						ASSERT(context.thread.IsCurrentThread(), "Thread context sanity check failed");
 
 						// WARNING!! Thread context can changed here! Set actual current thread context.
-						parent->executionContext.fiberContext->threadContext = &context;
+						parent->fiberContext->threadContext = &context;
 
-						ASSERT(parent->executionContext.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
+						ASSERT(parent->fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
 						taskInProgress = *parent;
 
-						parent->executionContext.fiberContext->currentTask = &taskInProgress;
-
+						taskInProgress.fiberContext->currentTask = &taskInProgress;
 					} else
 					{
 						// subtask still not finished
@@ -251,7 +241,7 @@ namespace MT
 		{
 			ASSERT(context.currentTask, "Invalid task in fiber context");
 			ASSERT(context.currentTask->taskFunc, "Invalid task function");
-			ASSERT(context.currentTask->taskGroup < TaskGroup::COUNT, "Invalid task group");
+			ASSERT(context.currentGroup < TaskGroup::COUNT, "Invalid task group");
 			ASSERT(context.threadContext, "Invalid thread context");
 			ASSERT(context.threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
@@ -272,33 +262,29 @@ namespace MT
 
 		while(context.state.Get() != ThreadState::EXIT)
 		{
-			MT::TaskDesc taskDesc;
-			if (context.queue.TryPop(taskDesc))
+			MT::GroupedTask task;
+			if (context.queue.TryPop(task))
 			{
 				//there is a new task
 
-				taskDesc.executionContext = context.taskScheduler->RequestExecutionContext();
-				ASSERT(taskDesc.executionContext.IsValid(), "Can't get execution context from pool");
-
-				taskDesc.executionContext.fiberContext->currentTask = &taskDesc;
-				ASSERT(taskDesc.executionContext.fiberContext->currentTask->taskFunc, "Sanity check failed");
+				context.taskScheduler->PrepareTaskDescription(task);
+				ASSERT(task.desc.fiberContext, "Can't get execution context from pool");
+				ASSERT(task.desc.fiberContext->currentTask->taskFunc, "Sanity check failed");
 
 				for(;;)
 				{
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
-					taskDesc.executionContext.fiberContext->subtaskFibersCount.Inc();
-					bool canDropContext = ExecuteTask(context, taskDesc);
-					int subtaskCount = taskDesc.executionContext.fiberContext->subtaskFibersCount.Dec();
+					task.desc.fiberContext->subtaskFibersCount.Inc();
+					bool canDropContext = ExecuteTask(context, task.desc);
+					int subtaskCount = task.desc.fiberContext->subtaskFibersCount.Dec();
 					ASSERT(subtaskCount >= 0, "Sanity check failed");
 
-					bool taskIsFinished = (taskDesc.executionContext.fiberContext->taskStatus == FiberTaskStatus::FINISHED);
+					bool taskIsFinished = (task.desc.fiberContext->taskStatus == FiberTaskStatus::FINISHED);
 
 					if (canDropContext)
 					{
-						taskDesc.executionContext.fiberContext->currentTask = nullptr;
-						context.taskScheduler->ReleaseExecutionContext(taskDesc.executionContext);
-						taskDesc.executionContext = MT::FiberExecutionContext::Empty();
-						ASSERT(taskDesc.executionContext.fiber == nullptr, "Sanity check failed");
+						context.taskScheduler->ReleaseTaskDescription(task.desc);
+						ASSERT(task.desc.fiberContext == nullptr, "Sanity check failed");
 					}
 
 					// if subtasks still exist, drop current task execution. current task will be resumed when last subtask finished
@@ -311,8 +297,8 @@ namespace MT
 					// continue task execution
 				}
 
-				if (taskDesc.executionContext.fiberContext)
-					taskDesc.executionContext.fiberContext->currentTask = nullptr;
+				if (task.desc.fiberContext)
+					task.desc.fiberContext->currentTask = nullptr;
 				
 
 			} 
@@ -324,13 +310,14 @@ namespace MT
 		}
 	}
 
-	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask)
+
+	void MT::TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, uint32 count, MT::TaskDesc * parentTask)
 	{
 		ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
 		if (parentTask)
 		{
-			parentTask->executionContext.fiberContext->subtaskFibersCount.Add(count);
+			parentTask->fiberContext->subtaskFibersCount.Add(count);
 		}
 
 		int startIndex = ((int)count - 1);
@@ -340,25 +327,17 @@ namespace MT
 			ThreadContext & context = threadContext[bucketIndex];
 			
 			//TODO: can be write more effective implementation here, just split to threads BEFORE submitting tasks to queue
-			MT::TaskDesc desc = taskDescArr[i];
-			desc.taskGroup = taskGroup;
-			desc.parentTask = parentTask;
+			MT::GroupedTask task((MT::TaskDesc&)taskDescArr[i], taskGroup);
+			task.desc.parentTask = parentTask;
 
 			groupIsDoneEvents[taskGroup].Reset();
 			groupCurrentlyRunningTaskCount[taskGroup].Inc();
 			
-			context.queue.Push(desc);
+			context.queue.Push(task);
 			
 			context.hasNewTasksEvent.Signal();
 		}
 	}
-
-
-	void TaskScheduler::RunAsync(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count)
-	{
-		RunTasksImpl(taskGroup, taskDescArr, count, nullptr);
-	}
-
 
 	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{
@@ -401,6 +380,20 @@ namespace MT
 			}
 		}
 		return false;
+	}
+
+	void TaskScheduler::ReleaseTaskDescription(MT::TaskDesc& description)
+	{
+		ReleaseFiberContext(description.fiberContext);
+		description.fiberContext = nullptr;
+	}
+
+	bool TaskScheduler::PrepareTaskDescription(MT::GroupedTask& task)
+	{
+		task.desc.fiberContext = RequestFiberContext();
+		task.desc.fiberContext->currentTask = &task.desc;
+		task.desc.fiberContext->currentGroup = task.group;
+		return task.desc.fiberContext != nullptr;
 	}
 
 }

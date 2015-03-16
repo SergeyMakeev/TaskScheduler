@@ -6,62 +6,69 @@
 SUITE(SimpleTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace SimpleTask
+struct SimpleTask
 {
-	static int sourceData = 0xFF33FF;
-	static int resultData = 0;
-	void MT_CALL_CONV Run(MT::FiberContext&, void* userData)
+	TASK_METHODS(SimpleTask)
+
+	static const int sourceData = 0xFF33FF;
+	int resultData;
+
+	SimpleTask() : resultData(0) {}
+
+	void Do(MT::FiberContext&)
 	{
-		resultData = *(int*)userData;
+		resultData = sourceData;
 	}
+};
 
+// Checks one simple task
+TEST(RunOneSimpleTask)
+{
+	MT::TaskScheduler scheduler;
 
-	// Checks one simple task
-	TEST(RunOneSimpleTask)
-	{
-		MT::TaskScheduler scheduler;
-		MT::TaskDesc task(SimpleTask::Run, &SimpleTask::sourceData);
+	SimpleTask task;
+	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
-
-		CHECK(scheduler.WaitAll(100));
-		CHECK_EQUAL(sourceData, resultData);
-	}
+	CHECK(scheduler.WaitAll(100));
+	CHECK_EQUAL(task.sourceData, task.resultData);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace ALotOfTasks
+struct ALotOfTasks
 {
+	TASK_METHODS(ALotOfTasks)
+
 	static const int TASK_COUNT = 1000;
 	static const int TASK_DURATION_MS = 1;
 
-	void MT_CALL_CONV TaskFunction(MT::FiberContext&, void* userData)
+	MT::AtomicInt* counter;
+
+	void Do(MT::FiberContext&)
 	{
-		MT::AtomicInt& counter = *(MT::AtomicInt*)userData;
-		counter.Inc();
+		counter->Inc();
 		Time::SpinSleep(TASK_DURATION_MS * 1000);
 	}
+};
 
-	// Checks one simple task
-	TEST(ALotOfTasks)
-	{
-		MT::TaskScheduler scheduler;
+// Checks one simple task
+TEST(ALotOfTasks)
+{
+	MT::TaskScheduler scheduler;
 
-		MT::AtomicInt counter;
+	MT::AtomicInt counter;
 
-		MT::TaskDesc tasks[TASK_COUNT];
+	ALotOfTasks tasks[ALotOfTasks::TASK_COUNT];
 
-		for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
-			tasks[i] = MT::TaskDesc(TaskFunction, &counter);
+	for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
+		tasks[i].counter = &counter;
 
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
+	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
-		int timeout = (TASK_COUNT * TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
+	int timeout = (ALotOfTasks::TASK_COUNT * ALotOfTasks::TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
 
-		CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
-		CHECK_EQUAL(TASK_COUNT, counter.Get());
-	}
+	CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
+	CHECK_EQUAL(ALotOfTasks::TASK_COUNT, counter.Get());
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

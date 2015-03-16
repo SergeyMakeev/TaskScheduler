@@ -6,181 +6,216 @@
 SUITE(SubtasksTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace DeepSubtaskQueue
+template<size_t N>
+struct DeepSubtaskQueue
 {
-	template<size_t N>
-	void MT_CALL_CONV Fibonacci(MT::FiberContext& context, void* userData)
+	TASK_METHODS(DeepSubtaskQueue)
+	
+	int result;
+
+	DeepSubtaskQueue() : result(0) {}
+
+	void Do(MT::FiberContext& context)
 	{
-		int& result = *(int*)userData;
+		DeepSubtaskQueue<N - 1> taskNm1;
+		DeepSubtaskQueue<N - 2> taskNm2;
 
-		MT::TaskDesc tasks[2];
+		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &taskNm1, 1);
+		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &taskNm2, 1);
 
-		int a = -100;
-		tasks[0] = MT::TaskDesc(Fibonacci<N - 1>, &a);
-
-		int b = -100;
-		tasks[1] = MT::TaskDesc(Fibonacci<N - 2>, &b);
-
-		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
-
-		result = a + b;
+		result = taskNm2.result + taskNm1.result;
 	}
+};
 
-	template<>
-	void MT_CALL_CONV Fibonacci<0>(MT::FiberContext&, void* userData)
+template<>
+struct DeepSubtaskQueue<0>
+{
+	TASK_METHODS(DeepSubtaskQueue)
+
+	int result;
+	void Do(MT::FiberContext&)
 	{
-		*(int*)userData = 0;
+		result = 0;
 	}
+};
 
-	template<>
-	void MT_CALL_CONV Fibonacci<1>(MT::FiberContext&, void* userData)
+
+template<>
+struct DeepSubtaskQueue<1>
+{
+	TASK_METHODS(DeepSubtaskQueue)
+
+	int result;
+	void Do(MT::FiberContext&)
 	{
-		*(int*)userData = 1;
+		result = 1;
 	}
-}
+};
+
 
 // Checks one simple task
 TEST(DeepSubtaskQueue)
 {
 	MT::TaskScheduler scheduler;
 
-	int result = 0;
-	MT::TaskDesc task(DeepSubtaskQueue::Fibonacci<12>, &result);
-
+	DeepSubtaskQueue<12> task;
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 	CHECK(scheduler.WaitAll(200));
 
-	CHECK_EQUAL(result, 144);
+	CHECK_EQUAL(task.result, 144);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace SubtaskGroup
+static MT::TaskGroup::Type sourceGroup = MT::TaskGroup::GROUP_1;
+static MT::TaskGroup::Type resultGroup = MT::TaskGroup::GROUP_UNDEFINED;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct GroupSubtask
 {
-	static MT::TaskGroup::Type sourceGroup = MT::TaskGroup::GROUP_1;
-	static MT::TaskGroup::Type resultGroup = MT::TaskGroup::GROUP_UNDEFINED;
+	TASK_METHODS(GroupSubtask)
 
-	void MT_CALL_CONV Subtask(MT::FiberContext& context, void*)
+
+	void Do(MT::FiberContext& context)
 	{
-		resultGroup = context.currentTask->GetGroup();
+		resultGroup = context.currentGroup;
 	}
+};
 
-	void MT_CALL_CONV Task(MT::FiberContext& context, void*)
+struct GroupTask
+{
+	TASK_METHODS(GroupTask)
+
+	void Do(MT::FiberContext& context)
 	{
-		MT::TaskDesc task(Subtask, 0);
-		context.RunSubtasksAndYield(&task, 1);
+		GroupSubtask task;
+		context.RunSubtasksAndYield(sourceGroup, &task, 1);
 	}
+};
 
-	void MT_CALL_CONV TaskWithManySubtasks(MT::FiberContext& context, void*)
+struct TaskWithManySubtasks
+{
+	TASK_METHODS(TaskWithManySubtasks)
+
+	void Do(MT::FiberContext& context)
 	{
-		MT::TaskDesc task(Subtask, 0);
+		GroupTask task;
 		for (int i = 0; i < 2; ++i)
 		{
-			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
-
-			context.RunSubtasksAndYield(&task, 1);
-
-			ASSERT(context.currentTask->GetGroup() < MT::TaskGroup::COUNT, "Invalid group");
-
+			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &task, 1);
 			Sleep(1);
 		}
 	}
 
+};
 
-	// Checks one simple task
-	TEST(SubtaskGroup)
+// Checks one simple task
+TEST(SubtaskGroup)
+{
+	MT::TaskScheduler scheduler;
+
+	GroupTask task;
+	scheduler.RunAsync(sourceGroup, &task, 1);
+
+	CHECK(scheduler.WaitAll(200));
+
+	CHECK_EQUAL(sourceGroup, resultGroup);
+}
+
+// Checks task with multiple subtasks
+TEST(OneTaskManySubtasks)
+{
+	MT::TaskScheduler scheduler;
+	TaskWithManySubtasks task;
+	scheduler.RunAsync(sourceGroup, &task, 1);
+	CHECK(scheduler.WaitAll(100));
+}
+
+// Checks many simple task with subtasks
+TEST(ManyTasksOneSubtask)
+{
+	MT::TaskScheduler scheduler;
+
+	bool waitAllOK = true;
+
+	for (int i = 0; i < 100000 && waitAllOK; ++i)
 	{
-		MT::TaskScheduler scheduler;
-
-		MT::TaskDesc task(SubtaskGroup::Task, 0);
-		scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
-
-		CHECK(scheduler.WaitAll(200));
-
-		CHECK_EQUAL(SubtaskGroup::sourceGroup, SubtaskGroup::resultGroup);
+		GroupSubtask group;
+		scheduler.RunAsync(sourceGroup, &group, 1);
+		waitAllOK = waitAllOK && scheduler.WaitAll(200);
 	}
 
-	// Checks task with multiple subtasks
-	TEST(OneTaskManySubtasks)
-	{
-		MT::TaskScheduler scheduler;
-
-		MT::TaskDesc task(SubtaskGroup::TaskWithManySubtasks, 0);
-		scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
-
-		CHECK(scheduler.WaitAll(100));
-	}
-
-	// Checks many simple task with subtasks
-	TEST(ManyTasksOneSubtask)
-	{
-		MT::TaskScheduler scheduler;
-
-		bool waitAllOK = true;
-
-		for (int i = 0; i < 100000 && waitAllOK; ++i)
-		{
-			MT::TaskDesc task(SubtaskGroup::Task, 0);
-			scheduler.RunAsync(SubtaskGroup::sourceGroup, &task, 1);
-			waitAllOK = waitAllOK && scheduler.WaitAll(200);
-		}
-
-		CHECK(waitAllOK);
-	}
+	CHECK(waitAllOK);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace TaskSubtaskCombo
+
+struct TaskSubtaskCombo
 {
-	static MT::AtomicInt sum;
+	MT::AtomicInt* data;
+};
 
-	void MT_CALL_CONV Function_Sum1(MT::FiberContext&, void* userData)
+struct TaskSubtaskCombo_Sum1 : public TaskSubtaskCombo
+{
+	TASK_METHODS(TaskSubtaskCombo_Sum1)
+
+	void Do(MT::FiberContext&)
 	{
-		MT::AtomicInt& data = *(MT::AtomicInt*)userData;
-		data.Inc();
+		data->Inc();
 	}
+};
 
-	void MT_CALL_CONV Function_Sum4(MT::FiberContext& context, void* userData)
+struct TaskSubtaskCombo_Sum4 : public TaskSubtaskCombo
+{
+	TASK_METHODS(TaskSubtaskCombo_Sum4)
+
+	TaskSubtaskCombo_Sum1 tasks[2];
+
+	void Do(MT::FiberContext& context)
 	{
-		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum1, userData), MT::TaskDesc(Function_Sum1, userData) };
+		tasks[0].data = data;
+		tasks[1].data = data;
+
 		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 	}
+};
 
-	void MT_CALL_CONV Function_Sum16(MT::FiberContext& context, void* userData)
+struct TaskSubtaskCombo_Sum16 : public TaskSubtaskCombo
+{
+	TASK_METHODS(TaskSubtaskCombo_Sum16)
+
+	TaskSubtaskCombo_Sum4 tasks[2];
+
+	void Do(MT::FiberContext& context)
 	{
-		MT::TaskDesc tasks[] = { MT::TaskDesc(Function_Sum4, userData), MT::TaskDesc(Function_Sum4, userData) };
+		tasks[0].data = data;
+		tasks[1].data = data;
+
 		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(&tasks[0], ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 	}
+};
 
-	void MT_CALL_CONV RootTask_Sum256(MT::FiberContext& context, void* userData)
+MT::AtomicInt sum;
+
+// Checks one simple task
+TEST(TaskSubtaskCombo)
+{
+	MT::TaskScheduler scheduler;
+
+	TaskSubtaskCombo_Sum16 task[16];
+	for (int i = 0; i < 16; ++i)
 	{
-		for (int i = 0; i < 16; ++i)
-		{
-			MT::TaskDesc task(Function_Sum16, userData);
-			context.RunSubtasksAndYield(&task, 1);
-		}
+		task[i].data = &sum;
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task[i], 1);
 	}
 
-	// Checks one simple task
-	TEST(TaskSubtaskCombo)
-	{
-		MT::TaskScheduler scheduler;
+	CHECK(scheduler.WaitAll(200));
 
-		MT::AtomicInt sum;
-
-		MT::TaskDesc task(TaskSubtaskCombo::RootTask_Sum256, &sum);
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
-
-		CHECK(scheduler.WaitAll(200));
-
-		CHECK_EQUAL(sum.Get(), 256);
-	}
+	CHECK_EQUAL(sum.Get(), 256);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

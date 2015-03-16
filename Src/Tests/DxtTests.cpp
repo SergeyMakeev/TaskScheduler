@@ -28,50 +28,68 @@ namespace DxtCompress
 		uint32 blkHeight;
 
 		uint8 * dstBlocks;
+
+		TaskParams() : width(0), height(0), stride(0), srcPixels(0), blkWidth(0), blkHeight(0), dstBlocks(0) {}
+
+		void Init(uint32 _width, uint32 _height, uint32 _stride, uint8* _srcPixels)
+		{
+			width = _width;
+			height = _height;
+			stride = _stride;
+
+			srcPixels = _srcPixels;
+
+			blkWidth = width >> 2;
+			blkHeight = height >> 2;
+		}
 	};
 
 
-	void MT_CALL_CONV SimpleRun(MT::FiberContext&, void* userData)
+	struct SimpleRunParams : public TaskParams
 	{
-		const TaskParams & params = *(TaskParams*)userData;
+		TASK_METHODS(SimpleRunParams)
 
-		for (uint32 blkY = 0; blkY < params.blkHeight; blkY++)
+		void Do(MT::FiberContext&)
 		{
-			for (uint32 blkX = 0; blkX < params.blkWidth; blkX++)
+			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 			{
-				// 16 pixels of input
-				uint32 pixels[4*4];
-
-				// copy dxt1 block from image
-				for (int y = 0; y < 4; y++)
+				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
 				{
-					for (int x = 0; x < 4; x++)
+					// 16 pixels of input
+					uint32 pixels[4*4];
+
+					// copy dxt1 block from image
+					for (int y = 0; y < 4; y++)
 					{
-						int srcX = blkX * 4 + x;
-						int srcY = blkY * 4 + y;
+						for (int x = 0; x < 4; x++)
+						{
+							int srcX = blkX * 4 + x;
+							int srcY = blkY * 4 + y;
 
-						int index = srcY * params.stride + (srcX * 3);
+							int index = srcY * stride + (srcX * 3);
 
-						uint8 r = params.srcPixels[index + 0];
-						uint8 g = params.srcPixels[index + 1];
-						uint8 b = params.srcPixels[index + 2];
+							uint8 r = srcPixels[index + 0];
+							uint8 g = srcPixels[index + 1];
+							uint8 b = srcPixels[index + 2];
 
-						uint32 color = 0xFF000000 | ((b << 16) | (g << 8) | (r));
+							uint32 color = 0xFF000000 | ((b << 16) | (g << 8) | (r));
 
-						pixels[y * 4 + x] = color;
+							pixels[y * 4 + x] = color;
+						}
 					}
-				}
 
-				// 8 bytes of output
-				int blockIndex = blkY * params.blkWidth + blkX;
-				uint8 * dxtBlock = &params.dstBlocks[blockIndex*8];
+					// 8 bytes of output
+					int blockIndex = blkY * blkWidth + blkX;
+					uint8 * dxtBlock = &dstBlocks[blockIndex*8];
 
-				// compress the 4x4 block using DXT1 compression
-				squish::Compress( (squish::u8 *)&pixels[0], dxtBlock, squish::kDxt1 );
+					// compress the 4x4 block using DXT1 compression
+					squish::Compress( (squish::u8 *)&pixels[0], dxtBlock, squish::kDxt1 );
 
+				} // block iterator
 			} // block iterator
-		} // block iterator
-	}
+		}
+	};
+	
 
 
 	// dxt compressor simple test
@@ -80,28 +98,19 @@ namespace DxtCompress
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
-		TaskParams taskParams;
-		taskParams.width = 128;
-		taskParams.height = 128;
-		taskParams.stride = 384;
-		taskParams.srcPixels = (uint8 *)&EmbeddedImage::lenaColor[0];
+		SimpleRunParams simpleTask;
+		simpleTask.Init(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
+		ASSERT ((simpleTask.width & 3) == 0 && (simpleTask.height & 3) == 0, "Image size must be a multiple of 4");
 
-		ASSERT ((taskParams.width & 3) == 0 && (taskParams.height & 3) == 0, "Image size must be a multiple of 4");
-
-		taskParams.blkWidth = taskParams.width >> 2;
-		taskParams.blkHeight = taskParams.height >> 2;
-
-		int dxtBlocksTotalSize = taskParams.blkWidth * taskParams.blkHeight * 8;
-		taskParams.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );
-		memset(taskParams.dstBlocks, 0x0, dxtBlocksTotalSize);
+		int dxtBlocksTotalSize = simpleTask.blkWidth * simpleTask.blkHeight * 8;
+		simpleTask.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );
+		memset(simpleTask.dstBlocks, 0x0, dxtBlocksTotalSize);
 
 		MT::TaskScheduler scheduler;
-		MT::TaskDesc task(DxtCompress::SimpleRun, &taskParams);
-
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &simpleTask, 1);
 
 		CHECK(scheduler.WaitAll(30000));
-		CHECK_ARRAY_EQUAL(taskParams.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
+		CHECK_ARRAY_EQUAL(simpleTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 /*
 		FILE * file = fopen("lena_dxt1.dds", "w+b");
@@ -110,12 +119,13 @@ namespace DxtCompress
 		fclose(file);
 */
 
-		free(taskParams.dstBlocks);
+		free(simpleTask.dstBlocks);
 	}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	struct SubTaskParams
+	struct ComplexRunBlockSubtask
 	{
+		TASK_METHODS(ComplexRunBlockSubtask);
+
 		int srcX;
 		int srcY;
 
@@ -123,69 +133,74 @@ namespace DxtCompress
 
 		uint8 * srcPixels;
 		uint8 * dstBlock;
+
+		ComplexRunBlockSubtask() : srcX(0), srcY(0), stride(0), srcPixels(0), dstBlock(0) {}
+
+		void Init(int _srcX, int _srcY, int _stride, uint8* _srcPixels, uint8* _dstBlock )
+		{
+				srcX = _srcX;
+				srcY = _srcY;
+				stride = _stride;
+				srcPixels = _srcPixels;
+				dstBlock = _dstBlock;
+		}
+
+		void Do(MT::FiberContext&)
+		{
+			// 16 pixels of input
+			uint32 pixels[4*4];
+
+			// copy dxt1 block from image
+			for (int y = 0; y < 4; y++)
+			{
+				for (int x = 0; x < 4; x++)
+				{
+					int posX = srcX + x;
+					int posY = srcY + y;
+
+					int index = posY * stride + (posX * 3);
+
+					uint8 r = srcPixels[index + 0];
+					uint8 g = srcPixels[index + 1];
+					uint8 b = srcPixels[index + 2];
+
+					uint32 color = 0xFF000000 | ((b << 16) | (g << 8) | (r));
+
+					pixels[y * 4 + x] = color;
+				}
+			}
+
+			// compress the 4x4 block using DXT1 compression
+			squish::Compress( (squish::u8 *)&pixels[0], dstBlock, squish::kDxt1 );
+		}
 	};
 
 
-	void MT_CALL_CONV ComplexRunBlockSubtask(MT::FiberContext&, void* userData)
+	struct ComplexRunParams : public TaskParams
 	{
-		const SubTaskParams & params = *(SubTaskParams*)userData;
+		TASK_METHODS(ComplexRunParams)
 
-		// 16 pixels of input
-		uint32 pixels[4*4];
-
-		// copy dxt1 block from image
-		for (int y = 0; y < 4; y++)
+		void Do(MT::FiberContext& context)
 		{
-			for (int x = 0; x < 4; x++)
+			int blockCount = blkWidth * blkHeight;
+
+			// use alloca as simplest thread safe allocator. beware stack overflow!
+			std::vector<ComplexRunBlockSubtask> subTasks(blockCount);
+			subTasks.resize(blockCount);
+
+			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 			{
-				int srcX = params.srcX + x;
-				int srcY = params.srcY + y;
-
-				int index = srcY * params.stride + (srcX * 3);
-
-				uint8 r = params.srcPixels[index + 0];
-				uint8 g = params.srcPixels[index + 1];
-				uint8 b = params.srcPixels[index + 2];
-
-				uint32 color = 0xFF000000 | ((b << 16) | (g << 8) | (r));
-
-				pixels[y * 4 + x] = color;
+				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
+				{
+					uint32 blockIndex = blkY * blkWidth + blkX;
+					subTasks[blockIndex].Init(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]);
+				}
 			}
+
+			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks.front(), subTasks.size());
 		}
+	};
 
-		// compress the 4x4 block using DXT1 compression
-		squish::Compress( (squish::u8 *)&pixels[0], params.dstBlock, squish::kDxt1 );
-	}
-
-
-	void MT_CALL_CONV ComplexRun(MT::FiberContext & context, void* userData)
-	{
-		const TaskParams & params = *(TaskParams*)userData;
-
-		int blockCount = params.blkWidth * params.blkHeight;
-
-		// use alloca as simplest thread safe allocator. beware stack overflow!
-		MT::TaskDesc* subTasksArray = (MT::TaskDesc*)_alloca( blockCount * sizeof(MT::TaskDesc) );
-		SubTaskParams* subTasksParams = (SubTaskParams*)_alloca( blockCount * sizeof(SubTaskParams) );
-
-		for (uint32 blkY = 0; blkY < params.blkHeight; blkY++)
-		{
-			for (uint32 blkX = 0; blkX < params.blkWidth; blkX++)
-			{
-				int blockIndex = blkY * params.blkWidth + blkX;
-
-				subTasksArray[blockIndex] = MT::TaskDesc( ComplexRunBlockSubtask, &subTasksParams[blockIndex] );
-
-				subTasksParams[blockIndex].srcX = blkX * 4;
-				subTasksParams[blockIndex].srcY = blkY * 4;
-				subTasksParams[blockIndex].srcPixels = params.srcPixels;
-				subTasksParams[blockIndex].stride = params.stride;
-				subTasksParams[blockIndex].dstBlock = &params.dstBlocks[blockIndex * 8];
-			} // block iterator
-		} // block iterator
-
-		context.RunSubtasksAndYield(subTasksArray, blockCount);
-	}
 
 	// dxt compressor complex test
 	TEST(RunComplexDxtCompress)
@@ -193,30 +208,22 @@ namespace DxtCompress
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
-		TaskParams taskParams;
-		taskParams.width = 128;
-		taskParams.height = 128;
-		taskParams.stride = 384;
-		taskParams.srcPixels = (uint8 *)&EmbeddedImage::lenaColor[0];
+		ComplexRunParams complexTask;
+		complexTask.Init(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
+		ASSERT ((complexTask.width & 3) == 0 && (complexTask.height & 4) == 0, "Image size must be a multiple of 4");
 
-		ASSERT ((taskParams.width & 3) == 0 && (taskParams.height & 4) == 0, "Image size must be a multiple of 4");
-
-		taskParams.blkWidth = taskParams.width >> 2;
-		taskParams.blkHeight = taskParams.height >> 2;
-
-		int dxtBlocksTotalSize = taskParams.blkWidth * taskParams.blkHeight * 8;
-		taskParams.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );
-		memset(taskParams.dstBlocks, 0x0, dxtBlocksTotalSize);
+		int dxtBlocksTotalSize = complexTask.blkWidth * complexTask.blkHeight * 8;
+		complexTask.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );
+		memset(complexTask.dstBlocks, 0x0, dxtBlocksTotalSize);
 
 		MT::TaskScheduler scheduler;
 
-		MT::TaskDesc task(DxtCompress::ComplexRun, &taskParams);
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &complexTask, 1);
 
 		CHECK(scheduler.WaitAll(30000));
-		CHECK_ARRAY_EQUAL(taskParams.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
+		CHECK_ARRAY_EQUAL(complexTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
-		free(taskParams.dstBlocks);
+		free(complexTask.dstBlocks);
 	}
 
 
