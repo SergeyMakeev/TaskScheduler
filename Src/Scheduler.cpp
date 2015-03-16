@@ -10,15 +10,12 @@ namespace MT
 		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
-		, thread(nullptr)
-		, threadId(0)
 		, schedulerFiber(nullptr)
 	{
 	}
 
 	ThreadContext::~ThreadContext()
 	{
-		ASSERT(thread == NULL, "Thread is not stopped!")
 	}
 
 
@@ -63,13 +60,13 @@ namespace MT
 		//  pointer to parentTask alive until all child task finished
 		MT::TaskDesc parentTask = *currentTask;
 
-		ASSERT(threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//add subtask to scheduler
 		threadContext->taskScheduler->RunTasksImpl(parentTask.taskGroup, taskDescArr, count, &parentTask);
 
 		//
-		ASSERT(threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//switch to scheduler
 		MT::SwitchToFiber(threadContext->schedulerFiber);
@@ -81,7 +78,7 @@ namespace MT
 	{
 
 		//query number of processor
-		threadsCount = MT::GetNumberOfHardwareThreads() - 2;
+		threadsCount = MT::Thread::GetNumberOfHardwareThreads() - 2;
 		if (threadsCount <= 0)
 		{
 			threadsCount = 1;
@@ -110,20 +107,10 @@ namespace MT
 		for (int32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].taskScheduler = this;
-			threadContext[i].thread = MT::CreateSuspendedThread( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
-
-			// bind thread to processor
-			MT::SetThreadProcessor(threadContext[i].thread, i);
+			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
 		}
 
-		// run worker threads
-		for (int32 i = 0; i < threadsCount; i++)
-		{
-			MT::ResumeThread(threadContext[i].thread);
-		}
 	}
-
-	static const int THREAD_CLOSE_TIMEOUT_MS = 200;
 
 	TaskScheduler::~TaskScheduler()
 	{
@@ -135,8 +122,7 @@ namespace MT
 
 		for (int32 i = 0; i < threadsCount; i++)
 		{
-			CloseThread(threadContext[i].thread, THREAD_CLOSE_TIMEOUT_MS);
-			threadContext[i].thread = NULL;
+			threadContext[i].thread.Stop();
 		}
 	}
 
@@ -173,8 +159,8 @@ namespace MT
 			// update task status
 			taskInProgress.executionContext.fiberContext->taskStatus = FiberTaskStatus::RUNNED;
 
-			ASSERT(context.threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
-			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(context.thread.IsCurrentThread(), "Thread context sanity check failed");
+			ASSERT(taskInProgress.executionContext.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			// run current task code
 			MT::SwitchToFiber(taskInProgress.executionContext.fiber);
@@ -218,13 +204,13 @@ namespace MT
 						// this is a last subtask. restore parent task
 
 						MT::TaskDesc * parent = taskInProgress.parentTask;
-
-						ASSERT(context.threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+						
+						ASSERT(context.thread.IsCurrentThread(), "Thread context sanity check failed");
 
 						// WARNING!! Thread context can changed here! Set actual current thread context.
 						parent->executionContext.fiberContext->threadContext = &context;
 
-						ASSERT(parent->executionContext.fiberContext->threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+						ASSERT(parent->executionContext.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 						// copy parent to current task.
 						// can't just use pointer, because parent pointer is pointer on fiber stack
@@ -267,7 +253,7 @@ namespace MT
 			ASSERT(context.currentTask->taskFunc, "Invalid task function");
 			ASSERT(context.currentTask->taskGroup < TaskGroup::COUNT, "Invalid task group");
 			ASSERT(context.threadContext, "Invalid thread context");
-			ASSERT(context.threadContext->threadId == MT::GetCurrentThreadId(), "Thread context sanity check failed");
+			ASSERT(context.threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			context.currentTask->taskFunc( context, context.currentTask->userData );
 
@@ -278,11 +264,10 @@ namespace MT
 	}
 
 
-	uint32 TaskScheduler::ThreadMain( void* userData )
+	void TaskScheduler::ThreadMain( void* userData )
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
-		context.threadId = MT::GetCurrentThreadId();
 		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
 
 		while(context.state.Get() != ThreadState::EXIT)
@@ -337,8 +322,6 @@ namespace MT
 				context.hasNewTasksEvent.Wait(2000);
 			}
 		}
-
-		return 0;
 	}
 
 	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask)
@@ -379,14 +362,14 @@ namespace MT
 
 	bool TaskScheduler::WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds)
 	{
-		VERIFY(IsWorkerThread(MT::GetCurrentThreadId()) == false, "Can't use WaitGroup inside Task. Use MT::FiberContext.WaitGroupAndYield() instead.", return false);
+		VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use MT::FiberContext.WaitGroupAndYield() instead.", return false);
 
 		return groupIsDoneEvents[group].Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
-		VERIFY(IsWorkerThread(MT::GetCurrentThreadId()) == false, "Can't use WaitAll inside Task. Use MT::FiberContext.WaitAllAndYield() instead.", return false);
+		VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task. Use MT::FiberContext.WaitAllAndYield() instead.", return false);
 
 		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
 	}
@@ -408,11 +391,11 @@ namespace MT
 		return threadsCount;
 	}
 
-	bool TaskScheduler::IsWorkerThread(uint32 threadId) const
+	bool TaskScheduler::IsWorkerThread() const
 	{
 		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
 		{
-			if (threadContext[i].threadId == threadId)
+			if (threadContext[i].thread.IsCurrentThread())
 			{
 				return true;
 			}

@@ -46,3 +46,6 @@ http://www.rtcgroup.com/arm/2007/presentations/211%20-%20Implementing%20a%20Work
 
 Lost Planet graphics course for 3D game fan of Nishikawa Zenji
 http://game.watch.impress.co.jp/docs/20070131/3dlp.htm
+
+Dragged Kicking and Screaming: Source Multicore
+http://www.valvesoftware.com/publications/2007/GDC2007_SourceMulticore.pdf

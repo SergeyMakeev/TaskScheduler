@@ -3,14 +3,13 @@
 #include "types.h"
 #include "Debug.h"
 
-#define MT_CALL_CONV __stdcall
+typedef void (*TThreadEntryPoint)(void* userData);
+
 
 #define ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
 
-
 namespace MT
 {
-
 	namespace EventReset
 	{
 		enum Type
@@ -19,15 +18,14 @@ namespace MT
 			MANUAL = 1,
 		};
 	}
-
 }
 
 
 
 #ifdef _WIN32
-	#include "PlatformWindows.h"
+	#include "Platform/Windows/Common.h"
 #else
-#include "PlatformPosix.h"
+	#include "Platform/Posix/Common.h"
 #endif
 
 

@@ -3,13 +3,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#define MT_CALL_CONV __stdcall
+
+#include "ThreadWindows.h"
 
 namespace MT
 {
-	typedef HANDLE Thread;
 	typedef void* Fiber;
 	typedef void (MT_CALL_CONV *TFiberStartFunc)(void* userData);
-	typedef uint32 (MT_CALL_CONV *TThreadStartFunc )(void* userData);
 
 	//
 	//
@@ -33,81 +34,10 @@ namespace MT
 	//
 	//
 	//
-	inline MT::Thread CreateSuspendedThread(size_t stackSize, TThreadStartFunc entryPoint, void* userData)
-	{
-		LPTHREAD_START_ROUTINE pEntryPoint = (LPTHREAD_START_ROUTINE)entryPoint;
-		HANDLE thread = ::CreateThread( NULL, stackSize, pEntryPoint, userData, CREATE_SUSPENDED, NULL );
-		return thread;
-	}
-
-	//
-	//
-	//
-	inline void ResumeThread(MT::Thread thread)
-	{
-		::ResumeThread(thread);
-	}
-
-	//
-	//
-	//
-	inline bool IsThreadAlive(MT::Thread thread)
-	{
-		DWORD exitCode;
-		BOOL result = ::GetExitCodeThread( thread, &exitCode );
-		return result && exitCode == STILL_ACTIVE;
-	}
-
-	//
-	//
-	//
-	inline bool CloseThread(MT::Thread thread, int waitTimeOutMS)
-	{
-		if (thread == NULL)
-			return true;
-
-		if (WAIT_OBJECT_0 != WaitForSingleObject(thread, waitTimeOutMS))
-		{
-			TerminateThread(thread, 1);
-		}
-
-		return CloseHandle(thread) == TRUE;
-	}
-
-	//
-	//
-	//
 	inline MT::Fiber ConvertCurrentThreadToFiber()
 	{
 		LPVOID fiber = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
 		return fiber;
-	}
-
-	//
-	//
-	//
-	inline void SetThreadProcessor(MT::Thread thread, uint32 processorNumber)
-	{
-		DWORD_PTR dwThreadAffinityMask = (1 << processorNumber);
-		::SetThreadAffinityMask(thread, dwThreadAffinityMask);
-	}
-
-	//
-	//
-	//
-	inline uint32 GetCurrentThreadId()
-	{
-		return ::GetCurrentThreadId();
-	}
-
-	//
-	//
-	//
-	inline uint32 GetNumberOfHardwareThreads()
-	{
-		SYSTEM_INFO sysinfo;
-		::GetSystemInfo( &sysinfo );
-		return sysinfo.dwNumberOfProcessors;
 	}
 
 

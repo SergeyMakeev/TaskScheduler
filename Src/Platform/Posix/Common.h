@@ -49,17 +49,17 @@ namespace MT
 
 		void Add(int sum)
 		{
-			__sync_add_and_fetch(&value, sum);
+			__sync_fetch_and_add(&value, sum);
 		}
 
 		int Inc()
 		{
-			return __sync_add_and_fetch(&value, 1);
+			return __sync_fetch_and_add(&value, 1);
 		}
 
 		int Dec()
 		{
-			return __sync_sub_and_fetch(&value, 1);
+			return __sync_fetch_and_sub(&value, 1);
 		}
 
 		int Get()
@@ -69,7 +69,7 @@ namespace MT
 
 		int Set(int val)
 		{
-			return InterlockedExchange(&value, val); 
+			return __sync_lock_test_and_set(&value, val);
 		}
 	};
 

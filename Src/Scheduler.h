@@ -200,8 +200,6 @@ namespace MT
 		// new task was arrived to queue event
 		MT::Event hasNewTasksEvent;
 
-		uint32 threadId;
-
 		// whether thread is alive
 		MT::AtomicInt state;
 
@@ -244,7 +242,7 @@ namespace MT
 		void RunTasksImpl(TaskGroup::Type taskGroup, const MT::TaskDesc * taskDescArr, uint32 count, MT::TaskDesc * parentTask);
 
 
-		static uint32 MT_CALL_CONV ThreadMain( void* userData );
+		static void ThreadMain( void* userData );
 		static void MT_CALL_CONV FiberMain(void* userData);
 
 		static bool ExecuteTask (MT::ThreadContext& context, const MT::TaskDesc & taskDesc);
@@ -263,7 +261,7 @@ namespace MT
 
 		int32 GetWorkerCount() const;
 
-		bool IsWorkerThread(uint32 threadId) const;
+		bool IsWorkerThread() const;
 
 
 	};
