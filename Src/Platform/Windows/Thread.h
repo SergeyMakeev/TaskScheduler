@@ -61,7 +61,7 @@ namespace MT
 
 			::WaitForSingleObject(thread, INFINITE);
 			BOOL res = CloseHandle(thread);
-			ASSERT(res == 0, "Can't close thread handle")
+			ASSERT(res != 0, "Can't close thread handle")
 			thread = nullptr;
 		}
 
