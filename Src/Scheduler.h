@@ -81,6 +81,12 @@ namespace MT
 		FiberContext();
 
 		void RunSubtasksAndYield(const MT::TaskDesc * taskDescArr, uint32 count);
+
+		void RunAsync(const MT::TaskDesc * taskDescArr, uint32 count);
+
+		bool WaitGroupAndYield(MT::TaskGroup::Type group, uint32 milliseconds);
+		bool WaitAllAndYield(uint32 milliseconds);
+
 	};
 
 	//

@@ -30,6 +30,27 @@ namespace MT
 	{
 	}
 
+	void FiberContext::RunAsync(const MT::TaskDesc * taskDescArr, uint32 count)
+	{
+		ASSERT(threadContext, "Sanity check failed!");
+
+		ASSERT(currentTask, "Sanity check failed!");
+		ASSERT(currentTask->taskGroup < TaskGroup::COUNT, "Sanity check failed!");
+
+		threadContext->taskScheduler->RunTasksImpl(currentTask->taskGroup, taskDescArr, count, nullptr);
+	}
+
+	bool FiberContext::WaitGroupAndYield(MT::TaskGroup::Type group, uint32 milliseconds)
+	{
+		return threadContext->taskScheduler->WaitGroup(group, milliseconds);
+	}
+
+	bool FiberContext::WaitAllAndYield(uint32 milliseconds)
+	{
+		return threadContext->taskScheduler->WaitAll(milliseconds);
+	}
+
+
 	void FiberContext::RunSubtasksAndYield(const MT::TaskDesc * taskDescArr, uint32 count)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
