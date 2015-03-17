@@ -29,6 +29,14 @@ namespace MT
 			queue.push_back(item);
 		}
 
+		void PushRange(const T* itemArray, size_t count)
+		{
+			MT::ScopedGuard guard(mutex);
+
+			for (size_t i = 0; i < count; ++i)
+				queue.push_back(itemArray[i]);
+		}
+
 		bool TryPop(T & item)
 		{
 			MT::ScopedGuard guard(mutex);

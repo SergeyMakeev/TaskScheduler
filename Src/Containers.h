@@ -73,4 +73,37 @@ public:
 };
 
 
+template<class T>
+class fixed_array
+{
+	T* data;
+	size_t count;
+public:
+	fixed_array(void* memoryChunk, size_t instanceCount) : count(instanceCount), data((T*)memoryChunk) {}
+	
+	const T &operator[]( uint32 i ) const
+	{
+		ASSERT( i < size(), "bad index" );
+		return data[i];
+	}
+
+	T &operator[]( uint32 i )
+	{
+		ASSERT( i < size(), "bad index" );
+		return data[i];
+	}
+
+	size_t size() const
+	{
+		return count;
+	}
+
+	bool empty() const
+	{
+		return count > 0;
+	}
+};
+
+
+
 

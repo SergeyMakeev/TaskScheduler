@@ -16,9 +16,9 @@ namespace MT
 	const uint32 MT_SCHEDULER_STACK_SIZE = 131072;
 	const uint32 MT_FIBER_STACK_SIZE = 16384;
 
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task group
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Application can wait until whole group was finished.
 	namespace TaskGroup
 	{
@@ -36,16 +36,26 @@ namespace MT
 
 
 	struct TaskDesc;
+	struct GroupedTask;
 	struct ThreadContext;
 	struct FiberContext;
 
 	class TaskScheduler;
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct TaskBucket
+	{
+		GroupedTask* tasks;
+		size_t count;
+		TaskBucket(GroupedTask* _tasks, size_t _count) : tasks(_tasks), count(_count) {}
+	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	typedef void (*TTaskEntryPoint)(FiberContext & context, void* userData);
 
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Fiber task status
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task can be completed for several reasons.
 	// For example task was done or someone call Yield from the Task body.
 	namespace FiberTaskStatus
@@ -59,9 +69,9 @@ namespace MT
 		};
 	}
 
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Fiber context
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Context passed to fiber main function
 	struct FiberContext
 	{
@@ -89,32 +99,41 @@ namespace MT
 		// prevent false sharing between threads
 		uint8 cacheline[64];
 
-		void RunSubtasksAndYield(TaskGroup::Type taskGroup, TaskDesc * taskDescArr, size_t count);
+		void RunSubtasksAndYield(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets);
 
 	public:
 		template<class TTask>
 		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
 		{
 			ASSERT(threadContext, "ThreadContext is NULL");
+			ASSERT(count < threadContext->descBuffer.size(), "Buffer overrun!")
 
-			threadContext->descBuffer.resize(count);
+			uint32 threadsCount = threadContext->taskScheduler->GetWorkerCount();
 
-			TaskDesc* buffer = threadContext->descBuffer.begin();
-			TaskScheduler::GenerateDescriptions(taskArray, buffer, count);
-
-			RunSubtasksAndYield(taskGroup, buffer, count);
+			fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
+			
+			size_t bucketCount = min(threadsCount, count);
+			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+			
+			threadContext->taskScheduler->DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
+			RunSubtasksAndYield(taskGroup, buckets);
 		}
 
 		template<class TTask>
-		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count)
+		void RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count)
 		{
 			ASSERT(threadContext, "ThreadContext is NULL");
-
 			ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 
-			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
-			TaskScheduler::GenerateDescriptions(taskArray, buffer, count);
-			threadContext->taskScheduler->RunTasksImpl(group, buffer, count, nullptr);
+			TaskScheduler& scheduler = *(threadContext->taskScheduler);
+
+			fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
+
+			size_t bucketCount = min(scheduler.GetWorkerCount(), count);
+			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+			scheduler.DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
+			scheduler.RunTasksImpl(taskGroup, buckets, nullptr);
 		}
 
 
@@ -164,11 +183,6 @@ namespace MT
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Base class for any Task
-	struct Task
-	{
-	};
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ThreadState
 	{
 		enum Type
@@ -187,12 +201,8 @@ namespace MT
 		GroupedTask(TaskDesc& _desc, TaskGroup::Type _group) : desc(_desc), group(_group) {}
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	typedef stack_array<TaskDesc, 4096> TaskDescBuffer;
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//
 	// Thread (Scheduler fiber) context
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ThreadContext
 	{
 		// pointer to task manager
@@ -214,7 +224,7 @@ namespace MT
 		AtomicInt state;
 
 		// Temporary buffer
-		TaskDescBuffer descBuffer;
+		std::vector<GroupedTask> descBuffer;
 
 		// prevent false sharing between threads
 		uint8 cacheline[64];
@@ -224,11 +234,9 @@ namespace MT
 	};
 
 
-	#define MAX_TASK_BATCH_COUNT 128
-
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task scheduler
-	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	class TaskScheduler
 	{
 		friend struct FiberContext;
@@ -237,7 +245,7 @@ namespace MT
 		AtomicInt roundRobinThreadIndex;
 
 		// Threads created by task manager
-		int32 threadsCount;
+		uint32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// Per group events that is completed
@@ -261,6 +269,7 @@ namespace MT
 		bool PrepareTaskDescription(GroupedTask& task);
 		void ReleaseTaskDescription(TaskDesc& description);
 
+		void RunTasksImpl(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets, TaskDesc * parentTask);
 		void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
 
 		void RunTasksImpl(TaskGroup::Type taskGroup, TaskDesc* taskDescArr, size_t count, TaskDesc * parentTask);
@@ -269,13 +278,36 @@ namespace MT
 		static void FiberMain( void* userData );
 		static bool ExecuteTask (ThreadContext& context, const TaskDesc & taskDesc);
 
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Distributes task to threads:
+		// | Task1 | Task2 | Task3 | Task4 | Task5 | Task6 |
+		// ThreadCount = 4
+		// Thread0: Task1, Task5
+		// Thread1: Task2, Task6
+		// Thread2: Task3
+		// Thread3: Task4
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		template<class TTask>
-		static bool GenerateDescriptions(TTask* taskArray, TaskDesc* descriptions, size_t count)
+		bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, fixed_array<GroupedTask>& descriptions, fixed_array<TaskBucket>& buckets) const
 		{
-			for (size_t i = 0; i < count; ++i)
-				descriptions[i] = TaskDesc(TTask::TaskFunction, (void*)(&taskArray[i]));
+			size_t index = 0;
 
-			return count > 0;
+			for (size_t bucketIndex = 0; (bucketIndex < buckets.size()) && (index < descriptions.size()); ++bucketIndex)
+			{
+				size_t bucketStartIndex = index;
+
+				for (size_t i = bucketIndex; i < descriptions.size(); i += buckets.size())
+				{
+					TaskDesc desc(TTask::TaskFunction, (void*)(&taskArray[i]));
+					descriptions[index++] = GroupedTask(desc, group);
+				}
+
+				buckets[bucketIndex] = TaskBucket(&descriptions[bucketStartIndex], index - bucketStartIndex);
+			}
+
+			ASSERT(index == descriptions.size(), "Sanity check")
+
+			return index > 0;
 		}
 
 	public:
@@ -288,9 +320,13 @@ namespace MT
 		{
 			ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
-			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
-			GenerateDescriptions(taskArray, buffer, count);
-			RunTasksImpl(group, buffer, count, nullptr);
+			fixed_array<GroupedTask> buffer(ALLOCATE_ON_STACK(GroupedTask, count), count);
+
+			size_t bucketCount = min(threadsCount, count);
+			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+			DistibuteDescriptions(group, taskArray, buffer, buckets);
+			RunTasksImpl(group, buckets, nullptr);
 		}
 
 		bool WaitGroup(TaskGroup::Type group, uint32 milliseconds);
@@ -298,17 +334,17 @@ namespace MT
 
 		bool IsEmpty();
 
-		int32 GetWorkerCount() const;
+		uint32 GetWorkerCount() const;
 
 		bool IsWorkerThread() const;
 	};
 
 
 	#define TASK_METHODS(TASK_TYPE) static void TaskFunction(MT::FiberContext& fiberContext, void* userData) \
-	                                {                                                                        \
-	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);                 \
-	                                    task->Do(fiberContext);                                              \
-	                                }                                                                        \
+	                                {                                                                    \
+	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);             \
+	                                    task->Do(fiberContext);                                          \
+	                                }                                                                    \
 
 
 }

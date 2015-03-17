@@ -6,10 +6,13 @@
 
 namespace MT
 {
+	static const size_t TASK_BUFFER_CAPACITY = 4096;
+
 	ThreadContext::ThreadContext()
 		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
+		, descBuffer(TASK_BUFFER_CAPACITY)
 	{
 	}
 
@@ -46,7 +49,7 @@ namespace MT
 		threadContext->schedulerFiber.SwitchTo();
 	}
 
-	void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, TaskDesc * taskDescArr, size_t count)
+	void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 
@@ -60,8 +63,15 @@ namespace MT
 
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
+		for (size_t bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex)
+		{
+			TaskBucket& bucket = buckets[bucketIndex];
+			for (size_t i = 0; i < bucket.count; ++i)
+				bucket.tasks[i].desc.parentTask = &parentTask;
+		}
+
 		//add subtask to scheduler
-		threadContext->taskScheduler->RunTasksImpl(taskGroup, taskDescArr, count, &parentTask);
+		threadContext->taskScheduler->RunTasksImpl(taskGroup, buckets, &parentTask);
 
 		//
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
@@ -76,11 +86,7 @@ namespace MT
 	{
 
 		//query number of processor
-		threadsCount = Thread::GetNumberOfHardwareThreads() - 2;
-		if (threadsCount <= 0)
-		{
-			threadsCount = 1;
-		}
+		threadsCount = (uint32)max(Thread::GetNumberOfHardwareThreads() - 2, 1);
 
 		if (threadsCount > MT_MAX_THREAD_COUNT)
 		{
@@ -103,7 +109,7 @@ namespace MT
 		}
 
 		// create worker thread pool
-		for (int32 i = 0; i < threadsCount; i++)
+		for (uint32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].taskScheduler = this;
 			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
@@ -113,13 +119,13 @@ namespace MT
 
 	TaskScheduler::~TaskScheduler()
 	{
-		for (int32 i = 0; i < threadsCount; i++)
+		for (uint32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].state.Set(ThreadState::EXIT);
 			threadContext[i].hasNewTasksEvent.Signal();
 		}
 
-		for (int32 i = 0; i < threadsCount; i++)
+		for (uint32 i = 0; i < threadsCount; i++)
 		{
 			threadContext[i].thread.Stop();
 		}
@@ -338,30 +344,34 @@ namespace MT
 	}
 
 
-	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, TaskDesc* taskDescArr, size_t count, TaskDesc * parentTask)
+	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets, TaskDesc * parentTask)
 	{
 		ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+
+		size_t count = 0;
+
+		for (size_t i = 0; i < buckets.size(); ++i)
+			count += buckets[i].count;
 
 		if (parentTask)
 		{
 			parentTask->fiberContext->subtaskFibersCount.Add((uint32)count);
 		}
 
-		for (size_t i = count - 1; i != (size_t)-1; i--)
+		for (size_t i = 0; i < buckets.size(); ++i)
 		{
 			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
 			ThreadContext & context = threadContext[bucketIndex];
-			
-			//TODO: can be write more effective implementation here, just split to threads BEFORE submitting tasks to queue
-			GroupedTask task(taskDescArr[i], taskGroup);
-			task.desc.parentTask = parentTask;
+
+			TaskBucket& bucket = buckets[i];
 
 			groupIsDoneEvents[taskGroup].Reset();
-			groupInProgressTaskCount[taskGroup].Inc();
-			
-			context.queue.Push(task);
-			
+			groupInProgressTaskCount[taskGroup].Add(bucket.count);
+
+			context.queue.PushRange(bucket.tasks, bucket.count);
+
 			context.hasNewTasksEvent.Signal();
+
 		}
 	}
 
@@ -391,7 +401,7 @@ namespace MT
 		return true;
 	}
 
-	int32 TaskScheduler::GetWorkerCount() const
+	uint32 TaskScheduler::GetWorkerCount() const
 	{
 		return threadsCount;
 	}
