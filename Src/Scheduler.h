@@ -88,11 +88,11 @@ namespace MT
 		// prevent false sharing between threads
 		uint8 cacheline[64];
 
-		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, uint32 count);
+		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, size_t count);
 
 	public:
 		template<class TTask>
-		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, const TTask* taskArray, uint32 count)
+		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
 		{
 			ASSERT(threadContext, "ThreadContext is NULL")
 
@@ -247,7 +247,7 @@ namespace MT
 		bool PrepareTaskDescription(MT::GroupedTask& task);
 		void ReleaseTaskDescription(MT::TaskDesc& description);
 
-		void RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, uint32 count, MT::TaskDesc * parentTask);
+		void RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, size_t count, MT::TaskDesc * parentTask);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );

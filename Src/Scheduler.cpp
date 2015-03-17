@@ -36,7 +36,7 @@ namespace MT
 		return threadContext->taskScheduler->WaitAll(milliseconds);
 	}
 
-	void FiberContext::RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, uint32 count)
+	void FiberContext::RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, size_t count)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 
@@ -310,17 +310,16 @@ namespace MT
 	}
 
 
-	void MT::TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, uint32 count, MT::TaskDesc * parentTask)
+	void MT::TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, size_t count, MT::TaskDesc * parentTask)
 	{
 		ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
 		if (parentTask)
 		{
-			parentTask->fiberContext->subtaskFibersCount.Add(count);
+			parentTask->fiberContext->subtaskFibersCount.Add((uint32)count);
 		}
 
-		int startIndex = ((int)count - 1);
-		for (int i = startIndex; i >= 0; i--)
+		for (size_t i = count - 1; i != (size_t)-1; i--)
 		{
 			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
 			ThreadContext & context = threadContext[bucketIndex];
