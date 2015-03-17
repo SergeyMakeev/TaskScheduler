@@ -3,8 +3,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#define MT_CALL_CONV __stdcall
-
 #include "Thread.h"
 #include "Mutex.h"
 #include "Atomic.h"

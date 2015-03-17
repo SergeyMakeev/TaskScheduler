@@ -41,7 +41,7 @@ namespace MT
 
 	class TaskScheduler;
 
-	typedef void (MT_CALL_CONV *TTaskEntryPoint)(MT::FiberContext & context, void* userData);
+	typedef void (*TTaskEntryPoint)(FiberContext & context, void* userData);
 
 	//
 	// Fiber task status
@@ -55,6 +55,7 @@ namespace MT
 			UNKNOWN = 0,
 			RUNNED = 1,
 			FINISHED = 2,
+			AWAITING = 3,
 		};
 	}
 
@@ -68,7 +69,7 @@ namespace MT
 		TaskDesc * currentTask;
 
 		// current group
-		MT::TaskGroup::Type currentGroup;
+		TaskGroup::Type currentGroup;
 
 		// active thread context
 		ThreadContext * threadContext;
@@ -77,10 +78,10 @@ namespace MT
 		FiberTaskStatus::Type taskStatus;
 
 		// Number of subtask fiber spawned
-		MT::AtomicInt subtaskFibersCount;
+		AtomicInt subtaskFibersCount;
 
 		// Pointer to system Fiber
-		MT::Fiber fiber;
+		Fiber fiber;
 
 		FiberContext();
 
@@ -88,13 +89,13 @@ namespace MT
 		// prevent false sharing between threads
 		uint8 cacheline[64];
 
-		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, size_t count);
+		void RunSubtasksAndYield(TaskGroup::Type taskGroup, TaskDesc * taskDescArr, size_t count);
 
 	public:
 		template<class TTask>
-		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
+		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
 		{
-			ASSERT(threadContext, "ThreadContext is NULL")
+			ASSERT(threadContext, "ThreadContext is NULL");
 
 			threadContext->descBuffer.resize(count);
 
@@ -104,7 +105,20 @@ namespace MT
 			RunSubtasksAndYield(taskGroup, buffer, count);
 		}
 
-		void WaitGroupAndYield(MT::TaskGroup::Type group);
+		template<class TTask>
+		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count)
+		{
+			ASSERT(threadContext, "ThreadContext is NULL");
+
+			ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
+
+			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
+			TaskScheduler::GenerateDescriptions(taskArray, buffer, count);
+			threadContext->taskScheduler->RunTasksImpl(group, buffer, count, nullptr);
+		}
+
+
+		void WaitGroupAndYield(TaskGroup::Type group);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,13 +157,10 @@ namespace MT
 		friend class TaskScheduler;
 
 		// Execution context. Not valid until scheduler attach fiber to task
-		MT::FiberContext* fiberContext;
+		FiberContext* fiberContext;
 
 		// Parent task pointer. Valid only for subtask
 		TaskDesc* parentTask;
-
-		// Task Group
-		//MT::TaskGroup::Type taskGroup;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,22 +196,22 @@ namespace MT
 	struct ThreadContext
 	{
 		// pointer to task manager
-		MT::TaskScheduler* taskScheduler;
+		TaskScheduler* taskScheduler;
 
 		// thread
-		MT::Thread thread;
+		Thread thread;
 
 		// scheduler fiber
-		MT::Fiber schedulerFiber;
+		Fiber schedulerFiber;
 
 		// task queue awaiting execution
-		MT::ConcurrentQueueLIFO<GroupedTask> queue;
+		ConcurrentQueueLIFO<GroupedTask> queue;
 
 		// new task was arrived to queue event
-		MT::Event hasNewTasksEvent;
+		Event hasNewTasksEvent;
 
 		// whether thread is alive
-		MT::AtomicInt state;
+		AtomicInt state;
 
 		// Temporary buffer
 		TaskDescBuffer descBuffer;
@@ -220,42 +231,43 @@ namespace MT
 	//
 	class TaskScheduler
 	{
-		friend struct MT::FiberContext;
+		friend struct FiberContext;
 
 		// Thread index for new task
-		MT::AtomicInt roundRobinThreadIndex;
+		AtomicInt roundRobinThreadIndex;
 
 		// Threads created by task manager
 		int32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// Per group events that is completed
-		MT::Event groupIsDoneEvents[TaskGroup::COUNT];
+		Event groupIsDoneEvents[TaskGroup::COUNT];
 
-		MT::AtomicInt groupInProgressTaskCount[TaskGroup::COUNT];
+		AtomicInt groupInProgressTaskCount[TaskGroup::COUNT];
 
 		//Task awaiting group through FiberContext::WaitGroupAndYield call
-		MT::ConcurrentQueueLIFO<GroupedTask> waitTaskQueues[TaskGroup::COUNT];
+		ConcurrentQueueLIFO<TaskDesc> waitTaskQueues[TaskGroup::COUNT];
 
 
 		// Fibers pool
-		MT::ConcurrentQueueLIFO<MT::FiberContext*> availableFibers;
+		ConcurrentQueueLIFO<FiberContext*> availableFibers;
 
 		// Fibers context
-		MT::FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
+		FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
-		MT::FiberContext* RequestFiberContext();
-		void ReleaseFiberContext(MT::FiberContext* fiberExecutionContext);
+		FiberContext* RequestFiberContext();
+		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
 
-		bool PrepareTaskDescription(MT::GroupedTask& task);
-		void ReleaseTaskDescription(MT::TaskDesc& description);
+		bool PrepareTaskDescription(GroupedTask& task);
+		void ReleaseTaskDescription(TaskDesc& description);
 
-		void RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, size_t count, MT::TaskDesc * parentTask);
+		void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
+
+		void RunTasksImpl(TaskGroup::Type taskGroup, TaskDesc* taskDescArr, size_t count, TaskDesc * parentTask);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
-
-		static bool ExecuteTask (MT::ThreadContext& context, const MT::TaskDesc & taskDesc);
+		static bool ExecuteTask (ThreadContext& context, const TaskDesc & taskDesc);
 
 		template<class TTask>
 		static bool GenerateDescriptions(TTask* taskArray, TaskDesc* descriptions, size_t count)
@@ -272,16 +284,16 @@ namespace MT
 		~TaskScheduler();
 
 		template<class TTask>
-		void RunAsync(MT::TaskGroup::Type group, TTask* taskArray, uint32 count)
+		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count)
 		{
-			ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use MT::FiberContext.RunAsync() instead.")
+			ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
 			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
 			GenerateDescriptions(taskArray, buffer, count);
 			RunTasksImpl(group, buffer, count, nullptr);
 		}
 
-		bool WaitGroup(MT::TaskGroup::Type group, uint32 milliseconds);
+		bool WaitGroup(TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
 
 		bool IsEmpty();
@@ -292,11 +304,11 @@ namespace MT
 	};
 
 
-	#define TASK_METHODS(TASK_TYPE)	static void MT_CALL_CONV TaskFunction(MT::FiberContext& fiberContext, void* userData)	\
-																	{																																											\
-																		TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);																\
-																		task->Do(fiberContext);																															\
-																	}																																											\
+	#define TASK_METHODS(TASK_TYPE) static void TaskFunction(MT::FiberContext& fiberContext, void* userData) \
+	                                {                                                                        \
+	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);                 \
+	                                    task->Do(fiberContext);                                              \
+	                                }                                                                        \
 
 
 }

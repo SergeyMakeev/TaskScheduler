@@ -2,31 +2,36 @@
 #include "../../TestFramework/UnitTest++/UnitTest++.h"
 #include "../Scheduler.h"
 
-/*
+
 
 SUITE(WaitTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace SimpleWaitFromSubtask
 {
-	void MT_CALL_CONV RunSubtask(MT::FiberContext&, void*)
+	struct Subtask
 	{
-		Sleep(1);
-	}
-
-
-	void MT_CALL_CONV Run(MT::FiberContext& ctx, void*)
-	{
-		MT::TaskDesc tasks[2];
-		for (int i = 0; i < ARRAY_SIZE(tasks); i++)
+		void Do(MT::FiberContext&)
 		{
-			tasks[i] = MT::TaskDesc(SimpleWaitFromSubtask::RunSubtask, nullptr);
+			Sleep(1);
 		}
 
-		ctx.RunAsync(&tasks[0], ARRAY_SIZE(tasks));
+		TASK_METHODS(Subtask);
+	};
 
-		ctx.WaitAllAndYield(10000);
-	}
+
+	struct Task
+	{
+		void Do(MT::FiberContext& ctx)
+		{
+			Subtask tasks[2];
+			ctx.RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
+
+			ctx.WaitGroupAndYield(MT::TaskGroup::GROUP_2);
+		}
+
+		TASK_METHODS(Task);
+	};
 
 
 	// Checks one simple task
@@ -34,12 +39,7 @@ namespace SimpleWaitFromSubtask
 	{
 		MT::TaskScheduler scheduler;
 
-		MT::TaskDesc tasks[128];
-		for (int i = 0; i < ARRAY_SIZE(tasks); i++)
-		{
-			tasks[i] = MT::TaskDesc(SimpleWaitFromSubtask::Run, nullptr);
-		}
-
+		Task tasks[128];
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(1000));
@@ -48,4 +48,3 @@ namespace SimpleWaitFromSubtask
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-*/

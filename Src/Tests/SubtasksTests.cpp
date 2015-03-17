@@ -178,7 +178,7 @@ struct TaskSubtaskCombo_Sum4 : public TaskSubtaskCombo
 		tasks[0].data = data;
 		tasks[1].data = data;
 
-		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
+		context.RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
 		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 	}
 };
@@ -194,7 +194,7 @@ struct TaskSubtaskCombo_Sum16 : public TaskSubtaskCombo
 		tasks[0].data = data;
 		tasks[1].data = data;
 
-		context.threadContext->taskScheduler->RunAsync(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
+		context.RunAsync(MT::TaskGroup::GROUP_1, &tasks[0], ARRAY_SIZE(tasks));
 		context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 	}
 };
