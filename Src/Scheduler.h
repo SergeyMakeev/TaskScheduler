@@ -94,8 +94,13 @@ namespace MT
 		template<class TTask>
 		void RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, const TTask* taskArray, uint32 count)
 		{
-			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
+			ASSERT(threadContext, "ThreadContext is NULL")
+
+			threadContext->descBuffer.resize(count);
+
+			TaskDesc* buffer = threadContext->descBuffer.begin();
 			TaskScheduler::GenerateDescriptions(taskArray, buffer, count);
+
 			RunSubtasksAndYield(taskGroup, buffer, count);
 		}
 
@@ -163,8 +168,6 @@ namespace MT
 		};
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	typedef stack_array<TaskDesc, 256> TaskDescBuffer;
-
 	struct GroupedTask
 	{
 		TaskGroup::Type group;
@@ -173,6 +176,9 @@ namespace MT
 		GroupedTask() : group(TaskGroup::GROUP_UNDEFINED) {}
 		GroupedTask(TaskDesc& _desc, TaskGroup::Type _group) : desc(_desc), group(_group) {}
 	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	typedef stack_array<TaskDesc, 4096> TaskDescBuffer;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//
 	// Thread (Scheduler fiber) context
@@ -196,6 +202,9 @@ namespace MT
 
 		// whether thread is alive
 		MT::AtomicInt state;
+
+		// Temporary buffer
+		TaskDescBuffer descBuffer;
 
 		// prevent false sharing between threads
 		uint8 cacheline[64];

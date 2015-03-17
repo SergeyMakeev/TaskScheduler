@@ -21,6 +21,10 @@ class stack_array
 		ASSERT(false, "Can't copy stack_vector");
 	}
 
+	T* buffer()
+	{
+		return (T*)(data);
+	}
 public:
 	inline stack_array(size_t _count = 0) : count(_count)
 	{
@@ -37,19 +41,19 @@ public:
 	const T &operator[]( uint32 i ) const
 	{
 		ASSERT( i < size(), "bad index" );
-		return GetBuffer()[i];
+		return buffer()[i];
 	}
 
 	T &operator[]( uint32 i )
 	{
 		ASSERT( i < size(), "bad index" );
-		return GetBuffer()[i];
+		return buffer()[i];
 	}
 
 	T& add()
 	{
 		ASSERT(count < capacity, "Can't add element");
-		return GetBuffer()[count++];
+		return buffer()[count++];
 	}
 
 	size_t size() const
@@ -62,9 +66,9 @@ public:
 		return count > 0;
 	}
 
-	T* GetBuffer()
+	T* begin()
 	{
-		return (T*)(data);
+		return buffer();
 	}
 };
 

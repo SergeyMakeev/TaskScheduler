@@ -327,7 +327,7 @@ namespace MT
 			ThreadContext & context = threadContext[bucketIndex];
 			
 			//TODO: can be write more effective implementation here, just split to threads BEFORE submitting tasks to queue
-			MT::GroupedTask task((MT::TaskDesc&)taskDescArr[i], taskGroup);
+			MT::GroupedTask task(taskDescArr[i], taskGroup);
 			task.desc.parentTask = parentTask;
 
 			groupIsDoneEvents[taskGroup].Reset();
