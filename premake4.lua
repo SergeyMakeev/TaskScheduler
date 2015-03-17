@@ -1,4 +1,12 @@
-if not _ACTION then _ACTION="vs2010" end
+if not _ACTION then
+	_ACTION="vs2010"
+end
+
+isVisualStudio = false
+
+if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION == "vs2008" or _ACTION == "vs2010" then
+	isVisualStudio = true
+end
 	
 solution "TaskScheduler"
 
@@ -34,11 +42,19 @@ configuration "Debug"
 
 configuration "x32"
 	libdirs { "$(DXSDK_DIR)/Lib/x86" }
+if isVisualStudio then
         buildoptions { "/wd4127"  }
+else
+	buildoptions { "-std=c++11 }
+end
 
 configuration "x64"
 	libdirs { "$(DXSDK_DIR)/Lib/x64" }
+if isVisualStudio then
         buildoptions { "/wd4127"  }
+else
+	buildoptions { "-std=c++11 }
+end
 
 
 --  give each configuration/platform a unique output directory
