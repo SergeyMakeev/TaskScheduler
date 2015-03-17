@@ -104,8 +104,7 @@ namespace MT
 			RunSubtasksAndYield(taskGroup, buffer, count);
 		}
 
-		bool WaitGroupAndYield(MT::TaskGroup::Type group, uint32 milliseconds);
-		bool WaitAllAndYield(uint32 milliseconds);
+		void WaitGroupAndYield(MT::TaskGroup::Type group);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +232,11 @@ namespace MT
 		// Per group events that is completed
 		MT::Event groupIsDoneEvents[TaskGroup::COUNT];
 
-		MT::AtomicInt groupCurrentlyRunningTaskCount[TaskGroup::COUNT];
+		MT::AtomicInt groupInProgressTaskCount[TaskGroup::COUNT];
+
+		//Task awaiting group through FiberContext::WaitGroupAndYield call
+		MT::ConcurrentQueueLIFO<GroupedTask> waitTaskQueues[TaskGroup::COUNT];
+
 
 		// Fibers pool
 		MT::ConcurrentQueueLIFO<MT::FiberContext*> availableFibers;
@@ -271,6 +274,8 @@ namespace MT
 		template<class TTask>
 		void RunAsync(MT::TaskGroup::Type group, TTask* taskArray, uint32 count)
 		{
+			ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use MT::FiberContext.RunAsync() instead.")
+
 			TaskDesc* buffer = ALLOCATE_ON_STACK(TaskDesc, count);
 			GenerateDescriptions(taskArray, buffer, count);
 			RunTasksImpl(group, buffer, count, nullptr);

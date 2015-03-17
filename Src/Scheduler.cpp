@@ -26,14 +26,11 @@ namespace MT
 	{
 	}
 
-	bool FiberContext::WaitGroupAndYield(MT::TaskGroup::Type group, uint32 milliseconds)
+	void FiberContext::WaitGroupAndYield(MT::TaskGroup::Type group)
 	{
-		return threadContext->taskScheduler->WaitGroup(group, milliseconds);
-	}
-
-	bool FiberContext::WaitAllAndYield(uint32 milliseconds)
-	{
-		return threadContext->taskScheduler->WaitAll(milliseconds);
+		VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return)
+		ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use WaitGroup outside Task. Use MT::TaskScheduler.WaitGroup() instead.")
+		threadContext->taskScheduler->WaitGroup(group, 0);
 	}
 
 	void FiberContext::RunSubtasksAndYield(MT::TaskGroup::Type taskGroup, MT::TaskDesc * taskDescArr, size_t count)
@@ -90,7 +87,7 @@ namespace MT
 		for (int32 i = 0; i < TaskGroup::COUNT; i++)
 		{
 			groupIsDoneEvents[i].Create( MT::EventReset::MANUAL, true );
-			groupCurrentlyRunningTaskCount[i].Set(0);
+			groupInProgressTaskCount[i].Set(0);
 		}
 
 		// create worker thread pool
@@ -166,7 +163,7 @@ namespace MT
 				ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
 				//update group status
-				int groupTaskCount = context.taskScheduler->groupCurrentlyRunningTaskCount[taskGroup].Dec();
+				int groupTaskCount = context.taskScheduler->groupInProgressTaskCount[taskGroup].Dec();
 				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 				if (groupTaskCount == 0)
 				{
@@ -329,7 +326,7 @@ namespace MT
 			task.desc.parentTask = parentTask;
 
 			groupIsDoneEvents[taskGroup].Reset();
-			groupCurrentlyRunningTaskCount[taskGroup].Inc();
+			groupInProgressTaskCount[taskGroup].Inc();
 			
 			context.queue.Push(task);
 			
@@ -346,7 +343,7 @@ namespace MT
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
-		VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task. Use MT::FiberContext.WaitAllAndYield() instead.", return false);
+		VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
 
 		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
 	}
