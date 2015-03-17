@@ -182,22 +182,21 @@ namespace DxtCompress
 
 		void Do(MT::FiberContext& context)
 		{
-			int blockCount = blkWidth * blkHeight;
-
-			// use alloca as simplest thread safe allocator. beware stack overflow!
-			std::vector<ComplexRunBlockSubtask> subTasks(blockCount);
-			subTasks.resize(blockCount);
+			// use stack_array as subtask container. beware stack overflow!
+			stack_array<ComplexRunBlockSubtask, 1024> subTasks;
 
 			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 			{
 				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
-					subTasks[blockIndex].Init(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]);
+
+					ComplexRunBlockSubtask & subtask = subTasks.add();
+					subtask.Init(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]);
 				}
 			}
 
-			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks.front(), subTasks.size());
+			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks[0], subTasks.size());
 		}
 	};
 
