@@ -6,9 +6,9 @@
 
 namespace EmbeddedImage
 {
-	#include "LenaColor.h"
-	#include "LenaColorDXT1.h"
-	#include "HeaderDDS.h"
+	#include "LenaDxt/LenaColor.h"
+	#include "LenaDxt/LenaColorDXT1.h"
+	#include "LenaDxt/HeaderDDS.h"
 }
 
 
