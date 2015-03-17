@@ -81,6 +81,12 @@ namespace MT
 	}
 
 
+	TaskScheduler::GroupStats::GroupStats()
+	{
+		inProgressTaskCount.Set(0);
+		allDoneEvent.Create( EventReset::MANUAL, true );
+	}
+
 	TaskScheduler::TaskScheduler()
 		: roundRobinThreadIndex(0)
 	{
@@ -99,13 +105,6 @@ namespace MT
 			FiberContext& context = fiberContext[i];
 			context.fiber.Create(MT_FIBER_STACK_SIZE, FiberMain, &context);
 			availableFibers.Push( &context );
-		}
-
-		// create group done events
-		for (int32 i = 0; i < TaskGroup::COUNT; i++)
-		{
-			groupIsDoneEvents[i].Create( EventReset::MANUAL, true );
-			groupInProgressTaskCount[i].Set(0);
 		}
 
 		// create worker thread pool
@@ -189,15 +188,26 @@ namespace MT
 				ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
 				//update group status
-				int groupTaskCount = context.taskScheduler->groupInProgressTaskCount[taskGroup].Dec();
+				int groupTaskCount = context.taskScheduler->groupStats[taskGroup].inProgressTaskCount.Dec();
 				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 				if (groupTaskCount == 0)
 				{
 					//restore awaiting tasks
 					context.taskScheduler->RestoreAwaitingTasks(taskGroup);
 
-					context.taskScheduler->groupIsDoneEvents[taskGroup].Signal();
+					context.taskScheduler->groupStats[taskGroup].allDoneEvent.Signal();
 				}
+
+				groupTaskCount = context.taskScheduler->allGroupStats.inProgressTaskCount.Dec();
+				ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+				if (groupTaskCount == 0)
+				{
+					//notify all tasks in all group finished
+					context.taskScheduler->allGroupStats.allDoneEvent.Signal();
+				}
+
+
+				
 
 				//raise up releasing task fiber flag
 				canDropExecutionContext = true;
@@ -365,8 +375,11 @@ namespace MT
 
 			TaskBucket& bucket = buckets[i];
 
-			groupIsDoneEvents[taskGroup].Reset();
-			groupInProgressTaskCount[taskGroup].Add(bucket.count);
+			allGroupStats.allDoneEvent.Reset();
+			allGroupStats.inProgressTaskCount.Add(bucket.count);
+
+			groupStats[taskGroup].allDoneEvent.Reset();
+			groupStats[taskGroup].inProgressTaskCount.Add(bucket.count);
 
 			context.queue.PushRange(bucket.tasks, bucket.count);
 
@@ -379,14 +392,14 @@ namespace MT
 	{
 		VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
-		return groupIsDoneEvents[group].Wait(milliseconds);
+		return groupStats[group].allDoneEvent.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
 		VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
 
-		return Event::WaitAll(&groupIsDoneEvents[0], ARRAY_SIZE(groupIsDoneEvents), milliseconds);
+		return allGroupStats.allDoneEvent.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::IsEmpty()

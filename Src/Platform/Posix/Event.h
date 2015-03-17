@@ -68,17 +68,6 @@ namespace MT
             return false;
 		}
 
-		bool Check()
-		{
-			return Wait(0);
-		}
-
-		static inline bool WaitAll(Event * eventsArray, uint32 size, uint32 milliseconds)
-		{
-			//DWORD res = WaitForMultipleObjects(size, (::HANDLE *)&eventsArray[0], TRUE, milliseconds);
-			//return (res == WAIT_OBJECT_0);
-			return false;
-		}
 	};
 
 }

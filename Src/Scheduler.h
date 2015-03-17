@@ -241,6 +241,14 @@ namespace MT
 	{
 		friend struct FiberContext;
 
+		struct GroupStats
+		{
+			AtomicInt inProgressTaskCount;
+			Event allDoneEvent;
+
+			GroupStats();
+		};
+
 		// Thread index for new task
 		AtomicInt roundRobinThreadIndex;
 
@@ -248,10 +256,12 @@ namespace MT
 		uint32 threadsCount;
 		ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
-		// Per group events that is completed
-		Event groupIsDoneEvents[TaskGroup::COUNT];
+		// Per group task statistic
+		GroupStats groupStats[TaskGroup::COUNT];
 
-		AtomicInt groupInProgressTaskCount[TaskGroup::COUNT];
+		// All groups task statistic
+		GroupStats allGroupStats;
+
 
 		//Task awaiting group through FiberContext::WaitGroupAndYield call
 		ConcurrentQueueLIFO<TaskDesc> waitTaskQueues[TaskGroup::COUNT];
