@@ -250,7 +250,7 @@ namespace MT
 		void RunTasksImpl(TaskGroup::Type taskGroup, MT::TaskDesc* taskDescArr, uint32 count, MT::TaskDesc * parentTask);
 
 		static void ThreadMain( void* userData );
-		static void MT_CALL_CONV FiberMain(void* userData);
+		static void FiberMain( void* userData );
 
 		static bool ExecuteTask (MT::ThreadContext& context, const MT::TaskDesc & taskDesc);
 

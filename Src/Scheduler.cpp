@@ -10,7 +10,6 @@ namespace MT
 		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, state(ThreadState::ALIVE)
 		, taskScheduler(nullptr)
-		, schedulerFiber(nullptr)
 	{
 	}
 
@@ -24,7 +23,6 @@ namespace MT
 		, threadContext(nullptr)
 		, subtaskFibersCount(0)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
-		, fiber(nullptr)
 	{
 	}
 
@@ -59,7 +57,8 @@ namespace MT
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//switch to scheduler
-		MT::SwitchToFiber(threadContext->schedulerFiber);
+
+		threadContext->schedulerFiber.SwitchTo();
 	}
 
 
@@ -83,7 +82,7 @@ namespace MT
 		for (int32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
 		{
 			MT::FiberContext& context = fiberContext[i];
-			context.fiber = MT::CreateFiber( MT_FIBER_STACK_SIZE, FiberMain, &context );
+			context.fiber.Create(MT_FIBER_STACK_SIZE, FiberMain, &context);
 			availableFibers.Push( &context );
 		}
 
@@ -157,7 +156,7 @@ namespace MT
 			ASSERT(taskInProgress.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			// run current task code
-			MT::SwitchToFiber(taskInProgress.fiberContext->fiber);
+			taskInProgress.fiberContext->fiber.SwitchTo();
 
 			// if task was done
 			if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
@@ -248,7 +247,7 @@ namespace MT
 			context.currentTask->taskFunc( context, context.currentTask->userData );
 
 			context.taskStatus = FiberTaskStatus::FINISHED;
-			MT::SwitchToFiber(context.threadContext->schedulerFiber);
+			context.threadContext->schedulerFiber.SwitchTo();
 		}
 
 	}
@@ -258,7 +257,7 @@ namespace MT
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
-		context.schedulerFiber = MT::ConvertCurrentThreadToFiber();
+		context.schedulerFiber.CreateFromCurrentThread();
 
 		while(context.state.Get() != ThreadState::EXIT)
 		{

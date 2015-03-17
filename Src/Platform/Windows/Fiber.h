@@ -7,7 +7,7 @@ namespace MT
 	//
 	// 
 	//
-	class _Fiber
+	class Fiber
 	{
 		void * funcData;
 		TThreadEntryPoint func;
@@ -16,27 +16,32 @@ namespace MT
 
 		static void __stdcall FiberFuncInternal(void *pFiber)
 		{
-			_Fiber* self = (_Fiber*)pFiber;
+			Fiber* self = (Fiber*)pFiber;
 			self->func(self->funcData);
 		}
 
 	private:
 
-		_Fiber(const _Fiber &) {}
-		void operator=(const _Fiber &) {}
+		Fiber(const Fiber &) {}
+		void operator=(const Fiber &) {}
 
 	public:
 
-		_Fiber()
+		Fiber()
 			: fiber(nullptr)
 		{
 		}
 
-		~_Fiber()
+		~Fiber()
 		{
 			if (fiber)
 			{
-				DeleteFiber(fiber);
+				//we don't need to delete context on fibers created from thread.
+				if (func != nullptr)
+				{
+					DeleteFiber(fiber);
+				}
+
 				fiber = nullptr;
 			}
 		}
