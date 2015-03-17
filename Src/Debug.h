@@ -2,16 +2,27 @@
 
 #include <stdio.h>
 
-// __debugbreak is msvc only, so throw null pointer exception
+
+#if defined(_MSC_VER)
+
 inline void ThrowException()
 {
 	__debugbreak();
-	/*
-	char * p = nullptr;
-	p += 13;
-	*p = 13;
-	*/
-};
+}
+
+#else
+
+#include<signal.h>
+
+inline void ThrowException()
+{
+	raise(SIGTRAP);
+}
+
+#endif
+
+
+
 
 #define REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line);ThrowException();
 
