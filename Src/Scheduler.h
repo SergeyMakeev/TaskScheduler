@@ -48,7 +48,11 @@ namespace MT
 	{
 		GroupedTask* tasks;
 		size_t count;
-		TaskBucket(GroupedTask* _tasks, size_t _count) : tasks(_tasks), count(_count) {}
+		TaskBucket(GroupedTask* _tasks, size_t _count)
+			: tasks(_tasks)
+			, count(_count)
+		{
+		}
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

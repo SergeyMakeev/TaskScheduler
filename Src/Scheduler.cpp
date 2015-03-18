@@ -32,6 +32,7 @@ namespace MT
 	void FiberContext::WaitGroupAndYield(TaskGroup::Type group)
 	{
 		VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
+		VERIFY(group < TaskGroup::COUNT, "Invalid group!", return);
 		ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use WaitGroup outside Task. Use TaskScheduler.WaitGroup() instead.");
 
 		ConcurrentQueueLIFO<TaskDesc> & groupQueue = threadContext->taskScheduler->waitTaskQueues[group];
@@ -322,6 +323,7 @@ namespace MT
 					ASSERT(subtaskCount >= 0, "Sanity check failed");
 
 					bool taskIsFinished = (task.desc.fiberContext->taskStatus == FiberTaskStatus::FINISHED);
+					bool taskIsAwait = (task.desc.fiberContext->taskStatus == FiberTaskStatus::AWAITING);
 
 					if (canDropContext)
 					{
@@ -330,7 +332,13 @@ namespace MT
 					}
 
 					// if subtasks still exist, drop current task execution. current task will be resumed when last subtask finished
-					if (subtaskCount > 0 || taskIsFinished)
+					if (subtaskCount > 0)
+					{
+						break;
+					}
+
+					//if task is finished or task is in await state drop execution
+					if (taskIsFinished || taskIsAwait)
 					{
 						break;
 					}
@@ -375,10 +383,10 @@ namespace MT
 			TaskBucket& bucket = buckets[i];
 
 			allGroupStats.allDoneEvent.Reset();
-			allGroupStats.inProgressTaskCount.Add(bucket.count);
+			allGroupStats.inProgressTaskCount.Add((uint32)bucket.count);
 
 			groupStats[taskGroup].allDoneEvent.Reset();
-			groupStats[taskGroup].inProgressTaskCount.Add(bucket.count);
+			groupStats[taskGroup].inProgressTaskCount.Add((uint32)bucket.count);
 
 			context.queue.PushRange(bucket.tasks, bucket.count);
 
