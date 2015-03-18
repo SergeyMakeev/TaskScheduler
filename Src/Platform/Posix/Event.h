@@ -2,6 +2,7 @@
 
 #include <sys/time.h>
 #include <sched.h>
+#include <errno.h>
 
 
 namespace MT
