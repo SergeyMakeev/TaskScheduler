@@ -1,6 +1,8 @@
 #pragma once
 
+#include <sys/time.h>
 #include <sched.h>
+
 
 namespace MT
 {
@@ -86,7 +88,7 @@ namespace MT
 
 			int ret = 0;
 			do
-			{   
+			{
 				ret = pthread_cond_timedwait( &condition, &mutex, &tm );
 			} while( ret == EINTR );
 

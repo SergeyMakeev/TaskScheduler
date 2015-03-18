@@ -75,8 +75,7 @@ namespace MT
 			fiberContext.uc_stack.ss_sp = malloc(stackSize);
 			fiberContext.uc_stack.ss_size = stackSize;
 			fiberContext.uc_stack.ss_flags = 0;
-			res = makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, this);
-			ASSERT(res == 0, "makecontext - failed");
+			makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, this);
 
 			isInitialized = true;
 		}
