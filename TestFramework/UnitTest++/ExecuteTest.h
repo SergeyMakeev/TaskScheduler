@@ -1,7 +1,7 @@
 #ifndef UNITTEST_EXECUTE_TEST_H
 #define UNITTEST_EXECUTE_TEST_H
 
-#include <time.h> 
+#include <time.h>
 #include "Config.h"
 #include "ExceptionMacros.h"
 #include "TestDetails.h"
@@ -30,15 +30,12 @@ void ExecuteTest(T& testObject, TestDetails const& details, bool isMockTest)
 	if (UNITTEST_SET_ASSERT_JUMP_TARGET() == 0)
 	{
 #endif
+		printf("Test: %s", details.testName);
+		clock_t t = clock();
+
 #ifndef UNITTEST_POSIX
-		UT_TRY({ 
-			printf("Test: %s", details.testName);
-
-			clock_t t = clock();
-			testObject.RunImpl(); 
-			t = clock() - t;
-
-			printf(" - %3.2f seconds\n", (float)t/CLOCKS_PER_SEC);
+		UT_TRY({
+			testObject.RunImpl();
 		})
 #else
 		UT_TRY
@@ -58,6 +55,10 @@ void ExecuteTest(T& testObject, TestDetails const& details, bool isMockTest)
 		({
 			CurrentTest::Results()->OnTestFailure(details, "Unhandled exception: test crashed");
 		})
+
+		t = clock() - t;
+		printf(" - %3.2f seconds\n", (float)t/CLOCKS_PER_SEC);
+
 #ifdef UNITTEST_NO_EXCEPTIONS
 	}
 #endif
