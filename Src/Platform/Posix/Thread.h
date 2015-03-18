@@ -72,6 +72,11 @@ namespace MT
 			func = entryPoint;
 			funcData = userData;
 
+//			int a[1];
+//			int b[PTHREAD_STACK_MIN];
+//			a=b;
+
+
 			ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
 
 			stackBase = (void *)malloc(stackSize);
