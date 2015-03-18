@@ -93,7 +93,10 @@ namespace MT
 
 		bool IsCurrentThread() const
 		{
-			ASSERT(isStarted, "Thread is not started");
+			if(!isStarted)
+			{
+				return false;
+			}
 
 			pthread_t callThread = pthread_self();
 			if (pthread_equal(callThread, thread))

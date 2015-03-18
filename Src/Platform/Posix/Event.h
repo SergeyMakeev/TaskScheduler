@@ -51,6 +51,8 @@ namespace MT
 			pthread_mutex_init( &mutex, nullptr );
 			pthread_cond_init( &condition, nullptr );
 			val.Set(0);
+
+			isInitialized = true;
 		}
 
 		void Signal()
