@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unistd.h>
+#include <time.h>
 
 namespace MT
 {
@@ -33,8 +34,8 @@ namespace MT
 	public:
 
 		Thread()
-			: func(nullptr)
-			, funcData(nullptr)
+			: funcData(nullptr)
+			, func(nullptr)
 			, isStarted(false)
 		{
 		}
@@ -103,8 +104,19 @@ namespace MT
 
 		static int GetNumberOfHardwareThreads()
 		{
-			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
+      			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
 			return (int)numberOfProcessors;
+		}
+
+		static void Sleep(uint32 milliseconds)
+		{
+      struct timespec req = {0};
+      time_t sec = (int)(milliseconds/1000);
+      milliseconds = milliseconds - (sec*1000);
+      req.tv_sec = sec;
+      req.tv_nsec = milliseconds * 1000000L;
+      while (nanosleep(&req,&req) == -1 )
+           continue;
 		}
 
 	};

@@ -77,6 +77,10 @@ namespace MT
 			return sysinfo.dwNumberOfProcessors;
 		}
 
+		static void Sleep(uint32 milliseconds)
+		{
+		  ::Sleep(milliseconds);
+		}
 	};
 
 

@@ -1,6 +1,5 @@
 #include "Tests.h"
 #include "../../TestFramework/UnitTest++/UnitTest++.h"
-#include "../../TestFramework/UnitTest++/UnitTestTimer.h"
 #include "../Scheduler.h"
 
 SUITE(SimpleTests)
@@ -19,6 +18,11 @@ struct SimpleTask
 	{
 		resultData = sourceData;
 	}
+
+	int GetSourceData()
+	{
+		return sourceData;
+	}
 };
 
 // Checks one simple task
@@ -30,7 +34,7 @@ TEST(RunOneSimpleTask)
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
 	CHECK(scheduler.WaitAll(100));
-	CHECK_EQUAL(task.sourceData, task.resultData);
+	CHECK_EQUAL(task.GetSourceData(), task.resultData);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,15 +43,12 @@ struct ALotOfTasks
 {
 	TASK_METHODS(ALotOfTasks)
 
-	static const int TASK_COUNT = 1000;
-	static const int TASK_DURATION_MS = 1;
-
 	MT::AtomicInt* counter;
 
 	void Do(MT::FiberContext&)
 	{
 		counter->Inc();
-		Time::SpinSleep(TASK_DURATION_MS * 1000);
+		MT::Thread::Sleep(1);
 	}
 };
 
@@ -58,17 +59,19 @@ TEST(ALotOfTasks)
 
 	MT::AtomicInt counter;
 
-	ALotOfTasks tasks[ALotOfTasks::TASK_COUNT];
+	static const int TASK_COUNT = 1000;
+
+	ALotOfTasks tasks[TASK_COUNT];
 
 	for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
 		tasks[i].counter = &counter;
 
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
 
-	int timeout = (ALotOfTasks::TASK_COUNT * ALotOfTasks::TASK_DURATION_MS / scheduler.GetWorkerCount()) * 2;
+	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 4;
 
 	CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
-	CHECK_EQUAL(ALotOfTasks::TASK_COUNT, counter.Get());
+	CHECK_EQUAL(TASK_COUNT, counter.Get());
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

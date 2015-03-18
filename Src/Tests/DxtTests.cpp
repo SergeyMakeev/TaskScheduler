@@ -2,7 +2,7 @@
 #include "../../TestFramework/UnitTest++/UnitTest++.h"
 #include "../Scheduler.h"
 
-#include <Squish.h>
+#include "squish.h"
 
 namespace EmbeddedImage
 {
@@ -89,7 +89,7 @@ namespace DxtCompress
 			} // block iterator
 		}
 	};
-	
+
 
 
 	// dxt compressor simple test

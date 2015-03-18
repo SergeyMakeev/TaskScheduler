@@ -1,6 +1,6 @@
 #pragma once
 
-#include <time.h> 
+#include <time.h>
 
 #include "types.h"
 #include "Debug.h"
@@ -41,7 +41,7 @@ namespace MT
 		MT::Mutex & mutex;
 
 		ScopedGuard( const ScopedGuard & ) : mutex(*((MT::Mutex*)nullptr)) {}
-		ScopedGuard& operator=( const ScopedGuard &) {}
+		void operator=( const ScopedGuard &) {}
 
 	public:
 

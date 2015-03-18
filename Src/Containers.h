@@ -1,7 +1,5 @@
 #pragma once
 
-#define ALLOCATE_ON_STACK(TYPE, COUNT) (TYPE*)_alloca(sizeof(TYPE) * COUNT)
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Array, allocated on stack
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,8 +77,8 @@ class fixed_array
 	T* data;
 	size_t count;
 public:
-	fixed_array(void* memoryChunk, size_t instanceCount) : count(instanceCount), data((T*)memoryChunk) {}
-	
+	fixed_array(void* memoryChunk, size_t instanceCount) : data((T*)memoryChunk), count(instanceCount) {}
+
 	const T &operator[]( uint32 i ) const
 	{
 		ASSERT( i < size(), "bad index" );

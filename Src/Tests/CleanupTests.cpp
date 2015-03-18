@@ -1,6 +1,7 @@
 #include "Tests.h"
 #include "../../TestFramework/UnitTest++/UnitTest++.h"
 #include "../Scheduler.h"
+#include "../Platform.h"
 
 SUITE(CleanupTests)
 {
@@ -12,7 +13,7 @@ struct NotFinishedTaskDestroy
 	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)
 	{
-		Sleep(timeLimitMS * 2);
+		MT::Thread::Sleep(timeLimitMS * 2);
 	}
 };
 
@@ -20,7 +21,7 @@ struct NotFinishedTaskDestroy
 TEST(NotFinishedTaskDestroy)
 {
 	MT::TaskScheduler scheduler;
-	
+
 	NotFinishedTaskDestroy task;
 
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);

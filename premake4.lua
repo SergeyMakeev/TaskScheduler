@@ -2,10 +2,16 @@ if not _ACTION then
 	_ACTION="vs2010"
 end
 
+isPOSIX = false
 isVisualStudio = false
 
 if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION == "vs2008" or _ACTION == "vs2010" then
 	isVisualStudio = true
+end
+
+if _ACTION == "codeblocks"
+then
+	isPosix = true
 end
 	
 solution "TaskScheduler"
@@ -92,9 +98,11 @@ project "UnitTest++"
 		"TestFramework/UnitTest++/**.*", 
 	}
 
-	excludes {
-		"TestFramework/UnitTest++/Posix/**.*"
-	}
+if isPosix then
+	excludes { "TestFramework/UnitTest++/Win32/**.*" }
+else
+	excludes { "TestFramework/UnitTest++/Posix/**.*" }
+end
 
 
 project "Squish"

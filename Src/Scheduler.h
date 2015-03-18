@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Tools.h"
 #include "Platform.h"
 #include "ConcurrentQueueLIFO.h"
 #include "Containers.h"
@@ -103,39 +104,10 @@ namespace MT
 
 	public:
 		template<class TTask>
-		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
-		{
-			ASSERT(threadContext, "ThreadContext is NULL");
-			ASSERT(count < threadContext->descBuffer.size(), "Buffer overrun!")
-
-			uint32 threadsCount = threadContext->taskScheduler->GetWorkerCount();
-
-			fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
-			
-			size_t bucketCount = min(threadsCount, count);
-			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
-			
-			threadContext->taskScheduler->DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-			RunSubtasksAndYield(taskGroup, buckets);
-		}
+		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count);
 
 		template<class TTask>
-		void RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count)
-		{
-			ASSERT(threadContext, "ThreadContext is NULL");
-			ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
-
-			TaskScheduler& scheduler = *(threadContext->taskScheduler);
-
-			fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
-
-			size_t bucketCount = min(scheduler.GetWorkerCount(), count);
-			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
-
-			scheduler.DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-			scheduler.RunTasksImpl(taskGroup, buckets, nullptr);
-		}
-
+		void RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count);
 
 		void WaitGroupAndYield(TaskGroup::Type group);
 	};
@@ -154,8 +126,8 @@ namespace MT
 		TaskDesc()
 			: taskFunc(nullptr)
 			, userData(nullptr)
-			, parentTask(nullptr)
 			, fiberContext(nullptr)
+			, parentTask(nullptr)
 		//	, taskGroup(TaskGroup::GROUP_UNDEFINED)
 		{
 
@@ -164,8 +136,8 @@ namespace MT
 		TaskDesc(TTaskEntryPoint _taskEntry, void* _userData)
 			: taskFunc(_taskEntry)
 			, userData(_userData)
-			, parentTask(nullptr)
 			, fiberContext(nullptr)
+			, parentTask(nullptr)
 //			, taskGroup(TaskGroup::GROUP_UNDEFINED)
 		{
 		}
@@ -198,7 +170,7 @@ namespace MT
 		TaskDesc desc;
 
 		GroupedTask() : group(TaskGroup::GROUP_UNDEFINED) {}
-		GroupedTask(TaskDesc& _desc, TaskGroup::Type _group) : desc(_desc), group(_group) {}
+		GroupedTask(TaskDesc& _desc, TaskGroup::Type _group) : group(_group), desc(_desc) {}
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Thread (Scheduler fiber) context
@@ -326,18 +298,7 @@ namespace MT
 		~TaskScheduler();
 
 		template<class TTask>
-		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count)
-		{
-			ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
-
-			fixed_array<GroupedTask> buffer(ALLOCATE_ON_STACK(GroupedTask, count), count);
-
-			size_t bucketCount = min(threadsCount, count);
-			fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
-
-			DistibuteDescriptions(group, taskArray, buffer, buckets);
-			RunTasksImpl(group, buckets, nullptr);
-		}
+		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count);
 
 		bool WaitGroup(TaskGroup::Type group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
@@ -348,6 +309,55 @@ namespace MT
 
 		bool IsWorkerThread() const;
 	};
+
+    template<class TTask>
+    void TaskScheduler::RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 count)
+    {
+        ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
+
+        fixed_array<GroupedTask> buffer(ALLOCATE_ON_STACK(GroupedTask, count), count);
+
+        size_t bucketCount = Min(threadsCount, count);
+        fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+        DistibuteDescriptions(group, taskArray, buffer, buckets);
+        RunTasksImpl(group, buckets, nullptr);
+    }
+
+    template<class TTask>
+    void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
+    {
+        ASSERT(threadContext, "ThreadContext is NULL");
+        ASSERT(count < threadContext->descBuffer.size(), "Buffer overrun!")
+
+        size_t threadsCount = threadContext->taskScheduler->GetWorkerCount();
+
+        fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
+
+        size_t bucketCount = Min(threadsCount, count);
+        fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+        threadContext->taskScheduler->DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
+        RunSubtasksAndYield(taskGroup, buckets);
+    }
+
+    template<class TTask>
+    void FiberContext::RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count)
+    {
+        ASSERT(threadContext, "ThreadContext is NULL");
+        ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
+
+        TaskScheduler& scheduler = *(threadContext->taskScheduler);
+
+        fixed_array<GroupedTask> buffer(&threadContext->descBuffer.front(), count);
+
+        size_t bucketCount = Min(scheduler.GetWorkerCount(), count);
+        fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+        scheduler.DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
+        scheduler.RunTasksImpl(taskGroup, buckets, nullptr);
+    }
+
 
 
 	#define TASK_METHODS(TASK_TYPE) static void TaskFunction(MT::FiberContext& fiberContext, void* userData) \

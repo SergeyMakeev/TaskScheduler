@@ -13,7 +13,7 @@ namespace SimpleWaitFromSubtask
 	{
 		void Do(MT::FiberContext&)
 		{
-			Sleep(1);
+			MT::Thread::Sleep(1);
 		}
 
 		TASK_METHODS(Subtask);

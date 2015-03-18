@@ -1,5 +1,5 @@
 #include "Scheduler.h"
-#include "Assert.h"
+//#include "Assert.h"
 
 
 //TODO: Split to files. One file - one class.
@@ -9,9 +9,9 @@ namespace MT
 	static const size_t TASK_BUFFER_CAPACITY = 4096;
 
 	ThreadContext::ThreadContext()
-		: hasNewTasksEvent(EventReset::AUTOMATIC, true)
+		: taskScheduler(nullptr)
+		, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, state(ThreadState::ALIVE)
-		, taskScheduler(nullptr)
 		, descBuffer(TASK_BUFFER_CAPACITY)
 	{
 	}
@@ -24,8 +24,8 @@ namespace MT
 	FiberContext::FiberContext()
 		: currentTask(nullptr)
 		, threadContext(nullptr)
-		, subtaskFibersCount(0)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
+		, subtaskFibersCount(0)
 	{
 	}
 
@@ -92,7 +92,7 @@ namespace MT
 	{
 
 		//query number of processor
-		threadsCount = (uint32)max(Thread::GetNumberOfHardwareThreads() - 2, 1);
+		threadsCount = Max(Thread::GetNumberOfHardwareThreads() - 2, 1);
 
 		if (threadsCount > MT_MAX_THREAD_COUNT)
 		{
@@ -100,7 +100,7 @@ namespace MT
 		}
 
 		// create fiber pool
-		for (int32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
+		for (uint32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
 		{
 			FiberContext& context = fiberContext[i];
 			context.fiber.Create(MT_FIBER_STACK_SIZE, FiberMain, &context);
@@ -154,8 +154,6 @@ namespace MT
 	void TaskScheduler::RestoreAwaitingTasks(TaskGroup::Type taskGroup)
 	{
 		ConcurrentQueueLIFO<TaskDesc> & groupQueue = waitTaskQueues[taskGroup];
-
-		groupQueue;
 		//TODO: move awaiting tasks into execution thread queues
 	}
 
@@ -207,7 +205,7 @@ namespace MT
 				}
 
 
-				
+
 
 				//raise up releasing task fiber flag
 				canDropExecutionContext = true;
@@ -229,7 +227,7 @@ namespace MT
 						// this is a last subtask. restore parent task
 
 						TaskDesc * parent = taskInProgress.parentTask;
-						
+
 						ASSERT(context.thread.IsCurrentThread(), "Thread context sanity check failed");
 
 						// WARNING!! Thread context can changed here! Set actual current thread context.
@@ -342,9 +340,9 @@ namespace MT
 
 				if (task.desc.fiberContext)
 					task.desc.fiberContext->currentTask = nullptr;
-				
 
-			} 
+
+			}
 			else
 			{
 				//TODO: can try to steal tasks from other threads
@@ -404,7 +402,7 @@ namespace MT
 
 	bool TaskScheduler::IsEmpty()
 	{
-		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
+		for (uint32 i = 0; i < MT_MAX_THREAD_COUNT; i++)
 		{
 			if (!threadContext[i].queue.IsEmpty())
 			{
@@ -421,7 +419,7 @@ namespace MT
 
 	bool TaskScheduler::IsWorkerThread() const
 	{
-		for (int i = 0; i < MT_MAX_THREAD_COUNT; i++)
+		for (uint32 i = 0; i < MT_MAX_THREAD_COUNT; i++)
 		{
 			if (threadContext[i].thread.IsCurrentThread())
 			{

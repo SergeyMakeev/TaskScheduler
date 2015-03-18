@@ -10,7 +10,7 @@ template<size_t N>
 struct DeepSubtaskQueue
 {
 	TASK_METHODS(DeepSubtaskQueue)
-	
+
 	int result;
 
 	DeepSubtaskQueue() : result(0) {}
@@ -103,7 +103,7 @@ struct TaskWithManySubtasks
 		for (int i = 0; i < 2; ++i)
 		{
 			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &task, 1);
-			Sleep(1);
+			MT::Thread::Sleep(1);
 		}
 	}
 
