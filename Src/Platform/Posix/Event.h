@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sched.h>
 
 namespace MT
 {
@@ -8,7 +9,10 @@ namespace MT
 	//
 	class Event
 	{
-		//::HANDLE eventHandle;
+		pthread_mutex_t	mutex;
+		pthread_cond_t	condition;
+		AtomicInt val;
+		bool isInitialized;
 
 	private:
 
@@ -18,54 +22,78 @@ namespace MT
 	public:
 
 		Event()
+			: isInitialized(false)
 		{
-			//static_assert(sizeof(Event) == sizeof(::HANDLE), "sizeof(Event) is invalid");
-			//eventHandle = NULL;
 		}
 
 		Event(EventReset::Type resetType, bool initialState)
+			: isInitialized(false)
 		{
-			//eventHandle = NULL;
-			//Create(resetType, initialState);
+			Create(resetType, initialState);
 		}
 
 		~Event()
 		{
-			//CloseHandle(eventHandle);
-			//eventHandle = NULL;
+			if (isInitialized)
+			{
+				pthread_cond_destroy( &condition );
+				pthread_mutex_destroy( &mutex );
+			}
 		}
 
 		void Create(EventReset::Type resetType, bool initialState)
 		{
-/*
-			if (eventHandle != NULL)
-			{
-				CloseHandle(eventHandle);
-			}
+			ASSERT (!isInitialized, "Event already initialized");
 
-			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
-			BOOL bInitialState = initialState ? TRUE : FALSE;
-			eventHandle = ::CreateEvent(NULL, bManualReset, bInitialState, NULL);
-*/
+			pthread_mutex_init( &mutex, nullptr );
+			pthread_cond_init( &condition, nullptr );
+			val.Set(0);
 		}
 
 		void Signal()
 		{
-			//SetEvent(eventHandle);
+			ASSERT (isInitialized, "Event not initialized");
+
+			val.Set(1);
+			pthread_cond_broadcast( &condition );
 		}
 
 		void Reset()
 		{
-			//ResetEvent(eventHandle);
+			ASSERT (isInitialized, "Event not initialized");
+
+			val.Set(0);
 		}
 
 		bool Wait(uint32 milliseconds)
 		{
-/*
-			DWORD res = WaitForSingleObject(eventHandle, milliseconds);
-			return (res == WAIT_OBJECT_0);
-*/
-            return false;
+			ASSERT (isInitialized, "Event not initialized");
+
+			if ( val.Get() != 0 )
+			{
+				val.Set(0);
+				return true;
+			}
+
+			//convert milliseconds to posix time
+			struct timeval tv;
+			gettimeofday( &tv, nullptr );
+			struct timespec tm;
+			tm.tv_sec = milliseconds / 1000 + tv.tv_sec;
+			tm.tv_nsec = ( milliseconds % 1000 ) * 1000000 + tv.tv_usec * 1000;
+
+			pthread_mutex_lock( &mutex );
+
+			int ret = 0;
+			do
+			{   
+				ret = pthread_cond_timedwait( &condition, &mutex, &tm );
+			} while( ret == EINTR );
+
+			sched_yield();
+
+			pthread_mutex_unlock( &mutex );
+			return ret == 0;
 		}
 
 	};

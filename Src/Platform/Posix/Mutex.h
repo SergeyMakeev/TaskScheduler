@@ -10,6 +10,7 @@ namespace MT
 	//
 	class Mutex
 	{
+		pthread_mutexattr_t mutexAttr;
 		pthread_mutex_t mutex;
 
 	private:
@@ -21,7 +22,13 @@ namespace MT
 
 		Mutex()
 		{
-			int res = pthread_mutex_init(&mutex, nullptr);
+			int res = pthread_mutexattr_init(&mutexAttr);
+			ASSERT(res == 0, "pthread_mutexattr_init - failed");
+
+			res = pthread_mutexattr_settype(&mutexAttr, PTHREAD_MUTEX_RECURSIVE);
+			ASSERT(res == 0, "pthread_mutexattr_settype - failed");
+
+			res = pthread_mutex_init(&mutex, &mutexAttr);
 			ASSERT(res == 0, "pthread_mutex_init - failed");
 		}
 
@@ -29,6 +36,9 @@ namespace MT
 		{
 			int res = pthread_mutex_destroy(&mutex);
 			ASSERT(res == 0, "pthread_mutex_destroy - failed");
+
+			res = pthread_mutexattr_destroy(&mutexAttr);
+			ASSERT(res == 0, "pthread_mutexattr_destroy - failed");
 		}
 
 		friend class MT::ScopedGuard;
@@ -37,11 +47,13 @@ namespace MT
 
 		void Lock()
 		{
-			pthread_mutex_lock(&mutex);
+			int res = pthread_mutex_lock(&mutex);
+			ASSERT(res == 0, "pthread_mutex_lock - failed");
 		}
 		void Unlock()
 		{
-			pthread_mutex_unlock(&mutex);
+			int res = pthread_mutex_unlock(&mutex);
+			ASSERT(res == 0, "pthread_mutex_unlock - failed");
 		}
 
 	};

@@ -14,6 +14,7 @@ namespace MT
 		TThreadEntryPoint func;
 
 		ucontext_t fiberContext;
+		bool isInitialized;
 
 		static void FiberFuncInternal(void *pFiber)
 		{
@@ -29,46 +30,64 @@ namespace MT
 	public:
 
 		Fiber()
+			: isInitialized(false)
 		{
-            fiberContext.uc_stack.ss_sp = nullptr;
 		}
 
 		~Fiber()
 		{
-            if (fiberContext.uc_stack.ss_sp)
-            {
-                free(fiberContext.uc_stack.ss_sp);
-                fiberContext.uc_stack.ss_sp = nullptr;
-            }
+			if (isInitialized)
+			{
+				if (func != nullptr)
+				{
+					free(fiberContext.uc_stack.ss_sp);
+				}
+				isInitialized = false;
+			}
 		}
 
 
 		void CreateFromCurrentThread()
 		{
-			getcontext(&fiberContext);
+			ASSERT(!isInitialized, "Already initialized");
+
+			int res = getcontext(&fiberContext);
+			ASSERT(res == 0, "getcontext - failed");
 
 			func = nullptr;
 			funcData = nullptr;
+
+			isInitialized = true;
 		}
 
 
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
+			ASSERT(!isInitialized, "Already initialized");
+
 			func = entryPoint;
 			funcData = userData;
 
-            getcontext(&fiberContext);
-            fiberContext.uc_link = nullptr;
-            fiberContext.uc_stack.ss_sp = malloc(stackSize);
-            fiberContext.uc_stack.ss_size = stackSize;
-            fiberContext.uc_stack.ss_flags = 0;
-            makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, this);
+			int res = getcontext(&fiberContext);
+			ASSERT(res == 0, "getcontext - failed");
+
+			fiberContext.uc_link = nullptr;
+			fiberContext.uc_stack.ss_sp = malloc(stackSize);
+			fiberContext.uc_stack.ss_size = stackSize;
+			fiberContext.uc_stack.ss_flags = 0;
+			res = makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, this);
+			ASSERT(res == 0, "makecontext - failed");
+
+			isInitialized = true;
 		}
 
 
 		void SwitchTo()
 		{
-			setcontext(&fiberContext);
+			ASSERT(isInitialized, "Can't use uninitialized fiber");
+
+			int res = setcontext(&fiberContext);
+			ASSERT(res == 0, "setcontext - failed");
 		}
 
 

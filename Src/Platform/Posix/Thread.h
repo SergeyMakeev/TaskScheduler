@@ -14,6 +14,8 @@ namespace MT
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
+		bool isStarted;
+
 		static void* ThreadFuncInternal(void *pThread)
 		{
 			Thread * self = (Thread *)pThread;
@@ -33,6 +35,7 @@ namespace MT
 		Thread()
 			: func(nullptr)
 			, funcData(nullptr)
+			, isStarted(false)
 		{
 		}
 
@@ -42,50 +45,65 @@ namespace MT
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
+			ASSERT(!isStarted, "Thread already stared");
+
 			ASSERT(func == nullptr, "Thread already started");
 
 			func = entryPoint;
 			funcData = userData;
 
-            int err = pthread_attr_init(&threadAttr);
-            ASSERT(err == 0, "pthread_attr_init - error");
+			int err = pthread_attr_init(&threadAttr);
+			ASSERT(err == 0, "pthread_attr_init - error");
 
-            err = pthread_attr_setstacksize(&threadAttr, stackSize);
-            ASSERT(err == 0, "pthread_attr_setstacksize - error");
+			err = pthread_attr_setstacksize(&threadAttr, stackSize);
+			ASSERT(err == 0, "pthread_attr_setstacksize - error");
 
-            err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
-            ASSERT(err == 0, "pthread_attr_setdetachstate - error");
+			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
+			ASSERT(err == 0, "pthread_attr_setdetachstate - error");
 
-            err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, userData);
-            ASSERT(err == 0, "pthread_create - error");
+			err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, userData);
+			ASSERT(err == 0, "pthread_create - error");
+
+			isStarted = true;
 		}
 
 		void Stop()
 		{
+			ASSERT(isStarted, "Thread is not started");
+
 			if (func == nullptr)
 			{
 				return;
 			}
 
 			void *threadStatus = nullptr;
-			pthread_join(thread, &threadStatus);
-			pthread_attr_destroy(&threadAttr);
+			int err = pthread_join(thread, &threadStatus);
+			ASSERT(err == 0, "pthread_join - error");
+
+			err = pthread_attr_destroy(&threadAttr);
+			ASSERT(err == 0, "pthread_attr_destroy - error");
+
 			func = nullptr;
+			funcData = nullptr;
+
+			isStarted = false;
 		}
 
 		bool IsCurrentThread() const
 		{
-            pthread_t callThread = pthread_self();
-            if (pthread_equal(callThread, thread))
-            {
-                return true;
-            }
-            return false;
+			ASSERT(isStarted, "Thread is not started");
+
+			pthread_t callThread = pthread_self();
+			if (pthread_equal(callThread, thread))
+			{
+					return true;
+			}
+			return false;
 		}
 
 		static int GetNumberOfHardwareThreads()
 		{
-            long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
+			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
 			return (int)numberOfProcessors;
 		}
 
