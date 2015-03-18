@@ -90,6 +90,12 @@ project "TaskScheduler"
 		"UnitTest++", "Squish"
 	}
 
+	if isPosix then
+	links { "pthread" }
+	end
+
+
+
 
 project "UnitTest++"
 	kind "StaticLib"
