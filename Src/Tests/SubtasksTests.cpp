@@ -58,12 +58,15 @@ TEST(DeepSubtaskQueue)
 {
 	MT::TaskScheduler scheduler;
 
-	DeepSubtaskQueue<12> task;
-	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
+	//while(true)
+	{
+		DeepSubtaskQueue<12> task;
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
-	CHECK(scheduler.WaitAll(200));
+		CHECK(scheduler.WaitAll(200));
 
-	CHECK_EQUAL(task.result, 144);
+		CHECK_EQUAL(task.result, 144);
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

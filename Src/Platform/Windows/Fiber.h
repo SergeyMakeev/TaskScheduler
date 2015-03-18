@@ -1,6 +1,8 @@
 #pragma once
 
 
+#define FIBER_DEBUG (1)
+
 namespace MT
 {
 
@@ -13,6 +15,10 @@ namespace MT
 		TThreadEntryPoint func;
 
 		void* fiber;
+
+#if FIBER_DEBUG
+		AtomicInt counter;
+#endif
 
 		static void __stdcall FiberFuncInternal(void *pFiber)
 		{
@@ -57,6 +63,10 @@ namespace MT
 
 			fiber = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
 			ASSERT(fiber != nullptr, "Can't create fiber");
+
+#if FIBER_DEBUG
+			counter.Set(1);
+#endif
 		}
 
 
@@ -68,12 +78,28 @@ namespace MT
 			funcData = userData;
 			fiber = ::CreateFiber( stackSize, FiberFuncInternal, this );
 			ASSERT(fiber != nullptr, "Can't create fiber");
+
+#if FIBER_DEBUG
+			counter.Set(0);
+#endif
 		}
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
 			ASSERT(from.fiber != nullptr, "Invalid from fiber");
 			ASSERT(to.fiber != nullptr, "Invalid to fiber");
+
+#if FIBER_DEBUG
+			ASSERT(from.counter.Get() == 1, "Invalid fiber state");
+			ASSERT(to.counter.Get() == 0, "Invalid fiber state");
+
+			int counterNow = from.counter.Dec();
+			ASSERT(counterNow == 0, "Invalid fiber state");
+
+			counterNow = to.counter.Inc();
+			ASSERT(counterNow == 1, "Invalid fiber state");
+#endif
+
 			::SwitchToFiber( (LPVOID)to.fiber );
 		}
 
