@@ -47,9 +47,10 @@ namespace MT
 		}
 
 
-		void CreateFromCurrentThread()
+		void CreateFromThread(Thread & thread)
 		{
 			ASSERT(fiber == nullptr, "Fiber already created");
+			ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
 			func = nullptr;
 			funcData = nullptr;
@@ -69,13 +70,12 @@ namespace MT
 			ASSERT(fiber != nullptr, "Can't create fiber");
 		}
 
-
-		void SwitchTo()
+		static void SwitchTo(Fiber & from, Fiber & to)
 		{
-			ASSERT(fiber != nullptr, "Invalid fiber");
-			::SwitchToFiber( (LPVOID)fiber );
+			ASSERT(from.fiber != nullptr, "Invalid from fiber");
+			ASSERT(to.fiber != nullptr, "Invalid to fiber");
+			::SwitchToFiber( (LPVOID)to.fiber );
 		}
-		
 
 	};
 

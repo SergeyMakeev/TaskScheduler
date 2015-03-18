@@ -46,7 +46,7 @@ namespace MT
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//switch to scheduler
-		threadContext->schedulerFiber.SwitchTo();
+		Fiber::SwitchTo(fiber, threadContext->schedulerFiber);
 	}
 
 	void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets)
@@ -77,7 +77,7 @@ namespace MT
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		//switch to scheduler
-		threadContext->schedulerFiber.SwitchTo();
+		Fiber::SwitchTo(fiber, threadContext->schedulerFiber);
 	}
 
 
@@ -176,7 +176,7 @@ namespace MT
 			ASSERT(taskInProgress.fiberContext->threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			// run current task code
-			taskInProgress.fiberContext->fiber.SwitchTo();
+			Fiber::SwitchTo(context.schedulerFiber, taskInProgress.fiberContext->fiber);
 
 			// if task was done
 			if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::FINISHED)
@@ -289,7 +289,8 @@ namespace MT
 			context.currentTask->taskFunc( context, context.currentTask->userData );
 
 			context.taskStatus = FiberTaskStatus::FINISHED;
-			context.threadContext->schedulerFiber.SwitchTo();
+
+			Fiber::SwitchTo(context.fiber, context.threadContext->schedulerFiber);
 		}
 
 	}
@@ -299,7 +300,7 @@ namespace MT
 	{
 		ThreadContext& context = *(ThreadContext*)(userData);
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
-		context.schedulerFiber.CreateFromCurrentThread();
+		context.schedulerFiber.CreateFromThread(context.thread);
 
 		while(context.state.Get() != ThreadState::EXIT)
 		{

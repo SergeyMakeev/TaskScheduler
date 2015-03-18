@@ -48,12 +48,18 @@ namespace MT
 		}
 
 
-		void CreateFromCurrentThread()
+		void CreateFromThread(Thread & thread)
 		{
 			ASSERT(!isInitialized, "Already initialized");
+			ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
 			int res = getcontext(&fiberContext);
 			ASSERT(res == 0, "getcontext - failed");
+
+			fiberContext.uc_link = nullptr;
+			fiberContext.uc_stack.ss_sp = thread.GetStackBase();
+			fiberContext.uc_stack.ss_size = thread.GetStackSize();
+			fiberContext.uc_stack.ss_flags = 0;
 
 			func = nullptr;
 			funcData = nullptr;
@@ -81,14 +87,14 @@ namespace MT
 			isInitialized = true;
 		}
 
-
-		void SwitchTo()
+		static void SwitchTo(Fiber & from, Fiber & to)
 		{
-			ASSERT(isInitialized, "Can't use uninitialized fiber");
-
-			int res = setcontext(&fiberContext);
+			ASSERT(from.isInitialized != nullptr, "Invalid from fiber");
+			ASSERT(to.isInitialized != nullptr, "Invalid to fiber");
+			int res = swapcontext(&from.fiberContext, &to.fiberContext);
 			ASSERT(res == 0, "setcontext - failed");
 		}
+
 
 
 	};

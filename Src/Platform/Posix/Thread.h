@@ -16,6 +16,9 @@ namespace MT
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
+		void * stackBase;
+		size_t stackSize;
+
 		bool isStarted;
 
 		static void* ThreadFuncInternal(void *pThread)
@@ -37,6 +40,8 @@ namespace MT
 		Thread()
 			: funcData(nullptr)
 			, func(nullptr)
+			, stackBase(nullptr)
+			, stackSize(0)
 			, isStarted(false)
 		{
 		}
@@ -44,6 +49,17 @@ namespace MT
 		~Thread()
 		{
 		}
+
+		void* GetStackBase()
+		{
+			return stackBase;
+		}
+
+		size_t GetStackSize()
+		{
+			return stackSize;
+		}
+		
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
@@ -54,8 +70,15 @@ namespace MT
 			func = entryPoint;
 			funcData = userData;
 
+			ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
+
+			stackBase = (void *)malloc(stackSize);
+
 			int err = pthread_attr_init(&threadAttr);
 			ASSERT(err == 0, "pthread_attr_init - error");
+
+			ret = pthread_attr_setstackaddr(&tattr, stackBase);
+			ASSERT(err == 0, "pthread_attr_setstackaddr - error");
 
 			err = pthread_attr_setstacksize(&threadAttr, stackSize);
 			ASSERT(err == 0, "pthread_attr_setstacksize - error");
@@ -88,6 +111,13 @@ namespace MT
 			func = nullptr;
 			funcData = nullptr;
 
+			if (stackBase)
+			{
+				free(stackBase);
+				stackBase = nullptr;
+			}
+			stackSize = 0;
+
 			isStarted = false;
 		}
 
@@ -108,7 +138,7 @@ namespace MT
 
 		static int GetNumberOfHardwareThreads()
 		{
-      			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
+			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
 			return (int)numberOfProcessors;
 		}
 
@@ -120,7 +150,9 @@ namespace MT
       req.tv_sec = sec;
       req.tv_nsec = milliseconds * 1000000L;
       while (nanosleep(&req,&req) == -1 )
+			{
            continue;
+			}
 		}
 
 	};
