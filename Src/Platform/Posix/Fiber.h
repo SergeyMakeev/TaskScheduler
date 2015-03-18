@@ -53,6 +53,9 @@ namespace MT
 			ASSERT(!isInitialized, "Already initialized");
 			ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
+			ucontext_t m;
+			fiberContext.uc_link = &m;
+
 			int res = getcontext(&fiberContext);
 			ASSERT(res == 0, "getcontext - failed");
 
@@ -89,8 +92,8 @@ namespace MT
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
-			ASSERT(from.isInitialized != nullptr, "Invalid from fiber");
-			ASSERT(to.isInitialized != nullptr, "Invalid to fiber");
+			ASSERT(from.isInitialized, "Invalid from fiber");
+			ASSERT(to.isInitialized, "Invalid to fiber");
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);
 			ASSERT(res == 0, "setcontext - failed");
 		}

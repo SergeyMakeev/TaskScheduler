@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
+#include <limits.h>
+#include <stdlib.h>
 
 namespace MT
 {
@@ -59,7 +61,7 @@ namespace MT
 		{
 			return stackSize;
 		}
-		
+
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
@@ -77,11 +79,8 @@ namespace MT
 			int err = pthread_attr_init(&threadAttr);
 			ASSERT(err == 0, "pthread_attr_init - error");
 
-			ret = pthread_attr_setstackaddr(&tattr, stackBase);
-			ASSERT(err == 0, "pthread_attr_setstackaddr - error");
-
-			err = pthread_attr_setstacksize(&threadAttr, stackSize);
-			ASSERT(err == 0, "pthread_attr_setstacksize - error");
+			err = pthread_attr_setstack(&threadAttr, stackBase, stackSize);
+			ASSERT(err == 0, "pthread_attr_setstack - error");
 
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
 			ASSERT(err == 0, "pthread_attr_setdetachstate - error");
