@@ -5,11 +5,10 @@
 
 SUITE(CleanupTests)
 {
-
 	static const int OLD_VALUE = 1;
 	static const int VALUE = 13;
 
-TEST(AtomicsSimpleTest)
+TEST(AtomicSimpleTest)
 {
 	MT::AtomicInt test;
 	test.Set(OLD_VALUE);
