@@ -63,7 +63,7 @@ namespace MT
 		}
 
 
-		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
+		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
 			ASSERT(!isStarted, "Thread already stared");
 
@@ -71,6 +71,8 @@ namespace MT
 
 			func = entryPoint;
 			funcData = userData;
+
+			stackSize = _stackSize;
 
 			ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
 
