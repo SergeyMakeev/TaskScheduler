@@ -22,12 +22,14 @@ void TestReporterStdout::ReportFailure(TestDetails const& details, char const* f
 #endif
 }
 
-void TestReporterStdout::ReportTestStart(TestDetails const& /*test*/)
+void TestReporterStdout::ReportTestStart(TestDetails const& details/*test*/)
 {
+	printf("\n=> Test: %s\n", details.testName);
 }
 
-void TestReporterStdout::ReportTestFinish(TestDetails const& /*test*/, float)
+void TestReporterStdout::ReportTestFinish(TestDetails const& /*test*/, float delta)
 {
+	printf("=> Finished in %3.2f sec\n", delta);
 }
 
 void TestReporterStdout::ReportSummary(int const totalTestCount, int const failedTestCount,
