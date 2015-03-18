@@ -12,15 +12,28 @@ namespace MT
 	//
 	class Event
 	{
+		static const int NOT_SIGNALED = 0;
+		static const int SIGNALED = 1;
+
 		pthread_mutex_t	mutex;
 		pthread_cond_t	condition;
 		AtomicInt val;
+		EventReset::Type resetType;
 		bool isInitialized;
 
 	private:
 
 		Event(const Event&) {}
 		void operator=(const Event&) {}
+
+		void AutoResetIfNeed()
+		{
+			if (resetType == EventReset::MANUAL)
+			{
+				return;
+			}
+			Reset();
+		}
 
 	public:
 
@@ -44,13 +57,15 @@ namespace MT
 			}
 		}
 
-		void Create(EventReset::Type resetType, bool initialState)
+		void Create(EventReset::Type _resetType, bool initialState)
 		{
 			ASSERT (!isInitialized, "Event already initialized");
 
+			resetType = _resetType;
+
 			pthread_mutex_init( &mutex, nullptr );
 			pthread_cond_init( &condition, nullptr );
-			val.Set(0);
+			val.Set(initialState ? SIGNALED : NOT_SIGNALED);
 
 			isInitialized = true;
 		}
@@ -59,7 +74,7 @@ namespace MT
 		{
 			ASSERT (isInitialized, "Event not initialized");
 
-			val.Set(1);
+			val.Set(SIGNALED);
 			pthread_cond_broadcast( &condition );
 		}
 
@@ -67,16 +82,17 @@ namespace MT
 		{
 			ASSERT (isInitialized, "Event not initialized");
 
-			val.Set(0);
+			val.Set(NOT_SIGNALED);
 		}
 
 		bool Wait(uint32 milliseconds)
 		{
 			ASSERT (isInitialized, "Event not initialized");
 
-			if ( val.Get() != 0 )
+			// early exit if event already signaled
+			if ( val.Get() != NOT_SIGNALED )
 			{
-				val.Set(0);
+				AutoResetIfNeed();
 				return true;
 			}
 
@@ -98,6 +114,8 @@ namespace MT
 			sched_yield();
 
 			pthread_mutex_unlock( &mutex );
+
+			AutoResetIfNeed();
 			return ret == 0;
 		}
 
