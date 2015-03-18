@@ -19,16 +19,19 @@ namespace MT
 		{
 		}
 
+		// The function returns the resulting added value.
 		int Add(int sum)
 		{
-			return InterlockedExchangeAdd(&value, sum);
+			return InterlockedExchangeAdd(&value, sum) + sum;
 		}
 
+		// The function returns the resulting incremented value.
 		int Inc()
 		{
 			return InterlockedIncrement(&value);
 		}
 
+		// The function returns the resulting decremented value.
 		int Dec()
 		{
 			return InterlockedDecrement(&value);
@@ -39,6 +42,7 @@ namespace MT
 			return value;
 		}
 
+		// The function returns the initial value.
 		int Set(int val)
 		{
 			return InterlockedExchange(&value, val); 
