@@ -63,7 +63,7 @@ namespace MT
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
 			ASSERT(err == 0, "pthread_attr_setdetachstate - error");
 
-			err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, userData);
+			err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, this);
 			ASSERT(err == 0, "pthread_create - error");
 
 			isStarted = true;
