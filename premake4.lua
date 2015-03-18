@@ -85,6 +85,12 @@ project "TaskScheduler"
 	{
 		"Squish"
 	}
+	
+	if isPosix then
+	excludes { "Src/Platform/Win32/**.*" }
+	else
+	excludes { "Src/Platform/Posix/**.*" }
+	end
 
 	links {
 		"UnitTest++", "Squish"

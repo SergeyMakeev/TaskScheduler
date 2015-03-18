@@ -2,9 +2,9 @@
 
 namespace MT
 {
-	uint64 GetTimeMS()
+	inline uint64 GetTimeMS()
 	{
-		return clock() / (CLOCK_TIME_PER_SEC / 1000);
+		return clock() / (CLOCKS_PER_SEC / 1000);
 	}
 }
 
