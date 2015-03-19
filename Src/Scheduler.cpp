@@ -23,6 +23,7 @@ namespace MT
 
 	FiberContext::FiberContext()
 		: currentTask(nullptr)
+		, currentGroup(TaskGroup::GROUP_UNDEFINED)
 		, threadContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
 		, subtaskFibersCount(0)
@@ -253,22 +254,23 @@ namespace MT
 					// exiting
 					break;
 				}
-			} else
+			} 
+			else if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::AWAITING)
 			{
-				if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::AWAITING)
-				{
-					// current task was yielded, due to awaiting another task group
-					// exiting
-					break;
-				} else
-				{
-					// current task was yielded, due to subtask spawn
-					// exiting
-					break;
-				}
-
+				// current task was yielded, due to awaiting another task group
+				// exiting
+				break;
 			}
-
+			else if (taskInProgress.fiberContext->taskStatus == FiberTaskStatus::RUNNED)
+			{
+				// current task was yielded, due to subtask spawn
+				// exiting
+				break;
+			}
+			else
+			{
+				ASSERT(false, "State is not supperted. Undefined behaviour!")
+			}
 		} // loop
 
 		return canDropExecutionContext;
