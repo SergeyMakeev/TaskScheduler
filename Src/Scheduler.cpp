@@ -206,9 +206,6 @@ namespace MT
 					context.taskScheduler->allGroupStats.allDoneEvent.Signal();
 				}
 
-
-
-
 				//raise up releasing task fiber flag
 				canDropExecutionContext = true;
 
@@ -227,6 +224,10 @@ namespace MT
 					if (subTasksCount == 0)
 					{
 						// this is a last subtask. restore parent task
+#if FIBER_DEBUG
+						int fiberUsageCounter = taskInProgress.parentTask->fiberContext->fiber.GetUsageCounter();
+						ASSERT(fiberUsageCounter == 0, "Parent fiber in invalid state");
+#endif
 
 						TaskDesc * parent = taskInProgress.parentTask;
 
@@ -319,10 +320,12 @@ namespace MT
 				for(;;)
 				{
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
-					task.desc.fiberContext->subtaskFibersCount.Inc();
+					ASSERT(task.desc.fiberContext->fiber.GetUsageCounter() == 0, "Fiber still executed");
+					task.desc.fiberContext->subtaskFibersCount.Add(300);
 					bool canDropContext = ExecuteTask(context, task.desc);
-					int subtaskCount = task.desc.fiberContext->subtaskFibersCount.Dec();
+					int subtaskCount = task.desc.fiberContext->subtaskFibersCount.Add(-300);
 					ASSERT(subtaskCount >= 0, "Sanity check failed");
+					ASSERT(task.desc.fiberContext->fiber.GetUsageCounter() == 0, "Fiber still executed");
 
 					bool taskIsFinished = (task.desc.fiberContext->taskStatus == FiberTaskStatus::FINISHED);
 					bool taskIsAwait = (task.desc.fiberContext->taskStatus == FiberTaskStatus::AWAITING);

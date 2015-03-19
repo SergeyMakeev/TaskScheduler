@@ -34,7 +34,7 @@ namespace MT
 			return __sync_sub_and_fetch(&value, 1);
 		}
 
-		int Get()
+		int Get() const
 		{
 			return value;
 		}

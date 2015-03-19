@@ -37,7 +37,7 @@ namespace MT
 			return InterlockedDecrement(&value);
 		}
 
-		int Get()
+		int Get() const
 		{
 			return value;
 		}

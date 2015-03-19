@@ -84,6 +84,15 @@ namespace MT
 #endif
 		}
 
+#if FIBER_DEBUG
+		int GetUsageCounter() const
+		{
+			return counter.Get();
+		}
+
+#endif
+
+
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
 			ASSERT(from.fiber != nullptr, "Invalid from fiber");
@@ -102,6 +111,7 @@ namespace MT
 
 			::SwitchToFiber( (LPVOID)to.fiber );
 		}
+
 
 	};
 
