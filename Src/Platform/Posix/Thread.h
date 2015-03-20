@@ -12,7 +12,7 @@ namespace MT
 {
 	class _Fiber;
 
-	class Thread
+	class Thread : public ThreadBase
 	{
 		pthread_t thread;
 		pthread_attr_t threadAttr;

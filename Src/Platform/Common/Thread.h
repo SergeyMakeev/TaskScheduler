@@ -20,7 +20,7 @@ namespace MT
 
 		static void SpinSleep(uint32 milliseconds)
 		{
-			int64 desiredTime = GetTimeMilliSeconds() + milliseconds;
+			uint64 desiredTime = GetTimeMilliSeconds() + milliseconds;
 			while(GetTimeMilliSeconds() <= desiredTime) {}
 		}
 	};

@@ -87,7 +87,7 @@ project "TaskScheduler"
 	}
 	
 	if isPosix then
-	excludes { "Src/Platform/Win32/**.*" }
+	excludes { "Src/Platform/Windows/**.*" }
 	else
 	excludes { "Src/Platform/Posix/**.*" }
 	end
