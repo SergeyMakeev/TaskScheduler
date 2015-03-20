@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 
+#include <windows.h>
+
+#pragma comment( lib, "winmm.lib" )
+
 #endif
 
 #include <stdio.h>
@@ -19,6 +23,7 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 {
 
 #ifdef _WIN32
+	timeBeginPeriod(1);
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
@@ -27,6 +32,7 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 
 #ifdef _WIN32
 	 _CrtDumpMemoryLeaks();
+	 timeEndPeriod(1);
 #endif
 
 	return 0;
