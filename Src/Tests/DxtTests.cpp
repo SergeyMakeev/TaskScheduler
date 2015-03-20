@@ -185,6 +185,9 @@ namespace DxtCompress
 			// use stack_array as subtask container. beware stack overflow!
 			stack_array<ComplexRunBlockSubtask, 1024> subTasks;
 
+			//uint32 blkX = 0;
+			//uint32 blkY = 0;
+
 			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 			{
 				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
@@ -219,7 +222,7 @@ namespace DxtCompress
 
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &complexTask, 1);
 
-		CHECK(scheduler.WaitAll(30000));
+		CHECK(scheduler.WaitAll(3000000));
 		CHECK_ARRAY_EQUAL(complexTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 		free(complexTask.dstBlocks);
