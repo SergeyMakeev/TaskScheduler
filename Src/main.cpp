@@ -28,7 +28,11 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
-	Tests::RunAll();
+	//while(true)
+	{
+		Tests::RunAll();
+	}
+
 
 #ifdef _WIN32
 	 _CrtDumpMemoryLeaks();

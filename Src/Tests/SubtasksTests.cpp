@@ -207,6 +207,8 @@ MT::AtomicInt sum;
 // Checks one simple task
 TEST(TaskSubtaskCombo)
 {
+	sum.Set(0);
+
 	MT::TaskScheduler scheduler;
 
 	TaskSubtaskCombo_Sum16 task[16];
