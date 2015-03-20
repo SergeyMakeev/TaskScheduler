@@ -34,7 +34,7 @@ SUITE(PlatformTests)
 
 	void MyThreadFunc2(void*)
 	{
-		MT::Thread::Sleep(300);
+		MT::Thread::SpinSleep(300);
 		g_Event.Signal();
 	}
 
@@ -59,9 +59,9 @@ SUITE(PlatformTests)
 
 		MT::Timer timer;
 
-		MT::Thread::Sleep(100);
+		MT::Thread::SpinSleep(100);
 
-		CHECK( timer.Get() >= 100 );
+		CHECK( timer.GetPastMilliSeconds() >= 100 );
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

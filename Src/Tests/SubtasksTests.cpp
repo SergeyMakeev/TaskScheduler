@@ -106,7 +106,7 @@ struct TaskWithManySubtasks
 		for (int i = 0; i < 2; ++i)
 		{
 			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &task, 1);
-			MT::Thread::Sleep(1);
+			MT::Thread::SpinSleep(1);
 		}
 	}
 

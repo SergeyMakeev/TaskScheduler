@@ -26,15 +26,20 @@ namespace MT
 {
 	class Timer
 	{
-		uint64 start;
+		uint64 startMicroSeconds;
 	public:
-		Timer() : start(MT::GetTimeMS())
+		Timer() : startMicroSeconds(MT::GetTimeMicroSeconds())
 		{
 		}
 
-		uint32 Get() const
+		uint32 GetPastMicroSeconds() const
 		{
-			return (uint32)(MT::GetTimeMS() - start);
+			return (uint32)(MT::GetTimeMicroSeconds() - startMicroSeconds);
+		}
+
+		uint32 GetPastMilliSeconds() const
+		{
+			return (uint32)((MT::GetTimeMicroSeconds() - startMicroSeconds) / 1000);
 		}
 	};
 }

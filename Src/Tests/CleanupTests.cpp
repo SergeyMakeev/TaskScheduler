@@ -13,7 +13,7 @@ struct NotFinishedTaskDestroy
 	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)
 	{
-		MT::Thread::Sleep(timeLimitMS * 2);
+		MT::Thread::SpinSleep(timeLimitMS * 2);
 	}
 };
 

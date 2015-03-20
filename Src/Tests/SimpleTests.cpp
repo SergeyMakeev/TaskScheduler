@@ -48,7 +48,7 @@ struct ALotOfTasks
 	void Do(MT::FiberContext&)
 	{
 		counter->Inc();
-		MT::Thread::Sleep(1);
+		MT::Thread::SpinSleep(1);
 	}
 };
 

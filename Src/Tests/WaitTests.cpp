@@ -16,7 +16,7 @@ namespace SimpleWaitFromSubtask
 	{
 		void Do(MT::FiberContext&)
 		{
-			MT::Thread::Sleep(2);
+			MT::Thread::SpinSleep(2);
 			subTaskCount.Inc();
 		}
 

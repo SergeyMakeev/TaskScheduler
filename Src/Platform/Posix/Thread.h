@@ -6,15 +6,14 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "../Common/Thread.h"
+
 namespace MT
 {
 	class _Fiber;
 
 	class Thread
 	{
-		void * funcData;
-		TThreadEntryPoint func;
-
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
@@ -32,23 +31,12 @@ namespace MT
 			pthread_exit(nullptr);
 		}
 
-	private:
-
-		Thread(const Thread &) {}
-		void operator=(const Thread &) {}
-
 	public:
 
 		Thread()
-			: funcData(nullptr)
-			, func(nullptr)
-			, stackBase(nullptr)
+			: stackBase(nullptr)
 			, stackSize(0)
 			, isStarted(false)
-		{
-		}
-
-		~Thread()
 		{
 		}
 
@@ -152,7 +140,7 @@ namespace MT
       req.tv_nsec = milliseconds * 1000000L;
       while (nanosleep(&req,&req) == -1 )
 			{
-           continue;
+				continue;
 			}
 		}
 

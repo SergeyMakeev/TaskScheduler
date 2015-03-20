@@ -1,15 +1,12 @@
 #pragma once
-
+#include "../Common/Thread.h"
 
 namespace MT
 {
 	class _Fiber;
 
-	class Thread
+	class Thread : public ThreadBase
 	{
-		void * funcData;
-		TThreadEntryPoint func;
-
 		DWORD threadId;
 		HANDLE thread;
 
@@ -21,18 +18,10 @@ namespace MT
 
 			ExitThread(0);
 		}
-
-	private:
-
-		Thread(const Thread &) {}
-		void operator=(const Thread &) {}
-
 	public:
 
 		Thread()
-			: func(nullptr)
-			, funcData(nullptr)
-			, thread(nullptr)
+			: thread(nullptr)
 			, threadId(0)
 		{
 		}
