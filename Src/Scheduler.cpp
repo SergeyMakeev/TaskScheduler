@@ -9,11 +9,11 @@ namespace MT
 	static const size_t TASK_BUFFER_CAPACITY = 4096;
 
 	ThreadContext::ThreadContext()
-		: taskScheduler(nullptr)
+		: lastActiveFiberContext(nullptr)
+		, taskScheduler(nullptr)
 		, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 		, state(ThreadState::ALIVE)
 		, descBuffer(TASK_BUFFER_CAPACITY)
-		, lastActiveFiberContext(nullptr)
 	{
 	}
 
@@ -23,11 +23,11 @@ namespace MT
 
 
 	FiberContext::FiberContext()
-		: taskStatus(FiberTaskStatus::UNKNOWN)
+		: threadContext(nullptr)
+		, taskStatus(FiberTaskStatus::UNKNOWN)
 		, currentGroup(TaskGroup::GROUP_UNDEFINED)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
-		, threadContext(nullptr)
 	{
 	}
 
@@ -356,7 +356,7 @@ namespace MT
 
 						// If parent fiber is exist transfer flow control to parent fiber, if parent fiber is null, exit
 						fiberContext = parentFiber;
-					} else 
+					} else
 					{
 						ASSERT( childrenFibersCount >= 0, "Sanity check failed");
 
