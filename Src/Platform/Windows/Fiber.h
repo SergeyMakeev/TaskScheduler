@@ -18,6 +18,7 @@ namespace MT
 
 #if FIBER_DEBUG
 		AtomicInt counter;
+		AtomicInt ownerThread;
 #endif
 
 		static void __stdcall FiberFuncInternal(void *pFiber)
@@ -65,6 +66,7 @@ namespace MT
 			ASSERT(fiber != nullptr, "Can't create fiber");
 
 #if FIBER_DEBUG
+			ownerThread.Set(0xFFFFFFFF);
 			counter.Set(1);
 #endif
 		}
@@ -80,6 +82,7 @@ namespace MT
 			ASSERT(fiber != nullptr, "Can't create fiber");
 
 #if FIBER_DEBUG
+			ownerThread.Set(0xFFFFFFFF);
 			counter.Set(0);
 #endif
 		}
@@ -90,15 +93,25 @@ namespace MT
 			return counter.Get();
 		}
 
+		int GetOwnerThread() const
+		{
+			return ownerThread.Get();
+		}
+
 #endif
 
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
+			MemoryBarrier();
+
 			ASSERT(from.fiber != nullptr, "Invalid from fiber");
 			ASSERT(to.fiber != nullptr, "Invalid to fiber");
 
 #if FIBER_DEBUG
+
+			to.ownerThread.Set(::GetCurrentThreadId());
+
 			ASSERT(from.counter.Get() == 1, "Invalid fiber state");
 			ASSERT(to.counter.Get() == 0, "Invalid fiber state");
 

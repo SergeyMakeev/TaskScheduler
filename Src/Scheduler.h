@@ -12,7 +12,7 @@
 namespace MT
 {
 
-	const uint32 MT_MAX_THREAD_COUNT = 32;
+	const uint32 MT_MAX_THREAD_COUNT = 2;
 	const uint32 MT_MAX_FIBERS_COUNT = 128;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 131072;
 	const uint32 MT_FIBER_STACK_SIZE = 16384;
@@ -130,13 +130,25 @@ namespace MT
 
 		void Reset();
 
+		void SetThreadContext(ThreadContext * _threadContext);
+		ThreadContext* GetThreadContext();
+
+		void SetStatus(FiberTaskStatus::Type _taskStatus);
+		FiberTaskStatus::Type GetStatus() const;
+
+	private:
+
+		// Active thread context (null if fiber context is not executing now)
+		ThreadContext * threadContext;
+
+		// Active task status
+		FiberTaskStatus::Type taskStatus;
+
 	public:
 
 		// Active task attached to this fiber
 		TaskDesc currentTask;
 
-		// Active task status
-		FiberTaskStatus::Type taskStatus;
 
 		// Active task group
 		TaskGroup::Type currentGroup;
@@ -146,9 +158,6 @@ namespace MT
 
 		// Parent fiber
 		FiberContext* parentFiber;
-
-		// Active thread context (null if fiber context is not executing now)
-		ThreadContext * threadContext;
 
 		// System Fiber
 		Fiber fiber;
@@ -190,6 +199,8 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ThreadContext
 	{
+		FiberContext* lastActiveFiberContext;
+
 		// pointer to task manager
 		TaskScheduler* taskScheduler;
 

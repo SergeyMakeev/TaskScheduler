@@ -58,7 +58,7 @@ TEST(DeepSubtaskQueue)
 {
 	MT::TaskScheduler scheduler;
 
-	//while(true)
+	while(true)
 	{
 		DeepSubtaskQueue<12> task;
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
