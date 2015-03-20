@@ -12,7 +12,7 @@
 namespace MT
 {
 
-	const uint32 MT_MAX_THREAD_COUNT = 2;
+	const uint32 MT_MAX_THREAD_COUNT = 32;
 	const uint32 MT_MAX_FIBERS_COUNT = 128;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 131072;
 	const uint32 MT_FIBER_STACK_SIZE = 16384;
@@ -279,7 +279,7 @@ namespace MT
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
-		static bool ExecuteTask (ThreadContext& threadContext, FiberContext* fiberContext);
+		static FiberContext* ExecuteTask (ThreadContext& threadContext, FiberContext* fiberContext);
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Distributes task to threads:
