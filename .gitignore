@@ -1,4 +1,5 @@
 Bin/
 Build/
+Scheduler/Docs
 *.user
 *.suo
