@@ -18,7 +18,7 @@ namespace MT
 
 	public:
 
-		/// \name   Constructors
+		/// \name Initializes a new instance of the ConcurrentQueueLIFO class.
 		/// \brief  
 		ConcurrentQueueLIFO()
 		{
