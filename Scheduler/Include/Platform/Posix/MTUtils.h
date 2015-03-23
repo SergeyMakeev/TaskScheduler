@@ -6,7 +6,7 @@ namespace MT
 	__inline int64 GetTimeMicroSeconds()
 	{
 		struct timeval te;
-		gettimeofday(&te, NULL);
+		gettimeofday(&te, nullptr);
 		return te.tv_sec*1000000LL + te.tv_usec;
 	}
 

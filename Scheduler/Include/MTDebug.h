@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 
-
 #if defined(_MSC_VER)
 
 inline void ThrowException()
@@ -13,7 +12,6 @@ inline void ThrowException()
 #else
 
 #include<signal.h>
-
 inline void ThrowException()
 {
 	raise(SIGTRAP);

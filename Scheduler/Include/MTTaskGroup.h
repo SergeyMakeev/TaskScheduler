@@ -1,0 +1,32 @@
+#pragma once
+
+#include <MTTools.h>
+#include <MTPlatform.h>
+#include <MTConcurrentQueueLIFO.h>
+#include <MTStackArray.h>
+#include <MTFixedArray.h>
+
+
+namespace MT
+{
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Task group
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Application can wait until whole group was finished.
+	namespace TaskGroup
+	{
+		enum Type
+		{
+			GROUP_0 = 0,
+			GROUP_1 = 1,
+			GROUP_2 = 2,
+
+			COUNT,
+
+			GROUP_UNDEFINED
+		};
+	}
+
+
+
+}

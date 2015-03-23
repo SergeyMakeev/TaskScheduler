@@ -62,7 +62,7 @@ namespace MT
 			func = nullptr;
 			funcData = nullptr;
 
-			fiber = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
+			fiber = ::ConvertThreadToFiberEx(nullptr, FIBER_FLAG_FLOAT_SWITCH);
 			ASSERT(fiber != nullptr, "Can't create fiber");
 
 #if FIBER_DEBUG

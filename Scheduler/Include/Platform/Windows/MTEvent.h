@@ -20,31 +20,31 @@ namespace MT
 		Event()
 		{
 			static_assert(sizeof(Event) == sizeof(::HANDLE), "sizeof(Event) is invalid");
-			eventHandle = NULL;
+			eventHandle = nullptr;
 		}
 
 		Event(EventReset::Type resetType, bool initialState)
 		{
-			eventHandle = NULL;
+			eventHandle = nullptr;
 			Create(resetType, initialState);
 		}
 
 		~Event()
 		{
 			CloseHandle(eventHandle);
-			eventHandle = NULL;
+			eventHandle = nullptr;
 		}
 
 		void Create(EventReset::Type resetType, bool initialState)
 		{
-			if (eventHandle != NULL)
+			if (eventHandle != nullptr)
 			{
 				CloseHandle(eventHandle);
 			}
 
 			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
 			BOOL bInitialState = initialState ? TRUE : FALSE;
-			eventHandle = ::CreateEvent(NULL, bManualReset, bInitialState, NULL);
+			eventHandle = ::CreateEvent(nullptr, bManualReset, bInitialState, nullptr);
 		}
 
 		void Signal()
