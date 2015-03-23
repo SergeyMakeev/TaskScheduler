@@ -7,10 +7,8 @@ SUITE(SubtasksTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<size_t N>
-struct DeepSubtaskQueue
+struct DeepSubtaskQueue : public MT::TaskBase<DeepSubtaskQueue<N>>
 {
-	TASK_METHODS(DeepSubtaskQueue)
-
 	int result;
 
 	DeepSubtaskQueue() : result(0) {}
@@ -28,10 +26,8 @@ struct DeepSubtaskQueue
 };
 
 template<>
-struct DeepSubtaskQueue<0>
+struct DeepSubtaskQueue<0> : public MT::TaskBase<DeepSubtaskQueue<0>>
 {
-	TASK_METHODS(DeepSubtaskQueue)
-
 	int result;
 	void Do(MT::FiberContext&)
 	{
@@ -41,10 +37,8 @@ struct DeepSubtaskQueue<0>
 
 
 template<>
-struct DeepSubtaskQueue<1>
+struct DeepSubtaskQueue<1> : public MT::TaskBase<DeepSubtaskQueue<1>>
 {
-	TASK_METHODS(DeepSubtaskQueue)
-
 	int result;
 	void Do(MT::FiberContext&)
 	{
@@ -74,21 +68,16 @@ TEST(DeepSubtaskQueue)
 static MT::TaskGroup::Type sourceGroup = MT::TaskGroup::GROUP_1;
 static MT::TaskGroup::Type resultGroup = MT::TaskGroup::GROUP_UNDEFINED;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct GroupSubtask
+struct GroupSubtask : public MT::TaskBase<GroupSubtask>
 {
-	TASK_METHODS(GroupSubtask)
-
-
 	void Do(MT::FiberContext& context)
 	{
 		resultGroup = context.currentGroup;
 	}
 };
 
-struct GroupTask
+struct GroupTask : public MT::TaskBase<GroupTask>
 {
-	TASK_METHODS(GroupTask)
-
 	void Do(MT::FiberContext& context)
 	{
 		GroupSubtask task;
@@ -96,10 +85,8 @@ struct GroupTask
 	}
 };
 
-struct TaskWithManySubtasks
+struct TaskWithManySubtasks : public MT::TaskBase<TaskWithManySubtasks>
 {
-	TASK_METHODS(TaskWithManySubtasks)
-
 	void Do(MT::FiberContext& context)
 	{
 		GroupTask task;
@@ -155,14 +142,9 @@ TEST(ManyTasksOneSubtask)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct TaskSubtaskCombo
+struct TaskSubtaskCombo_Sum1 : public MT::TaskBase<TaskSubtaskCombo_Sum1>
 {
 	MT::AtomicInt* data;
-};
-
-struct TaskSubtaskCombo_Sum1 : public TaskSubtaskCombo
-{
-	TASK_METHODS(TaskSubtaskCombo_Sum1)
 
 	void Do(MT::FiberContext&)
 	{
@@ -170,9 +152,9 @@ struct TaskSubtaskCombo_Sum1 : public TaskSubtaskCombo
 	}
 };
 
-struct TaskSubtaskCombo_Sum4 : public TaskSubtaskCombo
+struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 {
-	TASK_METHODS(TaskSubtaskCombo_Sum4)
+	MT::AtomicInt* data;
 
 	TaskSubtaskCombo_Sum1 tasks[2];
 
@@ -186,9 +168,9 @@ struct TaskSubtaskCombo_Sum4 : public TaskSubtaskCombo
 	}
 };
 
-struct TaskSubtaskCombo_Sum16 : public TaskSubtaskCombo
+struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 {
-	TASK_METHODS(TaskSubtaskCombo_Sum16)
+	MT::AtomicInt* data;
 
 	TaskSubtaskCombo_Sum4 tasks[2];
 

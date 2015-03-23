@@ -12,19 +12,17 @@ namespace SimpleWaitFromSubtask
 	MT::AtomicInt subTaskCount;
 	MT::AtomicInt taskCount;
 
-	struct Subtask
+	struct Subtask : public MT::TaskBase<Subtask>
 	{
 		void Do(MT::FiberContext&)
 		{
 			MT::Thread::SpinSleep(2);
 			subTaskCount.Inc();
 		}
-
-		TASK_METHODS(Subtask);
 	};
 
 
-	struct Task
+	struct Task : public MT::TaskBase<Task>
 	{
 		void Do(MT::FiberContext& ctx)
 		{
@@ -35,8 +33,6 @@ namespace SimpleWaitFromSubtask
 
 			taskCount.Inc();
 		}
-
-		TASK_METHODS(Task);
 	};
 
 

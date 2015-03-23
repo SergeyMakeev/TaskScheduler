@@ -6,10 +6,8 @@
 SUITE(CleanupTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct NotFinishedTaskDestroy
+struct NotFinishedTaskDestroy : public MT::TaskBase<NotFinishedTaskDestroy>
 {
-	TASK_METHODS(NotFinishedTaskDestroy)
-
 	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)
 	{

@@ -18,10 +18,8 @@ SUITE(DxtTests)
 namespace DxtCompress
 {
 
-	struct SimpleRunParams
+	struct SimpleRunParams : public MT::TaskBase<SimpleRunParams>
 	{
-		TASK_METHODS(SimpleRunParams);
-
 		uint32 width;
 		uint32 height;
 		uint32 stride;
@@ -117,10 +115,8 @@ namespace DxtCompress
 		free(simpleTask.dstBlocks);
 	}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct ComplexRunBlockSubtask
+	struct ComplexRunBlockSubtask : public MT::TaskBase<ComplexRunBlockSubtask>
 	{
-		TASK_METHODS(ComplexRunBlockSubtask);
-
 		int srcX;
 		int srcY;
 
@@ -169,10 +165,8 @@ namespace DxtCompress
 	};
 
 
-	struct ComplexRunParams
+	struct ComplexRunParams : public MT::TaskBase<ComplexRunParams>
 	{
-		TASK_METHODS(ComplexRunParams);
-
 		uint32 width;
 		uint32 height;
 		uint32 stride;

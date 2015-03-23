@@ -403,11 +403,18 @@ namespace MT
 
 
 
-	#define TASK_METHODS(TASK_TYPE) static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
-	                                {                                                                          \
-	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);                   \
-	                                    task->Do(fiberContext);                                                \
-	                                }                                                                          \
+
+
+		template<typename T>
+		struct TaskBase
+		{
+			static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData)
+			{
+				T* task = static_cast<T*>(userData);
+				task->Do(fiberContext);
+			}
+		};
+
 
 
 }
