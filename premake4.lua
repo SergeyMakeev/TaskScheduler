@@ -78,12 +78,12 @@ project "TaskScheduler"
  	flags {"NoPCH"}
  	kind "ConsoleApp"
  	files {
- 		"Src/**.*", 
+ 		"Scheduler/**.*", 
  	}
 
 	includedirs
 	{
-		"Squish"
+		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
 	}
 	
 	if isPosix then
