@@ -1,10 +1,15 @@
-#include "Platform.h"
+#pragma once
+
 #include <vector>
+
+#include "Platform.h"
+#include "Tools.h"
+
 
 namespace MT
 {
 
-	//TODO: This is very naive implementation, rewrite to multiple producer, multiple consumer lockless queue
+	//TODO: This is very naive implementation, rewrite to multiple producer, multiple consumer lock less queue
 	template<typename T>
 	class ConcurrentQueueLIFO
 	{
@@ -50,10 +55,21 @@ namespace MT
 			return true;
 		}
 
+		size_t PopAll(T * dstBuffer, size_t dstBufferSize)
+		{
+			MT::ScopedGuard guard(mutex);
+			size_t elementsCount = Min(queue.size(), dstBufferSize);
+			for (size_t i = 0; i < elementsCount; i++)
+			{
+				dstBuffer[i] = std::move(queue[i]);
+			}
+			queue.clear();
+			return elementsCount;
+		}
+
 		bool IsEmpty()
 		{
 			MT::ScopedGuard guard(mutex);
-
 			return queue.empty();
 		}
 

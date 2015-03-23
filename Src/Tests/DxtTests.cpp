@@ -17,8 +17,11 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace DxtCompress
 {
-	struct TaskParams
+
+	struct SimpleRunParams
 	{
+		TASK_METHODS(SimpleRunParams);
+
 		uint32 width;
 		uint32 height;
 		uint32 stride;
@@ -29,9 +32,7 @@ namespace DxtCompress
 
 		uint8 * dstBlocks;
 
-		TaskParams() : width(0), height(0), stride(0), srcPixels(0), blkWidth(0), blkHeight(0), dstBlocks(0) {}
-
-		void Init(uint32 _width, uint32 _height, uint32 _stride, uint8* _srcPixels)
+		SimpleRunParams(uint32 _width, uint32 _height, uint32 _stride, uint8* _srcPixels)
 		{
 			width = _width;
 			height = _height;
@@ -42,12 +43,7 @@ namespace DxtCompress
 			blkWidth = width >> 2;
 			blkHeight = height >> 2;
 		}
-	};
 
-
-	struct SimpleRunParams : public TaskParams
-	{
-		TASK_METHODS(SimpleRunParams)
 
 		void Do(MT::FiberContext&)
 		{
@@ -98,8 +94,7 @@ namespace DxtCompress
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
-		SimpleRunParams simpleTask;
-		simpleTask.Init(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
+		SimpleRunParams simpleTask(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
 		ASSERT ((simpleTask.width & 3) == 0 && (simpleTask.height & 3) == 0, "Image size must be a multiple of 4");
 
 		int dxtBlocksTotalSize = simpleTask.blkWidth * simpleTask.blkHeight * 8;
@@ -134,9 +129,7 @@ namespace DxtCompress
 		uint8 * srcPixels;
 		uint8 * dstBlock;
 
-		ComplexRunBlockSubtask() : srcX(0), srcY(0), stride(0), srcPixels(0), dstBlock(0) {}
-
-		void Init(int _srcX, int _srcY, int _stride, uint8* _srcPixels, uint8* _dstBlock )
+		ComplexRunBlockSubtask(int _srcX, int _srcY, int _stride, uint8* _srcPixels, uint8* _dstBlock )
 		{
 				srcX = _srcX;
 				srcY = _srcY;
@@ -176,9 +169,32 @@ namespace DxtCompress
 	};
 
 
-	struct ComplexRunParams : public TaskParams
+	struct ComplexRunParams
 	{
-		TASK_METHODS(ComplexRunParams)
+		TASK_METHODS(ComplexRunParams);
+
+		uint32 width;
+		uint32 height;
+		uint32 stride;
+		uint8 * srcPixels;
+
+		uint32 blkWidth;
+		uint32 blkHeight;
+
+		uint8 * dstBlocks;
+
+		ComplexRunParams(uint32 _width, uint32 _height, uint32 _stride, uint8* _srcPixels)
+		{
+			width = _width;
+			height = _height;
+			stride = _stride;
+
+			srcPixels = _srcPixels;
+
+			blkWidth = width >> 2;
+			blkHeight = height >> 2;
+		}
+
 
 		void Do(MT::FiberContext& context)
 		{
@@ -194,8 +210,7 @@ namespace DxtCompress
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
 
-					ComplexRunBlockSubtask & subtask = subTasks.add();
-					subtask.Init(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]);
+					subTasks.push_back( ComplexRunBlockSubtask(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]) );
 				}
 			}
 
@@ -210,8 +225,7 @@ namespace DxtCompress
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
 		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
-		ComplexRunParams complexTask;
-		complexTask.Init(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
+		ComplexRunParams complexTask(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
 		ASSERT ((complexTask.width & 3) == 0 && (complexTask.height & 4) == 0, "Image size must be a multiple of 4");
 
 		int dxtBlocksTotalSize = complexTask.blkWidth * complexTask.blkHeight * 8;

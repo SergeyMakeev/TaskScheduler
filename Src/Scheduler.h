@@ -114,7 +114,7 @@ namespace MT
 	{
 	private:
 
-		void RunSubtasksAndYield(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets);
+		void RunSubtasksAndYieldImpl(fixed_array<TaskBucket>& buckets);
 
 	public:
 
@@ -179,17 +179,20 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct GroupedTask
 	{
+		FiberContext* awaitingFiber;
 		FiberContext* parentFiber;
 		TaskGroup::Type group;
 		TaskDesc desc;
 
 		GroupedTask()
 			: parentFiber(nullptr)
+			, awaitingFiber(nullptr)
 			, group(TaskGroup::GROUP_UNDEFINED)
 		{}
 
 		GroupedTask(TaskDesc& _desc, TaskGroup::Type _group)
 			: parentFiber(nullptr)
+			, awaitingFiber(nullptr)
 			, group(_group)
 			, desc(_desc)
 		{}
@@ -227,6 +230,8 @@ namespace MT
 
 		ThreadContext();
 		~ThreadContext();
+
+		void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
 	};
 
 
@@ -236,6 +241,7 @@ namespace MT
 	class TaskScheduler
 	{
 		friend class FiberContext;
+		friend struct ThreadContext;
 
 		struct GroupStats
 		{
@@ -269,17 +275,34 @@ namespace MT
 		// Fibers context
 		FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
-		FiberContext* RequestFiberContext(const GroupedTask& task);
+		FiberContext* RequestFiberContext(GroupedTask& task);
 		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
 
-		void RunTasksImpl(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets, FiberContext * parentFiber);
-		void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
-
-		void RunTasksImpl(TaskGroup::Type taskGroup, TaskDesc* taskDescArr, size_t count, FiberContext * parentFiber);
+		void RunTasksImpl(fixed_array<TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
 		static FiberContext* ExecuteTask (ThreadContext& threadContext, FiberContext* fiberContext);
+
+
+		template<class T>
+		GroupedTask GetGroupedTask(TaskGroup::Type group, T * src) const
+		{
+			TaskDesc desc(T::TaskEntryPoint, (void*)(src));
+			return GroupedTask(desc, group);
+		}
+
+		//template specialization for FiberContext*
+		template<>
+		GroupedTask GetGroupedTask(TaskGroup::Type group, FiberContext ** src) const
+		{
+			ASSERT(group == TaskGroup::GROUP_UNDEFINED, "Group must be GROUP_UNDEFINED");
+			FiberContext * fiberContext = *src;
+			GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
+			groupedTask.awaitingFiber = fiberContext;
+			return groupedTask;
+		}
+
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Distributes task to threads:
@@ -301,8 +324,7 @@ namespace MT
 
 				for (size_t i = bucketIndex; i < descriptions.size(); i += buckets.size())
 				{
-					TaskDesc desc(TTask::TaskFunction, (void*)(&taskArray[i]));
-					descriptions[index++] = GroupedTask(desc, group);
+					descriptions[index++] = GetGroupedTask(group, &taskArray[i]);
 				}
 
 				buckets[bucketIndex] = TaskBucket(&descriptions[bucketStartIndex], index - bucketStartIndex);
@@ -342,7 +364,7 @@ namespace MT
         fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
 
         DistibuteDescriptions(group, taskArray, buffer, buckets);
-        RunTasksImpl(group, buckets, nullptr);
+        RunTasksImpl(buckets, nullptr, false);
     }
 
     template<class TTask>
@@ -359,7 +381,7 @@ namespace MT
         fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
 
         threadContext->taskScheduler->DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-        RunSubtasksAndYield(taskGroup, buckets);
+        RunSubtasksAndYieldImpl(buckets);
     }
 
     template<class TTask>
@@ -376,16 +398,16 @@ namespace MT
         fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
 
         scheduler.DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-        scheduler.RunTasksImpl(taskGroup, buckets, nullptr);
+        scheduler.RunTasksImpl(buckets, nullptr, false);
     }
 
 
 
-	#define TASK_METHODS(TASK_TYPE) static void TaskFunction(MT::FiberContext& fiberContext, void* userData) \
-	                                {                                                                    \
-	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);             \
-	                                    task->Do(fiberContext);                                          \
-	                                }                                                                    \
+	#define TASK_METHODS(TASK_TYPE) static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
+	                                {                                                                          \
+	                                    TASK_TYPE* task = static_cast<TASK_TYPE*>(userData);                   \
+	                                    task->Do(fiberContext);                                                \
+	                                }                                                                          \
 
 
 }

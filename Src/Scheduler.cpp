@@ -21,6 +21,33 @@ namespace MT
 	{
 	}
 
+	void ThreadContext::RestoreAwaitingTasks(TaskGroup::Type taskGroup)
+	{
+		ASSERT(taskScheduler, "Invalid Task Scheduler");
+		ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
+
+		ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskScheduler->waitTaskQueues[taskGroup];
+
+		if (groupQueue.IsEmpty())
+		{
+			return;
+		}
+
+		//copy awaiting tasks list to stack
+		stack_array<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
+		size_t taskCount = groupQueue.PopAll(groupQueueCopy.begin(), groupQueueCopy.size());
+
+		fixed_array<GroupedTask> buffer(&descBuffer.front(), taskCount);
+
+		TaskScheduler & scheduler = *(taskScheduler);
+		size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
+		fixed_array<TaskBucket>	buckets(ALLOCATE_ON_STACK(TaskBucket, bucketCount), bucketCount);
+
+		scheduler.DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.begin(), buffer, buckets);
+		scheduler.RunTasksImpl(buckets, nullptr, true);
+	}
+
+
 
 	FiberContext::FiberContext()
 		: threadContext(nullptr)
@@ -95,15 +122,14 @@ namespace MT
 		Fiber::SwitchTo(fiber, schedulerFiber);
 	}
 
-	void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets)
+	void FiberContext::RunSubtasksAndYieldImpl(fixed_array<TaskBucket>& buckets)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
-		ASSERT(taskGroup < TaskGroup::COUNT, "Sanity check failed!");
 		ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunSubtasksAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		// add to scheduler
-		threadContext->taskScheduler->RunTasksImpl(taskGroup, buckets, this);
+		threadContext->taskScheduler->RunTasksImpl(buckets, this, false);
 
 		//
 		ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
@@ -170,9 +196,15 @@ namespace MT
 		}
 	}
 
-	FiberContext* TaskScheduler::RequestFiberContext(const GroupedTask& task)
+	FiberContext* TaskScheduler::RequestFiberContext(GroupedTask& task)
 	{
-		FiberContext *fiberContext = nullptr;
+		FiberContext *fiberContext = task.awaitingFiber;
+		if (fiberContext)
+		{
+			task.awaitingFiber = nullptr;
+			return fiberContext;
+		}
+
 		if (!availableFibers.TryPop(fiberContext))
 		{
 			ASSERT(false, "Fibers pool is empty");
@@ -192,11 +224,6 @@ namespace MT
 	}
 
 
-	void TaskScheduler::RestoreAwaitingTasks(TaskGroup::Type taskGroup)
-	{
-		ConcurrentQueueLIFO<FiberContext*> & groupQueue = waitTaskQueues[taskGroup];
-		//TODO: move awaiting tasks into execution thread queues
-	}
 
 	FiberContext* TaskScheduler::ExecuteTask(ThreadContext& threadContext, FiberContext* fiberContext)
 	{
@@ -230,7 +257,7 @@ namespace MT
 			if (groupTaskCount == 0)
 			{
 				// Restore awaiting tasks
-				threadContext.taskScheduler->RestoreAwaitingTasks(taskGroup);
+				threadContext.RestoreAwaitingTasks(taskGroup);
 				threadContext.taskScheduler->groupStats[taskGroup].allDoneEvent.Signal();
 			}
 
@@ -329,7 +356,6 @@ namespace MT
 			if (context.queue.TryPop(task))
 			{
 				// There is a new task
-
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
 				ASSERT(fiberContext, "Can't get execution context from pool");
 				ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
@@ -390,21 +416,63 @@ namespace MT
 	}
 
 
-	void TaskScheduler::RunTasksImpl(TaskGroup::Type taskGroup, fixed_array<TaskBucket>& buckets, FiberContext * parentFiber)
+	void TaskScheduler::RunTasksImpl(fixed_array<TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
-		ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+		// Reset counter to initial value
+		int taskCountInGroup[TaskGroup::COUNT];
+		for (size_t i = 0; i < TaskGroup::COUNT; ++i)
+		{
+			taskCountInGroup[i] = 0;
+		}
 
+		// Set parent fiber pointer
+		// Calculate the number of tasks per group
+		// Calculate total number of tasks
 		size_t count = 0;
 		for (size_t i = 0; i < buckets.size(); ++i)
 		{
-			count += buckets[i].count;
+			TaskBucket& bucket = buckets[i];
+			for (size_t taskIndex = 0; taskIndex < bucket.count; taskIndex++)
+			{
+				GroupedTask & task = bucket.tasks[taskIndex];
+
+				ASSERT(task.group < TaskGroup::COUNT, "Invalid group.");
+
+				task.parentFiber = parentFiber;
+				taskCountInGroup[task.group]++;
+			}
+			count += bucket.count;
 		}
 
+		// Increments child fibers count on parent fiber
 		if (parentFiber)
 		{
 			parentFiber->childrenFibersCount.Add((uint32)count);
 		}
 
+		if (restoredFromAwaitState == false)
+		{
+			// Increments all task in progress counter
+			allGroupStats.allDoneEvent.Reset();
+			allGroupStats.inProgressTaskCount.Add((uint32)count);
+
+			// Increments task in progress counters (per group)
+			for (size_t i = 0; i < TaskGroup::COUNT; ++i)
+			{
+				int groupTaskCount = taskCountInGroup[i];
+				if (groupTaskCount > 0)
+				{
+					groupStats[i].allDoneEvent.Reset();
+					groupStats[i].inProgressTaskCount.Add((uint32)groupTaskCount);
+				}
+			}
+		} else
+		{
+			// If task's restored from await state, counters already in correct state
+		}
+
+
+		// Add to thread queue
 		for (size_t i = 0; i < buckets.size(); ++i)
 		{
 			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
@@ -412,21 +480,8 @@ namespace MT
 
 			TaskBucket& bucket = buckets[i];
 
-			allGroupStats.allDoneEvent.Reset();
-			allGroupStats.inProgressTaskCount.Add((uint32)bucket.count);
-
-			groupStats[taskGroup].allDoneEvent.Reset();
-			groupStats[taskGroup].inProgressTaskCount.Add((uint32)bucket.count);
-
-			for (size_t taskIndex = 0; taskIndex < bucket.count; taskIndex++)
-			{
-				bucket.tasks[taskIndex].parentFiber = parentFiber;
-			}
-
 			context.queue.PushRange(bucket.tasks, bucket.count);
-
 			context.hasNewTasksEvent.Signal();
-
 		}
 	}
 

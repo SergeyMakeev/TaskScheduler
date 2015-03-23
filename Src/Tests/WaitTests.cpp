@@ -41,7 +41,7 @@ namespace SimpleWaitFromSubtask
 
 
 	// Checks one simple task
-	TEST(RunOneSimpleTask)
+	TEST(RunOneSimpleWaitTask)
 	{
 		taskCount.Set(0);
 		subTaskCount.Set(0);
