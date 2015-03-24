@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "../Common/Thread.h"
+#include <Platform/Common/MTThread.h>
 
 namespace MT
 {

@@ -27,7 +27,11 @@ class stack_array
 
 	inline void dtor(T* element)
 	{
+#if _MSC_VER
+		// warning C4100: 'element' : unreferenced formal parameter
+		// if type T has not destructor
 		element;
+#endif
 		element->~T();
 	}
 

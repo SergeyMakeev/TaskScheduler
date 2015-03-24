@@ -21,14 +21,14 @@ namespace MT
 			TaskDesc desc;
 
 			GroupedTask()
-				: parentFiber(nullptr)
-				, awaitingFiber(nullptr)
+				: awaitingFiber(nullptr)
+				, parentFiber(nullptr)
 				, group(TaskGroup::GROUP_UNDEFINED)
 			{}
 
 			GroupedTask(TaskDesc& _desc, TaskGroup::Type _group)
-				: parentFiber(nullptr)
-				, awaitingFiber(nullptr)
+				: awaitingFiber(nullptr)
+				, parentFiber(nullptr)
 				, group(_group)
 				, desc(_desc)
 			{}

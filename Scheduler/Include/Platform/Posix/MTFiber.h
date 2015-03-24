@@ -92,6 +92,8 @@ namespace MT
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
+			 __sync_synchronize();
+
 			ASSERT(from.isInitialized, "Invalid from fiber");
 			ASSERT(to.isInitialized, "Invalid to fiber");
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);

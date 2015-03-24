@@ -3,6 +3,7 @@
 #include <MTScheduler.h>
 
 #include <squish.h>
+#include <string.h>
 
 namespace EmbeddedImage
 {
