@@ -96,6 +96,9 @@ project "Tests"
 		"UnitTest++", "Squish", "TaskScheduler"
 	}
 
+	if isPosix then
+		links { "pthread" }
+	end
 
 project "TaskScheduler"
         kind "StaticLib"
@@ -114,11 +117,6 @@ project "TaskScheduler"
 	else
 	excludes { "Src/Platform/Posix/**.*" }
 	end
-
-	if isPosix then
-		links { "pthread" }
-	end
-
 
 
 project "UnitTest++"

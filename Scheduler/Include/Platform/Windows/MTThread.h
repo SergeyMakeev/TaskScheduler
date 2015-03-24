@@ -50,7 +50,7 @@ namespace MT
 
 		~Thread()
 		{
-			ASSERT(thread == nullptr, "Thread is not stopped!")
+			ASSERT(thread == nullptr, "Thread is not stopped!");
 		}
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
@@ -72,7 +72,7 @@ namespace MT
 
 			::WaitForSingleObject(thread, INFINITE);
 			BOOL res = CloseHandle(thread);
-			ASSERT(res != 0, "Can't close thread handle")
+			ASSERT(res != 0, "Can't close thread handle");
 			thread = nullptr;
 		}
 

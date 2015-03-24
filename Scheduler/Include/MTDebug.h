@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "MTTools.h"
 #include <stdio.h>
 
 #if defined(_MSC_VER)
@@ -45,14 +46,15 @@ inline void ThrowException()
 
 #ifdef _DEBUG
 
-#define REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line);ThrowException();
+#define REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line); ThrowException();
 
 #define ASSERT( condition, description ) { if ( !(condition) ) { REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) } }
 #define VERIFY( condition, description, operation ) { if ( !(condition) ) { { REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) }; operation; } }
 
 #else
 
-#define ASSERT( condition, description )
-#define VERIFY( condition, description, operation ) { if ( !(condition) ) { operation; } }
+//TODO: Remove condition from ASSERT
+#define ASSERT( condition, description ) { if ( !(condition) ) {} }
+#define VERIFY( condition, description, operation ) { if ( !(condition) ) { { }; operation; } }
 
 #endif
