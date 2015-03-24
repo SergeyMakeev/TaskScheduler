@@ -1,3 +1,3 @@
 #pragma once
 
-#define ALLOCATE_ON_STACK(TYPE, COUNT) (TYPE*)_alloca(sizeof(TYPE) * COUNT)
+#define ALLOCATE_ON_STACK(BYTES_COUNT) _alloca(BYTES_COUNT)

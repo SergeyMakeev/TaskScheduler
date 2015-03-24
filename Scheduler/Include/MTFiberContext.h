@@ -40,10 +40,10 @@ namespace MT
 		FiberContext();
 
 		template<class TTask>
-		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count);
+		void RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t taskCount);
 
 		template<class TTask>
-		void RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count);
+		void RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, size_t taskCount);
 
 		void WaitGroupAndYield(TaskGroup::Type group);
 
@@ -83,44 +83,6 @@ namespace MT
 		// Prevent false sharing between threads
 		uint8 cacheline[64];
 	};
-
-
-
-	template<class TTask>
-	void FiberContext::RunSubtasksAndYield(TaskGroup::Type taskGroup, const TTask* taskArray, size_t count)
-	{
-		ASSERT(threadContext, "ThreadContext is nullptr");
-		ASSERT(count < threadContext->descBuffer.size(), "Buffer overrun!")
-
-			size_t threadsCount = threadContext->taskScheduler->GetWorkerCount();
-
-		fixed_array<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), count);
-
-		size_t bucketCount = Min(threadsCount, count);
-		fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(internal::TaskBucket, bucketCount), bucketCount);
-
-		threadContext->taskScheduler->DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-		RunSubtasksAndYieldImpl(buckets);
-	}
-
-	template<class TTask>
-	void FiberContext::RunAsync(TaskGroup::Type taskGroup, TTask* taskArray, uint32 count)
-	{
-		ASSERT(threadContext, "ThreadContext is nullptr");
-		ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
-
-		TaskScheduler& scheduler = *(threadContext->taskScheduler);
-
-		fixed_array<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), count);
-
-		size_t bucketCount = Min(scheduler.GetWorkerCount(), count);
-		fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(internal::TaskBucket, bucketCount), bucketCount);
-
-		scheduler.DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
-		scheduler.RunTasksImpl(buckets, nullptr, false);
-	}
-
-
 
 
 }

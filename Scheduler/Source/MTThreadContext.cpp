@@ -39,9 +39,9 @@ namespace MT
 
 			TaskScheduler & scheduler = *(taskScheduler);
 			size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-			fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(internal::TaskBucket, bucketCount), bucketCount);
+			fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
-			scheduler.DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.begin(), buffer, buckets);
+			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);
 		}
 
