@@ -74,9 +74,32 @@ end
 
 -- SUBPROJECTS
 
-project "TaskScheduler"
+project "Tests"
  	flags {"NoPCH"}
  	kind "ConsoleApp"
+ 	files {
+ 		"Tests/**.*", 
+ 	}
+
+	includedirs
+	{
+		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
+	}
+	
+	if isPosix then
+	excludes { "Src/Platform/Windows/**.*" }
+	else
+	excludes { "Src/Platform/Posix/**.*" }
+	end
+
+	links {
+		"UnitTest++", "Squish", "TaskScheduler"
+	}
+
+
+project "TaskScheduler"
+        kind "StaticLib"
+ 	flags {"NoPCH"}
  	files {
  		"Scheduler/**.*", 
  	}
@@ -92,14 +115,9 @@ project "TaskScheduler"
 	excludes { "Src/Platform/Posix/**.*" }
 	end
 
-	links {
-		"UnitTest++", "Squish"
-	}
-
 	if isPosix then
-	links { "pthread" }
+		links { "pthread" }
 	end
-
 
 
 
