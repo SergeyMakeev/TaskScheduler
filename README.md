@@ -2,6 +2,7 @@ Multithreaded task scheduler experiments
 
 
 
+Compiled on : Clang 3.4, GCC 4.8.2, MSVC 2010
 
 
 
