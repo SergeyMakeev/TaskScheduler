@@ -89,11 +89,12 @@ namespace MT
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
 		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
-
 		void RunTasksImpl(fixed_array<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
+		static bool StealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task);
+
 		static FiberContext* ExecuteTask (internal::ThreadContext& threadContext, FiberContext* fiberContext);
 
 	public:

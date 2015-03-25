@@ -75,5 +75,35 @@ namespace MT
 			mutex.Unlock();
 		}
 	};
+
+	//
+	// Simple Linear congruential generator
+	//
+	class LcgRandom
+	{
+		uint32 state;
+
+	public:
+
+		LcgRandom()
+			: state(2578432553)
+		{
+		}
+
+		void SetSeed(uint32 seed)
+		{
+			state = seed;
+		}
+
+		uint16 Get()
+		{
+			state = 214013 * state + 2531011;
+			uint16 rnd = (state >> 16);
+			return rnd;
+		}
+
+
+	};
+
 }
 

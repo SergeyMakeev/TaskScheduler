@@ -22,11 +22,31 @@
 
 #include <MTScheduler.h>
 
+
+
+
+
+
+
 namespace MT
 {
 	namespace internal
 	{
 		static const size_t TASK_BUFFER_CAPACITY = 4096;
+
+		// Prime numbers for linear congruential generator seed
+		static const uint32 primeNumbers[] = {
+			128473, 135349, 159499, 173839, 209213, 241603, 292709, 314723,
+			343943, 389299, 419473, 465169, 518327, 649921, 748271, 851087,
+			862171, 974551, 1002973, 1034639, 1096289, 1153123, 1251037, 1299269,
+			1272941, 1252151, 1231091, 1206761, 1185469, 1169933, 1141351, 1011583 };
+
+		uint32 GetPrimeNumber(uint32 index)
+		{
+			return primeNumbers[index % ARRAY_SIZE(primeNumbers)];
+		}
+
+
 
 		ThreadContext::ThreadContext()
 			: lastActiveFiberContext(nullptr)
@@ -34,11 +54,18 @@ namespace MT
 			, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 			, state(ThreadState::ALIVE)
 			, descBuffer(TASK_BUFFER_CAPACITY)
+			, workerIndex(0)
 		{
 		}
 
 		ThreadContext::~ThreadContext()
 		{
+		}
+
+		void ThreadContext::SetThreadIndex(uint32 threadIndex)
+		{
+			workerIndex = threadIndex;
+			random.SetSeed( GetPrimeNumber(threadIndex) );
 		}
 
 		void ThreadContext::RestoreAwaitingTasks(TaskGroup::Type taskGroup)

@@ -69,6 +69,12 @@ namespace MT
 			// Temporary buffer
 			std::vector<internal::GroupedTask> descBuffer;
 
+			// Thread index
+			uint32 workerIndex;
+
+			// Thread random number generator
+			LcgRandom random;
+
 			// prevent false sharing between threads
 			uint8 cacheline[64];
 
@@ -76,6 +82,8 @@ namespace MT
 			~ThreadContext();
 
 			void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
+
+			void SetThreadIndex(uint32 threadIndex);
 		};
 
 	}

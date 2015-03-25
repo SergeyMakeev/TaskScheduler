@@ -47,6 +47,7 @@ namespace MT
 		// create worker thread pool
 		for (uint32 i = 0; i < threadsCount; i++)
 		{
+			threadContext[i].SetThreadIndex(i);
 			threadContext[i].taskScheduler = this;
 			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
 		}
@@ -211,6 +212,26 @@ namespace MT
 	}
 
 
+	bool TaskScheduler::StealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task)
+	{
+		// Try to steal tasks from random worker thread
+		uint32 workersCount = threadContext.taskScheduler->GetWorkerCount();
+		if (workersCount <= 1)
+		{
+			return false;
+		}
+
+		uint32 victimIndex = threadContext.random.Get() % workersCount;
+		if (victimIndex == threadContext.workerIndex)
+		{
+			victimIndex = victimIndex++;
+			victimIndex = victimIndex % workersCount;
+		}
+
+		internal::ThreadContext& victimContext = threadContext.taskScheduler->threadContext[victimIndex];
+		return victimContext.queue.TryPop(task);
+	}
+
 	void TaskScheduler::ThreadMain( void* userData )
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
@@ -220,7 +241,7 @@ namespace MT
 		while(context.state.Get() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
-			if (context.queue.TryPop(task))
+			if (context.queue.TryPop(task) || StealTask(context, task) )
 			{
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
@@ -272,8 +293,8 @@ namespace MT
 
 			} else
 			{
-				// Queue is empty
-				// TODO: can try to steal tasks from other threads
+				// Queue is empty and stealing attempt failed
+				// Wait new events
 				context.hasNewTasksEvent.Wait(2000);
 			}
 
