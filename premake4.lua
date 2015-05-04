@@ -123,7 +123,8 @@ project "UnitTest++"
 	kind "StaticLib"
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	files {
-		"TestFramework/UnitTest++/**.*", 
+		"TestFramework/UnitTest++/**.cpp",
+                "TestFramework/UnitTest++/**.h", 
 	}
 
 if isPosix then
