@@ -194,7 +194,7 @@ namespace DxtCompress
 		void Do(MT::FiberContext& context)
 		{
 			// use stack_array as subtask container. beware stack overflow!
-			stack_array<ComplexRunBlockSubtask, 1024> subTasks;
+			MT::StackArray<ComplexRunBlockSubtask, 1024> subTasks;
 
 			//uint32 blkX = 0;
 			//uint32 blkY = 0;
@@ -205,11 +205,11 @@ namespace DxtCompress
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
 
-					subTasks.push_back( ComplexRunBlockSubtask(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]) );
+					subTasks.PushBack( ComplexRunBlockSubtask(blkX * 4, blkY * 4, stride, srcPixels, &dstBlocks[blockIndex * 8]) );
 				}
 			}
 
-			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks[0], subTasks.size());
+			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks[0], subTasks.Size());
 		}
 	};
 

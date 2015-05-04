@@ -22,100 +22,110 @@
 
 #pragma once
 
-// Array, allocated on stack
-template<class T, size_t capacity>
-class stack_array
+
+namespace MT
 {
-	char data[sizeof(T) * capacity];
-	size_t count;
 
-	stack_array(stack_array& other) {}
-	void operator=(const stack_array&) {}
-
-	inline T* buffer()
+	/// \class StackArray
+	/// \brief Array, allocated on stack.
+	template<class T, size_t capacity>
+	class StackArray
 	{
-		return (T*)(data);
-	}
+		char data[sizeof(T) * capacity];
+		size_t count;
 
-	inline void copy_ctor(T* element, const T & val)
-	{
-		new(element) T(val);
-	}
+		inline T* Buffer()
+		{
+			return (T*)(data);
+		}
 
-	inline void move_ctor(T* element, const T && val)
-	{
-		new(element) T(std::move(val));
-	}
+		inline void CopyCtor(T* element, const T & val)
+		{
+			new(element) T(val);
+		}
 
-	inline void dtor(T* element)
-	{
+		inline void MoveCtor(T* element, const T && val)
+		{
+			new(element) T(std::move(val));
+		}
+
+		inline void Dtor(T* element)
+		{
 #if _MSC_VER
-		// warning C4100: 'element' : unreferenced formal parameter
-		// if type T has not destructor
-		element;
+			// warning C4100: 'element' : unreferenced formal parameter
+			// if type T has not destructor
+			element;
 #endif
-		element->~T();
-	}
-
-public:
-
-
-	inline stack_array() : count(0)
-	{
-	}
-
-	inline stack_array(size_t _count, const T & defaultElement = T()) : count(_count)
-	{
-		ASSERT(count <= capacity, "Too big size");
-		for (size_t i = 0; i < count; i++)
-		{
-			copy_ctor(begin() + i, defaultElement);
+			element->~T();
 		}
-	}
 
-	inline ~stack_array()
-	{
-		for (size_t i = 0; i < count; i++)
+	private:
+
+		StackArray(StackArray& ) {}
+		void operator=(const StackArray&) {}
+
+	public:
+
+		inline StackArray()
+			: count(0)
 		{
-			dtor(begin() + i);
 		}
-	}
 
-	inline const T &operator[]( uint32 i ) const
-	{
-		ASSERT( i < size(), "bad index" );
-		return buffer()[i];
-	}
+		inline StackArray(size_t _count, const T & defaultElement = T())
+			: count(_count)
+		{
+			ASSERT(count <= capacity, "Too big size");
+			for (size_t i = 0; i < count; i++)
+			{
+				CopyCtor(Begin() + i, defaultElement);
+			}
+		}
 
-	inline T &operator[]( uint32 i )
-	{
-		ASSERT( i < size(), "bad index" );
-		return buffer()[i];
-	}
+		inline ~StackArray()
+		{
+			for (size_t i = 0; i < count; i++)
+			{
+				Dtor(Begin() + i);
+			}
+		}
 
-	inline void push_back(const T && val)
-	{
-		ASSERT(count < capacity, "Can't add element");
-		size_t lastElementIndex = count;
-		count++;
-		move_ctor( buffer() + lastElementIndex, std::move(val) );
-	}
+		inline const T &operator[]( uint32 i ) const
+		{
+			ASSERT( i < Size(), "bad index" );
+			return Buffer()[i];
+		}
 
-	inline size_t size() const
-	{
-		return count;
-	}
+		inline T &operator[]( uint32 i )
+		{
+			ASSERT( i < Size(), "bad index" );
+			return Buffer()[i];
+		}
 
-	inline bool empty() const
-	{
-		return count > 0;
-	}
+		inline void PushBack(const T && val)
+		{
+			ASSERT(count < capacity, "Can't add element");
+			size_t lastElementIndex = count;
+			count++;
+			MoveCtor( Buffer() + lastElementIndex, std::move(val) );
+		}
 
-	inline T* begin()
-	{
-		return buffer();
-	}
-};
+		inline size_t Size() const
+		{
+			return count;
+		}
+
+		inline bool IsEmpty() const
+		{
+			return count == 0;
+		}
+
+		inline T* Begin()
+		{
+			return Buffer();
+		}
+	};
 
 
+
+}
 

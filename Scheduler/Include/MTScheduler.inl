@@ -54,15 +54,15 @@ namespace MT
 		// Thread3: Task4
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		template<class TTask>
-		inline bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, fixed_array<internal::GroupedTask>& descriptions, fixed_array<internal::TaskBucket>& buckets)
+		inline bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, WrapperArray<internal::GroupedTask>& descriptions, WrapperArray<internal::TaskBucket>& buckets)
 		{
 			size_t index = 0;
 
-			for (size_t bucketIndex = 0; (bucketIndex < buckets.size()) && (index < descriptions.size()); ++bucketIndex)
+			for (size_t bucketIndex = 0; (bucketIndex < buckets.Size()) && (index < descriptions.Size()); ++bucketIndex)
 			{
 				size_t bucketStartIndex = index;
 
-				for (size_t i = bucketIndex; i < descriptions.size(); i += buckets.size())
+				for (size_t i = bucketIndex; i < descriptions.Size(); i += buckets.Size())
 				{
 					descriptions[index++] = GetGroupedTask(group, &taskArray[i]);
 				}
@@ -70,7 +70,7 @@ namespace MT
 				buckets[bucketIndex] = internal::TaskBucket(&descriptions[bucketStartIndex], index - bucketStartIndex);
 			}
 
-			ASSERT(index == descriptions.size(), "Sanity check");
+			ASSERT(index == descriptions.Size(), "Sanity check");
 			return index > 0;
 		}
 
@@ -85,10 +85,10 @@ namespace MT
 	{
 		ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
-		fixed_array<internal::GroupedTask> buffer(ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
+		WrapperArray<internal::GroupedTask> buffer(ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
 
 		size_t bucketCount = Min(threadsCount, taskCount);
-		fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		WrapperArray<internal::TaskBucket> buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);
 		RunTasksImpl(buckets, nullptr, false);

@@ -26,7 +26,7 @@
 #include <MTPlatform.h>
 #include <MTConcurrentQueueLIFO.h>
 #include <MTStackArray.h>
-#include <MTFixedArray.h>
+#include <MTWrapperArray.h>
 #include <MTThreadContext.h>
 #include <MTFiberContext.h>
 #include <MTTaskBase.h>
@@ -89,7 +89,7 @@ namespace MT
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
 		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
-		void RunTasksImpl(fixed_array<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
+		void RunTasksImpl(WrapperArray<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );

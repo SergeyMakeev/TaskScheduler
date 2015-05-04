@@ -38,6 +38,12 @@ namespace MT
 		MT::Mutex mutex;
 		std::vector<T> queue;
 
+
+	private:
+
+		ConcurrentQueueLIFO(const ConcurrentQueueLIFO&) {}
+		void operator=(const ConcurrentQueueLIFO&) {}
+
 	public:
 
 		/// \name Initializes a new instance of the ConcurrentQueueLIFO class.
@@ -46,9 +52,6 @@ namespace MT
 		{
 			queue.reserve(256);
 		}
-
-		/// 
-		~ConcurrentQueueLIFO() {}
 
 		/// \brief Push an item onto the top of queue.
 		/// \param item item to push

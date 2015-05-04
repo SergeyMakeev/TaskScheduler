@@ -54,6 +54,7 @@ inline void ThrowException()
 #else
 
 //TODO: Remove condition from ASSERT
+//      Currently condition removal produces too many unused variable warnings when compiling
 #define ASSERT( condition, description ) { if ( !(condition) ) {} }
 #define VERIFY( condition, description, operation ) { if ( !(condition) ) { { }; operation; } }
 

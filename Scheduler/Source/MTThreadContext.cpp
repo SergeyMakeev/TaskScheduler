@@ -81,16 +81,16 @@ namespace MT
 			}
 
 			//copy awaiting tasks list to stack
-			stack_array<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
-			size_t taskCount = groupQueue.PopAll(groupQueueCopy.begin(), groupQueueCopy.size());
+			StackArray<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
+			size_t taskCount = groupQueue.PopAll(groupQueueCopy.Begin(), groupQueueCopy.Size());
 
-			fixed_array<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
+			WrapperArray<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
 
 			TaskScheduler & scheduler = *(taskScheduler);
 			size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-			fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+			WrapperArray<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
-			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.begin(), buffer, buckets);
+			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.Begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);
 		}
 

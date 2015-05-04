@@ -31,10 +31,10 @@ namespace MT
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 
-		fixed_array<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
+		WrapperArray<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
 
 		size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-		fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		WrapperArray<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
 		RunSubtasksAndYieldImpl(buckets);
@@ -48,10 +48,10 @@ namespace MT
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 
-		fixed_array<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
+		WrapperArray<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
 
 		size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-		fixed_array<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		WrapperArray<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
 		scheduler.RunTasksImpl(buckets, nullptr, false);

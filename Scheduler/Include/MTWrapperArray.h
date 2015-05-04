@@ -23,42 +23,54 @@
 #pragma once
 
 
-template<class T>
-class fixed_array
+namespace MT
 {
-	T* data;
-	size_t count;
-public:
-	fixed_array(void* memoryChunk, size_t instanceCount)
-		: data((T*)memoryChunk)
-		, count(instanceCount)
+
+
+	/// \class WrapperArray
+	/// \brief Simple wrapper to work with raw memory as an array. Includes array bounds checking.
+	template<class T>
+	class WrapperArray
 	{
-		ASSERT(data, "Invalid data array");
-	}
+		T* data;
+		size_t count;
 
-	const T &operator[]( size_t i ) const
-	{
-		ASSERT( i < size(), "bad index" );
-		return data[i];
-	}
+	private:
 
-	T &operator[]( size_t i )
-	{
-		ASSERT( i < size(), "bad index" );
-		return data[i];
-	}
+		WrapperArray(WrapperArray& ) {}
+		void operator=(const WrapperArray&) {}
 
-	size_t size() const
-	{
-		return count;
-	}
+	public:
 
-	bool empty() const
-	{
-		return count > 0;
-	}
-};
+		WrapperArray(void* memoryChunk, size_t instanceCount)
+			: data((T*)memoryChunk)
+			, count(instanceCount)
+		{
+			ASSERT(count == 0 || data, "Invalid data array");
+		}
+
+		const T &operator[]( size_t i ) const
+		{
+			ASSERT( i < Size(), "bad index" );
+			return data[i];
+		}
+
+		T &operator[]( size_t i )
+		{
+			ASSERT( i < Size(), "bad index" );
+			return data[i];
+		}
+
+		size_t Size() const
+		{
+			return count;
+		}
+
+		bool IsEmpty() const
+		{
+			return count == 0;
+		}
+	};
 
 
-
-
+}

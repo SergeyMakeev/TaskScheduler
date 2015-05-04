@@ -96,7 +96,7 @@ namespace MT
 		Fiber::SwitchTo(fiber, schedulerFiber);
 	}
 
-	void FiberContext::RunSubtasksAndYieldImpl(fixed_array<internal::TaskBucket>& buckets)
+	void FiberContext::RunSubtasksAndYieldImpl(WrapperArray<internal::TaskBucket>& buckets)
 	{
 		ASSERT(threadContext, "Sanity check failed!");
 		ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunSubtasksAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");

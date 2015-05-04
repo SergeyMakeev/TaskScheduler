@@ -301,7 +301,7 @@ namespace MT
 		} // main thread loop
 	}
 
-	void TaskScheduler::RunTasksImpl(fixed_array<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
+	void TaskScheduler::RunTasksImpl(WrapperArray<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
 		// Reset counter to initial value
 		int taskCountInGroup[TaskGroup::COUNT];
@@ -314,7 +314,7 @@ namespace MT
 		// Calculate the number of tasks per group
 		// Calculate total number of tasks
 		size_t count = 0;
-		for (size_t i = 0; i < buckets.size(); ++i)
+		for (size_t i = 0; i < buckets.Size(); ++i)
 		{
 			internal::TaskBucket& bucket = buckets[i];
 			for (size_t taskIndex = 0; taskIndex < bucket.count; taskIndex++)
@@ -357,7 +357,7 @@ namespace MT
 		}
 
 		// Add to thread queue
-		for (size_t i = 0; i < buckets.size(); ++i)
+		for (size_t i = 0; i < buckets.Size(); ++i)
 		{
 			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
 			internal::ThreadContext & context = threadContext[bucketIndex];
