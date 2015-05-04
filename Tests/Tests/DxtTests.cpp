@@ -235,6 +235,19 @@ namespace DxtCompress
 		CHECK_ARRAY_EQUAL(complexTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 		free(complexTask.dstBlocks);
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+		MT::ProfileEventDesc eventsBuffer[4096];
+		uint32 workerThreadCount = scheduler.GetWorkerCount();
+		for(uint32 workerId = 0; workerId < workerThreadCount; workerId++)
+		{
+			size_t eventsCount = scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
+			printf("Thread[%d], Profile events count = %d\n", workerId, (uint32)eventsCount);
+		}
+
+#endif
+
 	}
 
 

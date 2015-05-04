@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include <MTPlatform.h>
 #include <MTTools.h>
 
@@ -43,7 +41,7 @@ namespace MT
 	{
 		MT::Mutex mutex;
 
-		T buffer[numElements];
+		void * data;
 
 		size_t writeIndex;
 		size_t readIndex;
@@ -53,6 +51,26 @@ namespace MT
 
 		ConcurrentRingBuffer(const ConcurrentRingBuffer&) {}
 		void operator=(const ConcurrentRingBuffer&) {}
+
+		inline T* Buffer()
+		{
+			return (T*)(data);
+		}
+
+		inline void MoveCtor(T* element, T && val)
+		{
+			new(element) T(std::move(val));
+		}
+
+		inline void Dtor(T* element)
+		{
+#if _MSC_VER
+			// warning C4100: 'element' : unreferenced formal parameter
+			// if type T has not destructor
+			element;
+#endif
+			element->~T();
+		}
 
 
 		size_t NextIndex(size_t index)
@@ -69,24 +87,32 @@ namespace MT
 			, readIndex(0)
 			, size(0)
 		{
-			static_assert(std::is_pod<T>::value == true, "Only POD types allowed to use in MT::ConcurrentRingBuffer");
+			data = malloc(sizeof(T) * numElements);
+
 			static_assert(is_power_of_two<numElements>::value == true, "NumElements used in MT::ConcurrentRingBuffer must be power of two");
 		}
 
-		void Push(const T & item)
+		~ConcurrentRingBuffer()
+		{
+			free(data);
+			data = nullptr;
+		}
+
+		void Push(T && item)
 		{
 			MT::ScopedGuard guard(mutex);
 
-			buffer[writeIndex] = item;
 			if (size >= numElements)
 			{
 				// RingBuffer is full. Overwrite old data.
+				Dtor(Buffer() + readIndex);
 				readIndex = NextIndex(readIndex);
 			} else
 			{
 				size++;
 			}
 
+			MoveCtor(Buffer() + writeIndex, std::move(item));
 			writeIndex = NextIndex(writeIndex);
 		}
 
@@ -99,7 +125,8 @@ namespace MT
 
 			for (size_t i = 0; i < elementsCount; i++)
 			{
-				dstBuffer[i] = buffer[readIndex];
+				dstBuffer[i] = std::move(Buffer()[readIndex]);
+				Dtor(Buffer() + readIndex);
 				readIndex = NextIndex(readIndex);
 			}
 

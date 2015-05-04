@@ -26,6 +26,8 @@ solution "TaskScheduler"
 	local config_list = {
 		"Release",
 		"Debug",
+                "Instrumented_Release",
+                "Instrumented_Debug"
 	}
 	local platform_list = {
 		"x32",
@@ -37,6 +39,14 @@ solution "TaskScheduler"
 
 
 -- CONFIGURATIONS
+
+configuration "Instrumented_Release"
+	defines { "NDEBUG", "MT_INSTRUMENTED_BUILD" }
+	flags { "Symbols", optimization_flags }
+
+configuration "Instrumented_Debug"
+	defines { "_DEBUG", "MT_INSTRUMENTED_BUILD" }
+	flags { "Symbols" }
 
 configuration "Release"
 	defines { "NDEBUG" }

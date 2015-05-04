@@ -113,6 +113,12 @@ namespace MT
 		uint32 GetWorkerCount() const;
 
 		bool IsWorkerThread() const;
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+		size_t GetProfilerEvents(uint32 workerIndex, MT::ProfileEventDesc * dstBuffer, size_t dstBufferSize);
+
+#endif
 	};
 }
 

@@ -89,6 +89,10 @@ namespace MT
 
 		Fiber & schedulerFiber = threadContext->schedulerFiber;
 
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext->NotifyTaskYielded(currentTask);
+#endif
+
 		// Yielding, so reset thread context
 		threadContext = nullptr;
 
@@ -112,6 +116,10 @@ namespace MT
 		taskStatus = FiberTaskStatus::AWAITING_CHILD;
 
 		Fiber & schedulerFiber = threadContext->schedulerFiber;
+
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext->NotifyTaskYielded(currentTask);
+#endif
 
 		// Yielding, so reset thread context
 		threadContext = nullptr;

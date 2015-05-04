@@ -44,7 +44,7 @@ namespace MT
 			new(element) T(val);
 		}
 
-		inline void MoveCtor(T* element, const T && val)
+		inline void MoveCtor(T* element, T && val)
 		{
 			new(element) T(std::move(val));
 		}
@@ -101,7 +101,7 @@ namespace MT
 			return Buffer()[i];
 		}
 
-		inline void PushBack(const T && val)
+		inline void PushBack(T && val)
 		{
 			ASSERT(count < capacity, "Can't add element");
 			size_t lastElementIndex = count;

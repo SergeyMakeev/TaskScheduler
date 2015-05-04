@@ -94,6 +94,41 @@ namespace MT
 			scheduler.RunTasksImpl(buckets, nullptr, true);
 		}
 
+#ifdef MT_INSTRUMENTED_BUILD
+
+		void ThreadContext::NotifyTaskFinished(const internal::TaskDesc & desc)
+		{
+			desc;
+
+			ProfileEventDesc eventDesc;
+			eventDesc.type = ProfileEventType::TASK_DONE;
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			profileEvents.Push(std::move(eventDesc));
+		}
+
+		void ThreadContext::NotifyTaskResumed(const internal::TaskDesc & desc)
+		{
+			desc;
+
+			ProfileEventDesc eventDesc;
+			eventDesc.type = ProfileEventType::TASK_RESUME;
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			profileEvents.Push(std::move(eventDesc));
+		}
+
+		void ThreadContext::NotifyTaskYielded(const internal::TaskDesc & desc)
+		{
+			desc;
+
+			ProfileEventDesc eventDesc;
+			eventDesc.type = ProfileEventType::TASK_YIELD;
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			profileEvents.Push(std::move(eventDesc));
+		}
+
+
+#endif
+
 	}
 
 }

@@ -25,6 +25,7 @@
 #include <MTTools.h>
 #include <MTPlatform.h>
 #include <MTConcurrentQueueLIFO.h>
+#include <MTConcurrentRingBuffer.h>
 #include <MTGroupedTask.h>
 
 namespace MT
@@ -32,9 +33,31 @@ namespace MT
 	class FiberContext;
 	class TaskScheduler;
 
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+	namespace ProfileEventType
+	{
+		enum Type
+		{
+			TASK_RESUME = 0,
+			TASK_YIELD = 1,
+			TASK_DONE = 2
+		};
+	}
+
+	struct ProfileEventDesc
+	{
+		uint64 timeStampMicroSeconds;
+		ProfileEventType::Type type;
+	};
+
+#endif
+
+
+
 	namespace internal
 	{
-
 		namespace ThreadState
 		{
 			const uint32 ALIVE = 0;
@@ -66,7 +89,7 @@ namespace MT
 			// whether thread is alive
 			AtomicInt state;
 
-			// Temporary buffer
+			// Temporary buffer, fixed size = TASK_BUFFER_CAPACITY
 			std::vector<internal::GroupedTask> descBuffer;
 
 			// Thread index
@@ -74,6 +97,13 @@ namespace MT
 
 			// Thread random number generator
 			LcgRandom random;
+
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+			ConcurrentRingBuffer<ProfileEventDesc, 4096> profileEvents;
+
+#endif
 
 			// prevent false sharing between threads
 			uint8 cacheline[64];
@@ -84,6 +114,14 @@ namespace MT
 			void RestoreAwaitingTasks(TaskGroup::Type taskGroup);
 
 			void SetThreadIndex(uint32 threadIndex);
+
+#ifdef MT_INSTRUMENTED_BUILD
+			
+			void NotifyTaskFinished(const internal::TaskDesc & desc);
+			void NotifyTaskResumed(const internal::TaskDesc & desc);
+			void NotifyTaskYielded(const internal::TaskDesc & desc);
+
+#endif
 		};
 
 	}

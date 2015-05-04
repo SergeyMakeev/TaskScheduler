@@ -206,6 +206,10 @@ namespace MT
 
 			fiberContext.SetStatus(FiberTaskStatus::FINISHED);
 
+#ifdef MT_INSTRUMENTED_BUILD
+			fiberContext.GetThreadContext()->NotifyTaskFinished(fiberContext.currentTask);
+#endif
+
 			Fiber::SwitchTo(fiberContext.fiber, fiberContext.GetThreadContext()->schedulerFiber);
 		}
 
@@ -250,6 +254,10 @@ namespace MT
 
 				while(fiberContext)
 				{
+#ifdef MT_INSTRUMENTED_BUILD
+					context.NotifyTaskResumed(task.desc);
+#endif
+
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
 					fiberContext->childrenFibersCount.Inc();
 
@@ -264,7 +272,6 @@ namespace MT
 					if (taskStatus == FiberTaskStatus::FINISHED)
 					{
 						ASSERT( childrenFibersCount == 0, "Sanity check failed");
-
 						context.taskScheduler->ReleaseFiberContext(fiberContext);
 
 						// If parent fiber is exist transfer flow control to parent fiber, if parent fiber is null, exit
@@ -411,5 +418,21 @@ namespace MT
 		}
 		return false;
 	}
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+	size_t TaskScheduler::GetProfilerEvents(uint32 workerIndex, ProfileEventDesc * dstBuffer, size_t dstBufferSize)
+	{
+		if (workerIndex >= MT_MAX_THREAD_COUNT)
+		{
+			return 0;
+		}
+
+		size_t elementsCount = threadContext[workerIndex].profileEvents.PopAll(dstBuffer, dstBufferSize);
+		return elementsCount;
+	}
+
+#endif
+
 
 }
