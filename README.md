@@ -33,7 +33,8 @@ Infamous Second Son : Engine Postmortem
 http://adruab.net/wp-images/GDC14_infamous_second_son_engine_postmortem.pdf
 
 Multithreading the Entire Destiny Engine - GDC 2015
-????
+http://www.gdcvault.com/play/1022164/Multithreading-the-Entire-Destiny (members only)
+http://chomikuj.pl/dexio21/GDC+2015/GDC+Vault+-+Multithreading+the+Entire+Destiny+Engine,4690817362.mp4%28video%29
 
 Molecule Engine - Building a load-balanced task scheduler
 https://molecularmusings.wordpress.com/2012/04/05/building-a-load-balanced-task-scheduler-part-1-basics/
@@ -55,3 +56,6 @@ http://game.watch.impress.co.jp/docs/20070131/3dlp.htm
 
 Dragged Kicking and Screaming: Source Multicore
 http://www.valvesoftware.com/publications/2007/GDC2007_SourceMulticore.pdf
+
+Games: Playing with Threads
+http://www2.epcc.ed.ac.uk/downloads/lectures/BenNicholson/BenNicholson.pdf
