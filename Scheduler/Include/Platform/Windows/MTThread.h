@@ -38,7 +38,7 @@ namespace MT
 
 			self->func(self->funcData);
 
-			ExitThread(0);
+			return 0;
 		}
 	public:
 

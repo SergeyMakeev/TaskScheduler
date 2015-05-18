@@ -50,7 +50,7 @@ namespace MT
 
 			self->func(self->funcData);
 
-			pthread_exit(nullptr);
+			return nullptr;
 		}
 
 	public:
