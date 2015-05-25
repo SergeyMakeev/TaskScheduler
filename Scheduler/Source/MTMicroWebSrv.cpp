@@ -75,6 +75,12 @@ MicroWebServer::~MicroWebServer()
 #ifdef _WIN32
 	WSACleanup();
 #endif
+
+	free(requestData);
+	free(answerData);
+
+	requestData = nullptr;
+	answerData = nullptr;
 }
 
 
