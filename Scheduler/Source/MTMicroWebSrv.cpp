@@ -25,11 +25,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <MTMicroWebSrv.h>
+#include <MTThreadContext.h>
+#include <MTScheduler.h>
 
 #include "malloc.h"
 
 #define MAX_REQUEST_SIZE (8192)
-#define MAX_ANSWER_SIZE (32768)
+#define MAX_ANSWER_SIZE (262144)
+#define MAX_STRINGFORMAT_BUFFER_SIZE (65536)
 
 #ifdef _WIN32
 
@@ -49,8 +52,16 @@
 #endif
 
 
+#define WEB_HTTP "HTTP/"
+#define WEB_GET "GET /"
+
+
 namespace MT
 {
+
+namespace profile
+{
+
 
 MicroWebServer::MicroWebServer()
 	: listenerSocket(BAD_SOCKET)
@@ -61,12 +72,10 @@ MicroWebServer::MicroWebServer()
 	ASSERT(res == 0, "Can't WSAStartup");
 #endif
 
-
 	requestData = (char*)malloc(MAX_REQUEST_SIZE);
 	answerData = (char*)malloc(MAX_ANSWER_SIZE);
+	stringFormatBuffer = (char*)malloc(MAX_STRINGFORMAT_BUFFER_SIZE);
 }
-
-
 
 MicroWebServer::~MicroWebServer()
 {
@@ -78,11 +87,12 @@ MicroWebServer::~MicroWebServer()
 
 	free(requestData);
 	free(answerData);
+	free(stringFormatBuffer);
 
 	requestData = nullptr;
 	answerData = nullptr;
+	stringFormatBuffer = nullptr;
 }
-
 
 bool MicroWebServer::IsValidSocket(TcpSocket socket)
 {
@@ -131,7 +141,6 @@ void MicroWebServer::SetSocketMode(TcpSocket socket, SocketMode::Type mode)
 	}
 #endif
 }
-
 
 void MicroWebServer::CloseSocket(TcpSocket socket)
 {
@@ -185,7 +194,6 @@ int32 MicroWebServer::Serve(uint16 portRangeMin, uint16 portRangeMax)
 	return webServerPort;
 }
 
-
 void MicroWebServer::Append(const char * txt)
 {
 	size_t stringLen = strlen(txt);
@@ -200,11 +208,16 @@ void MicroWebServer::Append(const char * txt)
 	answerData[answerSize] = '\0';
 }
 
+const char * MicroWebServer::StringFormat(const char * formatString, ...)
+{
+	va_list va;
+	va_start( va, formatString );
+	_vsnprintf_s( stringFormatBuffer, MAX_STRINGFORMAT_BUFFER_SIZE, MAX_STRINGFORMAT_BUFFER_SIZE - 1, formatString, va );
+	va_end( va );
+	return stringFormatBuffer;
+}
 
-#define WEB_HTTP "HTTP/"
-#define WEB_GET "GET /"
-
-void MicroWebServer::Update()
+void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 {
 	TcpSocket clientSocket = accept(listenerSocket, 0, 0);
 	if (!IsValidSocket(clientSocket))
@@ -240,7 +253,54 @@ void MicroWebServer::Update()
 			if (StringEqualCaseInsensitive(pDocument, "data.json"))
 			{
 				Append("HTTP/1.0 200 OK\r\nContent-Type: application/json \r\n\r\n");
-				Append("This is data json");
+
+				Append("{");
+
+				MT::ProfileEventDesc eventsBuffer[4096];
+				uint32 threadCount = scheduler.GetWorkerCount();
+
+				Append("\"threads\": [");
+				
+				for(uint32 workerId = 0; workerId < threadCount; workerId++)
+				{
+					Append("{");
+
+					size_t eventsCount = scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
+
+					Append("\"events\": [");
+
+					for(size_t eventId = 0; eventId < eventsCount; eventId++)
+					{
+						Append("{");
+
+						MT::ProfileEventDesc evt = eventsBuffer[eventId];
+
+						Append(StringFormat("\"time\" : %llu,", evt.timeStampMicroSeconds));
+						Append(StringFormat("\"type\" : %d", evt.type));
+
+						if ((eventId + 1) < eventsCount)
+						{
+							Append("},");
+						} else
+						{
+							Append("}");
+						}
+					}
+
+					Append("]");
+
+					if ((workerId + 1) < threadCount)
+					{
+						Append("},");
+					} else
+					{
+						Append("}");
+					}
+				}
+
+				Append("]");
+
+				Append("}");
 			} else
 			{
 				// profiler web page
@@ -274,6 +334,7 @@ void MicroWebServer::Update()
 	clientSocket = BAD_SOCKET;
 }
 
+}
 
 }
 

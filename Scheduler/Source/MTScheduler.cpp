@@ -28,6 +28,13 @@ namespace MT
 	TaskScheduler::TaskScheduler()
 		: roundRobinThreadIndex(0)
 	{
+#ifdef MT_INSTRUMENTED_BUILD
+		profilerWebServer.Serve(8080, 8090);
+
+		//initialize static start time
+		TaskScheduler::GetStartTime();
+#endif
+
 		//query number of processor
 		threadsCount = Max(Thread::GetNumberOfHardwareThreads() - 2, 1);
 
@@ -432,7 +439,16 @@ namespace MT
 		return elementsCount;
 	}
 
+	void TaskScheduler::UpdateProfiler()
+	{
+		profilerWebServer.Update(*this);
+	}
+
+	int64 TaskScheduler::GetStartTime()
+	{
+		static int64 startTime = GetTimeMicroSeconds();
+		return startTime;
+	}
+
 #endif
-
-
 }

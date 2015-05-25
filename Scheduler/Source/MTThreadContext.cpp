@@ -23,11 +23,6 @@
 #include <MTScheduler.h>
 
 
-
-
-
-
-
 namespace MT
 {
 	namespace internal
@@ -102,7 +97,7 @@ namespace MT
 
 			ProfileEventDesc eventDesc;
 			eventDesc.type = ProfileEventType::TASK_DONE;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
 
@@ -112,7 +107,7 @@ namespace MT
 
 			ProfileEventDesc eventDesc;
 			eventDesc.type = ProfileEventType::TASK_RESUME;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
 
@@ -122,7 +117,7 @@ namespace MT
 
 			ProfileEventDesc eventDesc;
 			eventDesc.type = ProfileEventType::TASK_YIELD;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
 

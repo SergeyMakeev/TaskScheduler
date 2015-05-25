@@ -103,7 +103,19 @@ namespace DxtCompress
 		MT::TaskScheduler scheduler;
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &simpleTask, 1);
 
-		CHECK(scheduler.WaitAll(30000));
+		while(true)
+		{
+			bool waitDone = scheduler.WaitAll(16);
+			if (waitDone)
+			{
+				break;
+			}
+
+#ifdef MT_INSTRUMENTED_BUILD
+			scheduler.UpdateProfiler();
+#endif
+		}
+
 		CHECK_ARRAY_EQUAL(simpleTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 /*
@@ -231,23 +243,22 @@ namespace DxtCompress
 
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &complexTask, 1);
 
-		CHECK(scheduler.WaitAll(3000000));
+		while(true)
+		{
+			bool waitDone = scheduler.WaitAll(16);
+			if (waitDone)
+			{
+				break;
+			}
+
+#ifdef MT_INSTRUMENTED_BUILD
+			scheduler.UpdateProfiler();
+#endif
+		}
+
 		CHECK_ARRAY_EQUAL(complexTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 		free(complexTask.dstBlocks);
-
-#ifdef MT_INSTRUMENTED_BUILD
-
-		MT::ProfileEventDesc eventsBuffer[4096];
-		uint32 workerThreadCount = scheduler.GetWorkerCount();
-		for(uint32 workerId = 0; workerId < workerThreadCount; workerId++)
-		{
-			size_t eventsCount = scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
-			printf("Thread[%d], Profile events count = %d\n", workerId, (uint32)eventsCount);
-		}
-
-#endif
-
 	}
 
 

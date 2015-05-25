@@ -31,6 +31,10 @@
 #include <MTFiberContext.h>
 #include <MTTaskBase.h>
 
+#ifdef MT_INSTRUMENTED_BUILD
+#include <MTMicroWebSrv.h>
+#endif
+
 namespace MT
 {
 	const uint32 MT_MAX_THREAD_COUNT = 32;
@@ -87,6 +91,10 @@ namespace MT
 		// Fibers context
 		FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
+#ifdef MT_INSTRUMENTED_BUILD
+		profile::MicroWebServer profilerWebServer;
+#endif
+
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
 		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
 		void RunTasksImpl(WrapperArray<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
@@ -117,7 +125,8 @@ namespace MT
 #ifdef MT_INSTRUMENTED_BUILD
 
 		size_t GetProfilerEvents(uint32 workerIndex, MT::ProfileEventDesc * dstBuffer, size_t dstBufferSize);
-
+		void UpdateProfiler();
+		static int64 GetStartTime();
 #endif
 	};
 }

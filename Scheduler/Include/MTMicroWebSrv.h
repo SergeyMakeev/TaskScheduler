@@ -45,43 +45,52 @@ typedef int TcpSocket;
 
 namespace MT
 {
-	class MicroWebServer
+	class TaskScheduler;
+
+	namespace profile
 	{
 
-		struct SocketMode
+		class MicroWebServer
 		{
-			enum Type
+
+			struct SocketMode
 			{
-				BLOCKING = 0,
-				NONBLOCKING = 1,
+				enum Type
+				{
+					BLOCKING = 0,
+					NONBLOCKING = 1,
+				};
 			};
+
+			TcpSocket listenerSocket;
+
+			void Cleanup();
+			void CloseSocket(TcpSocket socket);
+			void SetSocketMode(TcpSocket socket, SocketMode::Type mode);
+
+			static bool IsValidSocket(TcpSocket socket);
+			static bool StringEqualCaseInsensitive(const char * str1, const char * str2);
+			static char* FindSubstring(char * str, char * substr);
+
+			char * requestData;
+
+			void Append(const char * txt);
+			const char * StringFormat(const char * formatString, ...);
+
+			char * answerData;
+			uint32 answerSize;
+
+			char* stringFormatBuffer;
+
+		public:
+
+			MicroWebServer();
+			~MicroWebServer();
+
+			int32 Serve(uint16 portRangeMin, uint16 portRangeMax);
+			void Update(MT::TaskScheduler & scheduler);
 		};
-
-		TcpSocket listenerSocket;
-
-		void Cleanup();
-		void CloseSocket(TcpSocket socket);
-		void SetSocketMode(TcpSocket socket, SocketMode::Type mode);
-
-		static bool IsValidSocket(TcpSocket socket);
-		static bool StringEqualCaseInsensitive(const char * str1, const char * str2);
-		static char* FindSubstring(char * str, char * substr);
-
-		char * requestData;
-		
-		void Append(const char * txt);
-
-		char * answerData;
-		uint32 answerSize;
-
-	public:
-
-		MicroWebServer();
-		~MicroWebServer();
-
-		int32 Serve(uint16 portRangeMin, uint16 portRangeMax);
-		void Update();
-	};
+	}
 
 }
 
