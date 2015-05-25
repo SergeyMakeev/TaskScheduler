@@ -219,9 +219,18 @@ const char * MicroWebServer::StringFormat(const char * formatString, ...)
 
 void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 {
+	MT::ProfileEventDesc eventsBuffer[4096];
+
 	TcpSocket clientSocket = accept(listenerSocket, 0, 0);
 	if (!IsValidSocket(clientSocket))
 	{
+		//clear profiler data
+		uint32 threadCount = scheduler.GetWorkerCount();
+		for(uint32 workerId = 0; workerId < threadCount; workerId++)
+		{
+			scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
+		}
+
 		return;
 	}
 
@@ -256,7 +265,6 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 
 				Append("{");
 
-				MT::ProfileEventDesc eventsBuffer[4096];
 				uint32 threadCount = scheduler.GetWorkerCount();
 
 				Append("\"threads\": [");
@@ -304,14 +312,14 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 			} else
 			{
 				// profiler web page
-				FILE* file = fopen("profiler.html", "rb");
+				FILE* file = fopen(pDocument, "rb");
 				if (file != nullptr)
 				{
 					fseek(file, 0, SEEK_END);
 					int fileSize = ftell(file);
 					fseek(file, 0, SEEK_SET);
 
-					Append("HTTP/1.0 200 OK\r\nContent-Type: text/html \r\n\r\n");
+					Append("HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n");
 
 					char* const pBuffer = (char*)alloca(fileSize+1);
 					int nRead = (int)fread(pBuffer, 1, fileSize, file);
@@ -322,7 +330,9 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 					Append(pBuffer);
 				} else
 				{
-					Append("HTTP/1.1 404 Not Found\r\n\r\nError 404. Page Not Found.");
+					Append("HTTP/1.1 404 Not Found\r\n\r\nError 404. Page '");
+					Append(pDocument);
+					Append("' Not Found.");
 				}
 			}
 

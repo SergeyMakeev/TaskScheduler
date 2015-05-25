@@ -2,56 +2,225 @@
 <html>
 <head>
 <script>
+    
+var canvas;
+var profilerJson;    
 
-function createRequest(url)
+function CreateRequest(url)
 {
   var req = new XMLHttpRequest();
   req.open('GET', url, true);
   return req;
 }
  
-
-function draw(text)
-{
-      var canvas=document.getElementById("ProfilerCanvas");
-      var context=canvas.getContext("2d");
  
-      var x = 250;
-      var y = 200;
-      context.fillText(text, x, y);
+function KeyDown(evt)
+{
+    // add
+    if(evt.keyCode == 107)
+    {
+        window.canvas.width += 256;
+        //zoom += 0.5;
+        Draw();
+    }
+    
+    // add
+    if(evt.keyCode == 109)
+    {
+        window.canvas.width -= 256;
+        if (window.canvas.width < 512)
+        {
+            window.canvas.width = 512;
+        }
+        Draw();
+    }
+    
+}
+ 
 
-      context.beginPath();
-      context.moveTo(100, 150);
-      context.lineTo(450, 50);
-      context.lineWidth = 10;
+function Draw()
+{
+    var context = window.canvas.getContext("2d");
+    
+    context.clearRect ( 0 , 0 , window.canvas.width, window.canvas.height );
+    
+    var canvasWidth = window.canvas.width;
+    var canvasHeight = window.canvas.height;
+   
+    var threadsCount = profilerJson.threads.length;
+      
+    var minTime = 0;
+    var maxTime = 0;
+    var isInitialized = false;
+    for(var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
+    {
+        var thread = profilerJson.threads[threadIndex];
+        var eventsCount = thread.events.length;
+        for(var eventIndex = 0; eventIndex < eventsCount; eventIndex++)
+        {
+            var event = thread.events[eventIndex];
+            
+            if (isInitialized === false)
+            {
+                minTime = event.time;
+                maxTime = event.time;
+                isInitialized = true;
+            } else
+            {
+                minTime = Math.min(minTime, event.time);
+                maxTime = Math.max(maxTime, event.time);
+            }
+        }
+    }
+       
+    var timeRangeMicroSeconds = maxTime - minTime;
+   
+    if (timeRangeMicroSeconds < 1)
+    {
+        timeRangeMicroSeconds = 1;
+    }
+    
+    //1000 microseconds = 1 ms
+   
 
-      // set line color
-      context.strokeStyle = '#ff0000';
-      context.stroke();
+    var x = 20;
+    var y = 20;
+    for(var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
+    {
+// Task type: RESUME = 0, YIELD = 1,DONE = 2
+        context.fillText(threadIndex, 5, y);
+        
+        var thread = profilerJson.threads[threadIndex];
+        var eventsCount = thread.events.length;
+        var parity = 0;
+        for(var eventIndex = 0; eventIndex < (eventsCount-1); eventIndex++)
+        {
+            var eventFrom = thread.events[eventIndex];
+            
+            if (eventFrom.type !== 0)
+            {
+                continue;
+            }
+            
+            eventIndex++;
+            var eventTo = thread.events[eventIndex];
+            
+            var from = x + ((eventFrom.time - minTime) / timeRangeMicroSeconds) * canvasWidth;
+            var to = x + ((eventTo.time - minTime) / timeRangeMicroSeconds) * canvasWidth;
+            
+            context.beginPath();
+            context.moveTo(from, y);
+            context.lineTo(to, y);
+            context.lineWidth = 10;
+
+            // set line color
+            
+            if (parity === 0)
+            {
+               context.strokeStyle = '#008000';
+               parity = 1;
+            } else
+            {
+               context.strokeStyle = '#00ff00';
+               parity = 0;
+            }
+            context.stroke();
+        }
+        
+        y += 10;
+        
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(canvasWidth, y);
+        context.lineWidth = 0.5;
+        context.strokeStyle = '#404040';
+        context.stroke();
+        
+        y += 22;
+    }
+    
+    
+    
+    var msTicksCount = timeRangeMicroSeconds / 1000;
+    
+    
+    console.log(msTicksCount);
+    
+    var timeNow = 0;
+    for(var i = 0; i < msTicksCount; i++)
+    {
+        var tickX = x + (timeNow / timeRangeMicroSeconds) * canvasWidth;
+        
+        context.beginPath();
+        context.moveTo(tickX, threadsCount * 32);
+        context.lineTo(tickX, threadsCount * 33);
+        context.lineWidth = 0.5;
+        context.stroke();
+        
+        context.fillText(timeNow / 1000, tickX, threadsCount * 34);
+        
+        timeNow += 1000;
+    }    
+    
+    
+    
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, canvasHeight);
+    context.lineWidth = 0.5;
+    context.stroke();
+    
+    
+/*
+    var x = 250;
+    var y = 200;
+    context.fillText("test", x, y);
+
+    context.beginPath();
+    context.moveTo(100, 150);
+    context.lineTo(450, 50);
+    context.lineWidth = 10;
+
+    // set line color
+    context.strokeStyle = '#ff0000';
+    context.stroke();
+*/    
 }
 
-function init()
+
+function RefreshData()
 {
-      var req = createRequest('data.json');
+    //console.log('Load data!');
+    
+    var req = CreateRequest('data.json');
 
-      req.onload = function()
-      {
-         var responseText = req.responseText;
-         console.log(responseText);
-         draw(responseText);
-      };
+    req.onload = function()
+    {
+      window.profilerJson = JSON.parse(req.responseText);
+      Draw();
+    };
 
-      req.onerror = function()
-      {
-         console.log('There was an error!');
-      };
+    req.onerror = function()
+    {
+       console.log('There was an error!');
+    };
 
-      req.send();
+    req.send();  
+}
+
+function Init()
+{
+    window.canvas = document.getElementById("ProfilerCanvas");
+    window.addEventListener('keydown', KeyDown);
+    
+    //window.setInterval(RefreshData, 1000);
+
+    RefreshData();
 }
  
 </script>
 </head>
-<body onload="init()">
-	<canvas id="ProfilerCanvas" width="578" height="200"></canvas>
+<body onload="Init()">
+	<canvas id="ProfilerCanvas" width="1920" height="600"></canvas>
 </body>
 </html>

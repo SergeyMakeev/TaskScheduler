@@ -241,11 +241,15 @@ namespace DxtCompress
 
 		MT::TaskScheduler scheduler;
 
+#ifdef MT_INSTRUMENTED_BUILD
+		printf("Profiler: http://127.0.0.1:8080/profiler.html \n");
+#endif
+
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &complexTask, 1);
 
 		while(true)
 		{
-			bool waitDone = scheduler.WaitAll(16);
+			bool waitDone = scheduler.WaitAll(33);
 			if (waitDone)
 			{
 				break;
