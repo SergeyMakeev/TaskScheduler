@@ -57,7 +57,6 @@ configuration "Debug"
 	flags { "Symbols" }
 
 configuration "x32"
-	libdirs { "$(DXSDK_DIR)/Lib/x86" }
 if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
@@ -65,7 +64,6 @@ else
 end
 
 configuration "x64"
-	libdirs { "$(DXSDK_DIR)/Lib/x64" }
 if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
@@ -109,6 +107,11 @@ project "Tests"
 	if isPosix then
 		links { "pthread" }
 	end
+
+	if isVisualStudio then
+		links { "Ws2_32" }
+	end
+
 
 project "TaskScheduler"
         kind "StaticLib"

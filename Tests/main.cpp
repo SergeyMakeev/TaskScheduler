@@ -18,8 +18,23 @@
 #include "Tests/Tests.h"
 
 
+//#include <MTMicroWebSrv.h>
+
 int main(int UNUSED(argc), char ** UNUSED(argv))
 {
+/*
+	MT::MicroWebServer webSrv;
+	webSrv.Serve(8080, 8080);
+
+	char xxx[8192];
+	GetCurrentDirectoryA(ARRAY_SIZE(xxx), xxx);
+	printf("%s\n", xxx);
+
+	for(;;)
+	{
+		webSrv.Update();
+	}
+*/
 
 #ifdef _WIN32
 	timeBeginPeriod(1);

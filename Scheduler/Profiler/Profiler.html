@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script>
+
+function createRequest(url)
+{
+  var req = new XMLHttpRequest();
+  req.open('GET', url, true);
+  return req;
+}
+ 
+
+function draw(text)
+{
+      var canvas=document.getElementById("ProfilerCanvas");
+      var context=canvas.getContext("2d");
+ 
+      var x = 250;
+      var y = 200;
+      context.fillText(text, x, y);
+
+      context.beginPath();
+      context.moveTo(100, 150);
+      context.lineTo(450, 50);
+      context.lineWidth = 10;
+
+      // set line color
+      context.strokeStyle = '#ff0000';
+      context.stroke();
+}
+
+function init()
+{
+      var req = createRequest('data.json');
+
+      req.onload = function()
+      {
+         var responseText = req.responseText;
+         console.log(responseText);
+         draw(responseText);
+      };
+
+      req.onerror = function()
+      {
+         console.log('There was an error!');
+      };
+
+      req.send();
+}
+ 
+</script>
+</head>
+<body onload="init()">
+	<canvas id="ProfilerCanvas" width="578" height="200"></canvas>
+</body>
+</html>
