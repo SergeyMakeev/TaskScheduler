@@ -1,5 +1,4 @@
-**Multithreaded task scheduler experiments
-Now with integrated profiler!**
+**Multithreaded task scheduler experiments. Now with integrated profiler!**
 ![alt tag](https://raw.githubusercontent.com/SergeyMakeev/TaskScheduler/master/Images/profiler_ui.jpg)
 
 **Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
