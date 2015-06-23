@@ -1,14 +1,19 @@
 Multithreaded task scheduler experiments
 
+now with integrated profiler!
 
+![alt tag](https://raw.githubusercontent.com/SergeyMakeev/TaskScheduler/master/Images/profiler_ui.jpg)
+
+Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling
 
 Compiled on : Clang 3.4, GCC 4.8.2, MSVC 2010
 
 
 
-
 Useful reading:
 
+Parallelizing the Naughty Dog engine using fibers
+http://www.swedishcoding.com/wp-content/uploads/2015/03/parallelizing_the_naughty_dog_engine_using_fibers.pdf
 
 id Tech 5 Challenges
 From Texture Virtualization to Massive Parallelization
@@ -16,9 +21,6 @@ http://s09.idav.ucdavis.edu/talks/05-JP_id_Tech_5_Challenges.pdf
 
 Doom3 BFG Source Code Review: Multi-threading 
 http://fabiensanglard.net/doom3_bfg/threading.php
-
-Parallelizing the Naughty Dog engine using fibers
-http://www.swedishcoding.com/wp-content/uploads/2015/03/parallelizing_the_naughty_dog_engine_using_fibers.pdf
 
 How Ubisoft Develops Games for Multicore - Before and After C++11
 http://www.youtube.com/watch?v=X1T3IQ4N-3g
