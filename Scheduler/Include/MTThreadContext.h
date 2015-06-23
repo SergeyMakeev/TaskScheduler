@@ -49,6 +49,8 @@ namespace MT
 	struct ProfileEventDesc
 	{
 		uint64 timeStampMicroSeconds;
+		const char * id;
+		int colorIndex;
 		ProfileEventType::Type type;
 	};
 
@@ -120,6 +122,8 @@ namespace MT
 			void NotifyTaskFinished(const internal::TaskDesc & desc);
 			void NotifyTaskResumed(const internal::TaskDesc & desc);
 			void NotifyTaskYielded(const internal::TaskDesc & desc);
+
+			void NotifyWorkerAwait(int64 waitFrom, int64 waitTo);
 
 #endif
 		};

@@ -29,6 +29,10 @@ namespace MT
 		inline internal::GroupedTask GetGroupedTask(TaskGroup::Type group, T * src)
 		{
 			internal::TaskDesc desc(T::TaskEntryPoint, (void*)(src));
+#ifdef MT_INSTRUMENTED_BUILD
+			desc.debugID = T::GetDebugID();
+			desc.colorIndex = T::GetDebugColorIndex();
+#endif
 			return internal::GroupedTask(desc, group);
 		}
 
@@ -64,7 +68,8 @@ namespace MT
 
 				for (size_t i = bucketIndex; i < descriptions.Size(); i += buckets.Size())
 				{
-					descriptions[index++] = GetGroupedTask(group, &taskArray[i]);
+					descriptions[index] = GetGroupedTask(group, &taskArray[i]);
+					index++;
 				}
 
 				buckets[bucketIndex] = internal::TaskBucket(&descriptions[bucketStartIndex], index - bucketStartIndex);

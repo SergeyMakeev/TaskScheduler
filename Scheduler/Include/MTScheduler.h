@@ -101,7 +101,7 @@ namespace MT
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
-		static bool StealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task);
+		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount);
 
 		static FiberContext* ExecuteTask (internal::ThreadContext& threadContext, FiberContext* fiberContext);
 

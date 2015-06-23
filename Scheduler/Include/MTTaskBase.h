@@ -29,6 +29,34 @@
 #include <MTWrapperArray.h>
 
 
+#define DEFAULT_COLOR (0)
+#define BLUE_COLOR (1)
+#define RED_COLOR (2)
+#define YELLOW_COLOR (3)
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+#define DECLARE_DEBUG(name, colorID) \
+	static const char * GetDebugID() \
+	{ \
+		return name; \
+	} \
+	static int GetDebugColorIndex() \
+	{ \
+		return colorID; \
+	}
+
+#else
+
+#define DECLARE_DEBUG(name, colorID)
+
+#endif
+
+
+
+
+
+
 namespace MT
 {
 		template<typename T>

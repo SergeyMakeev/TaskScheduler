@@ -1,226 +1,1157 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<script>
-    
-var canvas;
-var profilerJson;    
-
-function CreateRequest(url)
-{
-  var req = new XMLHttpRequest();
-  req.open('GET', url, true);
-  return req;
-}
- 
- 
-function KeyDown(evt)
-{
-    // add
-    if(evt.keyCode == 107)
-    {
-        window.canvas.width += 256;
-        //zoom += 0.5;
-        Draw();
-    }
-    
-    // add
-    if(evt.keyCode == 109)
-    {
-        window.canvas.width -= 256;
-        if (window.canvas.width < 512)
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Scheduler Profiler</title>
+        
+        <link rel="stylesheet" type="text/css" href="w2ui-dark.min.css" />
+        <script type="text/javascript" src="jquery.min.js"></script>
+        <script type="text/javascript" src="w2ui.min.js"></script>
+        <script type="text/javascript" src="jquery.mousewheel.min.js"></script>
+        <script type="text/javascript" src="filesaver.min.js"></script>
+        
+        <style type="text/css">
+            
+        .infinite-bar
         {
-            window.canvas.width = 512;
+                background: url("data:image/gif;base64,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");
+                height: 100%;
+                filter: alpha(opacity=25); /* support: IE8 */
+                opacity: 0.25;
         }
-        Draw();
-    }
-    
-}
- 
+        
+        .w2ui-icon.icon-save {
+          background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACWElEQVR4Xo3QT0hVTRzH4c/MmXPv9d5EW0jav9cXaVHta/UuK2kXuImKNlE7txWvEnlFbNHKf4sWhiS2SHQTVlogN8KMsBaRt9CKyCIMKiq9954z0/kNF1xE0ReGOcx8nxnOqMauqY7Ika/ElsiC5c/RgNEQBhqj6KTh4pR7vOpc4X3k/jbSFSPWxM5hsPw3vIw7v4viyldA4QBnLQlAa43DL7B7e73vPj3dglgN8D1WMD2EZKS/l5GBXuZnJnk4M0FNNs3Vvh4e3Z1M1ibwmR70RmKUgh9li2neQzm2tHd045zC2hhQgKP9/26sv82xXoml641YrRx8K0U07j+QQEtfvoPpG9cIjaK/p5N7E9eZGR8lFeDXnYuT7kFvxBqAtciSM5A2cC6fJ7L4fz/blQeQ2/3hR46fIBNCLvAGiUFBKRF1oeLWqzVa/81iSUD1KTei0eA7dSnljVijgHLkqEsbLs194ULhM6W4eis+KOFKkQ4gGyrpeiPWAJQtbEopyrHmVIvi2L4mNuKqQzE6/4Gxt46UVmJ8jKoeUGM04BLcwOKbTwQmFEOlEmHjGK38HuPvVpOu8kasKCrOkgkVKQNRKWbbls0MXxnkzMmj7Ei+w5TBGEO0HicdJV1vJAbAOk0uNDgsUeyozWrmHhQ41HqY2oyAAJzze9kwSLraG4mWxzFBQH029MNojSQdaLJpA5DMKXKZFIHWVHveiNXRx9dDl2/OMnTnPgO3CzxfXGJ+ocjOf5rb2sdm2xaevKD4ctmPxeKSdHxXjFgFNAFb+TXP8GEvv8/KT0HpR/oWSI9CAAAAAElFTkSuQmCC') no-repeat center !important;
+        }     
+        
+        .w2ui-icon.icon-capture {
+          background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACu0lEQVR4Xp2RW0xTWRSG/9NTCrVQ7AMx4fLgiy8WEoNDgKKJxEuMiZl50CEkXpAYSJgImUyNMaVykcREUEgxkV4UCoVxdOJMTNAHlQdUKhEjUqSZDEIhbaaQqUjP6aHXJT2hMVRf9EtW1tP69r/WRoK+/kGKF74H68AQCWsCHwqGeKOl95sk0qsdnVRaUix0dnWP1Jyt1qwJwhbb0N0GlpVcBqDABkRYI4q1V1Yca8RnIAkGgwgEAgiHwyE/xyNDqQxwPHd9bn5O4XTOIFEu11wax3G6gcE7biRRqG9qJZ2+mUyWPr67x0wG0y167XhHK36O7HY7ra73Kcc09ZgsdNNopl6r7UvJpabWjh5zL5nWD0mnNeTzemnZHyDfRz/5+QDNu+bpvPY36rfZyGi+TZbb1lZxBYhgIjsnp5ZhCHs0JVht/xuZ539C2uwk5Mp0jI29wJmTJ1Fbdw7795aBZQihYFArHhEbRCKRLUplBrbn5UKIEoSGa0g/Xoy2Ch0G7v4Jg8EA3bAHU4sfMH7hKEx9Q6mJBAkB5HI5xu12SCmGmPoH0F+vYLTdQXVVFfJ2FsHp9kH7oxrFV17i1LGjSE6ANHkqNGVliP8MEw0jtGMXXP/+gzjTCz4gFsWKEEHNETUO3HAgOUGIYoDP9z9kMhmkEok4EF4Xg6IACAwAfxi4P7mMyoMF2NfyiBICLC15rR6PBwuLbjx/NgpZSgpSpFJIWRZgWLAsKwr4KIPMDDk8fBSsBJvIbmppW/r9j3s0PeOkAC9QnJGRp2J/8/4/Krr4gH596Kb6YTeVtzwkAIUMNlPQqG9+nJuXm5Wfr4ZKpdrYkzAx60XXGIfS8hK8HbXjif7wbgAToiBZUvdL/bnMraoTAMmICNFIGNr6WvxsGHVAkaV+qjskDgMAg6+TDWCb+PhmeAAKcXiDT9g2Yct4yizWAAAAAElFTkSuQmCC') no-repeat center !important;
+        }     
 
-function Draw()
-{
-    var context = window.canvas.getContext("2d");
+        .w2ui-icon.icon-trash {
+          background: url('data:image/png;base64,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') no-repeat center !important;
+        }     
+        
+        
+        </style>        
     
-    context.clearRect ( 0 , 0 , window.canvas.width, window.canvas.height );
+
+        <script type="text/javascript">
+            
+// The MIT License (MIT)
+// 
+// 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
+// 
+// 	Permission is hereby granted, free of charge, to any person obtaining a copy
+// 	of this software and associated documentation files (the "Software"), to deal
+// 	in the Software without restriction, including without limitation the rights
+// 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// 	copies of the Software, and to permit persons to whom the Software is
+// 	furnished to do so, subject to the following conditions:
+// 
+//      The above copyright notice and this permission notice shall be included in
+// 	all copies or substantial portions of the Software.
+// 
+// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// 	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// 	THE SOFTWARE.
+            
+            var threadHeight = 25;
+            
+            var maxScrollOffset = 60;
+
+            var canvas;
+            var threads = [];
+            var intervId;
+            var eventsReceived;
+            
+            var hierarchicalThreads = [];
+            
+            
+            var gridSteps = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 20, 50, 100, 200, 500, 1000];
+            
+            
+            var blockColors = ['#6a8002', '#5f769b', '#b13c3c', '#cbc635'];
+            
+            var minTime = 0;
+            var maxTime = 0;
+            
+            
+            
+            var scrollParams = {
+                offset:maxScrollOffset,
+                scale:200.0 //1ms = 200px
+            };
+            
+            var dragState = {
+                active:false,
+                startCoord:0,
+                startOffset:0
+            };
+            
+            var mouseState = {
+                x:0,
+                y:0
+            };
+                                  
+            
+            function CompareFunc(a,b)
+            {
+                if (a.start < b.start)
+                {
+                    return -1;
+                }
+                
+                if (a.start > b.start)
+                {
+                    return 1;
+                }
+
+                return 0;
+            } 
+            
+            function CustomContextMenu()
+            {
+                console.log("CustomContextMenu");
+                return false;
+            }
+            
+            
+            function ClampOffset()
+            {
+                if (window.scrollParams.offset > maxScrollOffset)
+                {
+                    window.scrollParams.offset = maxScrollOffset;
+                }
+            }
+
+            function OnMouseMove(event)
+            {
+                window.mouseState.x = event.clientX;
+                window.mouseState.y = event.clientY;
+                
+                if (window.dragState.active === true)
+                {
+                    window.scrollParams.offset = window.dragState.startOffset + (event.clientX - window.dragState.startCoord);
+                    
+                    ClampOffset();
+                    
+                    ProfilerDraw();
+                    //console.log("Drag");
+                }
+            }
     
-    var canvasWidth = window.canvas.width;
-    var canvasHeight = window.canvas.height;
-   
-    var threadsCount = profilerJson.threads.length;
+            function OnMouseDown(event)
+            {
+                if (window.hierarchicalThreads.length === 0)
+                {
+                    return;
+                }
+                
+                if (event.button === 0 && window.dragState.active === false)
+                {
+                    window.dragState.active = true;
+                    window.dragState.startCoord = event.clientX;
+                    window.dragState.startOffset = window.scrollParams.offset;
+                    
+                    //console.log("Start drag : " + window.dragState.startCoord);
+                    
+                    window.canvas.style.cursor = "all-scroll";
+                }
+            }
+    
+            function OnMouseUp(event)
+            {
+                if (event.button === 0 && window.dragState.active === true)
+                {
+                    window.dragState.active = false;
+                    //console.log("Stop drag");
+                    
+                    window.canvas.style.cursor = "default";
+                }
+            }
+            
+            function OnMouseLeave()
+            {
+                window.dragState.active = false;
+                window.canvas.style.cursor = "auto";
+                //console.log("Mouse leave");
+            }
+            
+            function OnMouseEnter()
+            {
+                //console.log("Mouse enter");
+            }
+            
+            function OnMouseWheel(event)
+            {
+                if (window.hierarchicalThreads.length === 0)
+                {
+                    return;
+                }
+                
+                var delta = event.deltaY;
+                
+                //console.log("Mouse wheel : " + delta);
+                //console.log("x : " + window.mouseState.x + " y : " + window.mouseState.y);
+                
+                var timeMS = ScreenToTime(window.mouseState.x);
+                //console.log("click time : " + timeMS);
+                
+                var offsetBefore = window.mouseState.x;
+                
+                window.scrollParams.scale += (delta * window.scrollParams.scale * 0.1);
+                
+                if (window.scrollParams.scale < 0.1)
+                {
+                    window.scrollParams.scale = 0.1;
+                } else
+                {
+                    if (window.scrollParams.scale > 20000.0)
+                    {
+                        window.scrollParams.scale = 20000.0;
+                    }
+                }
+
+                var offsetAfter = TimeToScreen(timeMS);
+                window.scrollParams.offset += (offsetBefore - offsetAfter);
+                
+                ClampOffset();
+
+                //console.log("scale : " + window.scrollParams.scale);
+                ProfilerDraw();
+            }
+            
+            
+            function TimeToScreen(v)
+            {
+                var res = window.scrollParams.offset + (v * scrollParams.scale);
+                return res;
+            }
+            
+            function ScreenToTime(v)
+            {
+                var res = (v - window.scrollParams.offset) / scrollParams.scale;
+                return res;
+            }
+            
+            function TimeToString(time)
+            {
+                var txt = time.toFixed(2);
+                txt += "ms";
+                return txt;
+            }
+    
+           
+            function DrawRuler(context)
+            {
+                //var rullerHeight = (threadHeight + 6) * window.hierarchicalThreads.length;
+                var rullerHeight = window.canvas.height - 16;
+                
+                var timeEnd = ScreenToTime(window.canvas.width);
+                
+                var txt = TimeToString(timeEnd);
+                var txtWidth = context.measureText(txt).width;
+                var txtIndent = 20.0;
+                var stepTime = ((txtWidth + txtIndent) / scrollParams.scale);
+                var stepMs = 1000;
+                for(var i = 0; i < window.gridSteps.length; i++)
+                {
+                    if (window.gridSteps[i] > stepTime)
+                    {
+                        stepMs = window.gridSteps[i];
+                        break;
+                    }
+                }
+
+                var stepSizePx = stepMs * scrollParams.scale;
+                
+                
+                var timeStartMs = ScreenToTime(0);
+                
+                timeStartMs = timeStartMs - (timeStartMs % stepMs);
+
+                //console.log("grid step : " + stepMs);
+                //console.log("timeStart : " + timeStartMs);
+                
+                var x = TimeToScreen(timeStartMs);
+                
+                while(true)
+                {
+                    var time = ScreenToTime(x);
+                    
+                    txt = TimeToString(time);
+                    txtWidth = context.measureText(txt).width;
+                    
+                    context.fillText(txt, x - txtWidth * 0.5, rullerHeight + 10);
+                    context.beginPath();
+                    context.moveTo(x+0.5, 0);
+                    context.lineTo(x+0.5, rullerHeight);
+                    context.lineWidth = 0.15;
+                    context.stroke();
+                    
+                    x += stepSizePx;
+                    if (x > window.canvas.width)
+                    {
+                        break;
+                    }
+                }
+            }
+            
+            function SplitThread(thread, minIndex, maxIndex)
+            {               
+                if (maxIndex === minIndex)
+                {
+                    return;
+                }
+                
+                var minTime = thread.events[minIndex].start;
+                var maxTime = thread.events[minIndex].end;
+                
+                for(var eventIndex = (minIndex+1); eventIndex < maxIndex; eventIndex++)
+                {
+                    var event = thread.events[eventIndex];
+                    
+                    minTime = Math.min(minTime, event.start);
+                    maxTime = Math.max(maxTime, event.end);
+                }
+                
+                var splitTime = minTime + ((maxTime - minTime) / 2);
+                var splitIndex = minIndex + Math.floor((maxIndex - minIndex) / 2);
+                
+                for(var eventIndex = minIndex; eventIndex < (maxIndex-1); eventIndex++)
+                {
+                    var distA = thread.events[eventIndex].start - splitTime;
+                    var distB = thread.events[eventIndex].end - splitTime;
+                   
+                    if (distA <= 0 && distB >= 0)
+                    {
+                        //console.log("split1!!!");
+                        
+                        distA = Math.abs(distA);
+                        distB = Math.abs(distB);
+                        
+                        if (distA < distB && eventIndex < (maxIndex-1))
+                        {
+                            splitIndex = eventIndex + 1;
+                        } else
+                        {
+                            splitIndex = eventIndex;
+                        }
+                        
+                        break;
+                    } else
+                    {
+                        distA = thread.events[eventIndex].end - splitTime;
+                        distB = thread.events[eventIndex+1].start - splitTime;
+                        
+                        if (distA <= 0 && distB >= 0)
+                        {
+                            //console.log("split2!!!");
+
+                            distA = Math.abs(distA);
+                            distB = Math.abs(distB);
+
+                            if (distA < distB && eventIndex > 0)
+                            {
+                                splitIndex = eventIndex;
+                            } else
+                            {
+                                splitIndex = eventIndex+1;
+                            }
+
+                            break;
+                        }                        
+                        
+                    }
+                }
+                
+                
+                var res = {
+                    minTime:minTime,
+                    maxTime:maxTime,
+                    label:(maxIndex-minIndex) + " items",
+                    color:-1,
+                    splitIndex:splitIndex,
+                    startIndex:minIndex,
+                    endIndex:maxIndex,
+                    children:[]
+                };
+                
+                
+                return res;
+            }
+            
+            function BuildThreadHierarchy(thread)
+            {
+                if (thread === undefined)
+                {
+                    return;
+                }
+                
+                if (thread.events.length === 0)
+                {
+                    return;
+                }
+                
+                var nodesToSplit = [];
+                var root = SplitThread(thread, 0, thread.events.length);
+                
+                nodesToSplit.push(root);
+                
+                while(nodesToSplit.length > 0)
+                {
+                    var node = nodesToSplit.pop();
+                    
+                    //refactor me (same code)
+                    //--------------------------
+                    if ((node.splitIndex - node.startIndex) > 1)
+                    {
+                        var child = SplitThread(thread, node.startIndex, node.splitIndex);
+                        
+                        if (child.startIndex !== child.splitIndex && child.endIndex !== child.splitIndex)
+                        {
+                            nodesToSplit.push( child );
+                            node.children.push( child );
+                        } else
+                        {
+                            for (var i = node.startIndex; i < node.splitIndex; i++)
+                            {
+                                var evt = thread.events[i];
+                                
+                                node.children.push({
+                                    minTime:evt.start,
+                                    maxTime:evt.end,
+                                    label:evt.id,
+                                    color:evt.color,
+                                    splitIndex:-1,
+                                    startIndex:i,
+                                    endIndex:i,
+                                    children:[]
+                                });
+                                
+                            }
+                        }
+                    } else
+                    {
+                        var evt = thread.events[node.startIndex];
+                        
+                        node.children.push({
+                            minTime:evt.start,
+                            maxTime:evt.end,
+                            label:evt.id,
+                            color:evt.color,
+                            splitIndex:-1,
+                            startIndex:node.startIndex,
+                            endIndex:node.startIndex,
+                            children:[]
+                        });
+                
+                    }
+
+                    //refactor me (same code)
+                    //--------------------------
+                    if ((node.endIndex - node.splitIndex) > 1)
+                    {
+                        var child = SplitThread(thread, node.splitIndex, node.endIndex);
+                        if (child.startIndex !== child.splitIndex && child.endIndex !== child.splitIndex)
+                        {
+                            nodesToSplit.push( child );
+                            node.children.push( child );
+                        } else
+                        {
+                            for (var i = node.splitIndex; i < node.endIndex; i++)
+                            {
+                                var evt = thread.events[i];
+                                
+                                node.children.push({
+                                    minTime:evt.start,
+                                    maxTime:evt.end,
+                                    label:evt.id,
+                                    color:evt.color,
+                                    splitIndex:-1,
+                                    startIndex:i,
+                                    endIndex:i,
+                                    children:[]
+                                });
+                                
+                            }
+                            
+                        }
+                    } else
+                    {
+                        var evt = thread.events[node.endIndex-1];
+                        
+                        node.children.push({
+                            minTime:evt.start,
+                            maxTime:evt.end,
+                            label:evt.id,
+                            color:evt.color,
+                            splitIndex:-1,
+                            startIndex:node.endIndex-1,
+                            endIndex:node.endIndex-1,
+                            children:[]
+                        });
+                
+                    }
+                    //---------------------------------------------------------
+                    
+                }
+                
+                return root;
+            }
+
+
+            function UpdateMinMaxTime()
+            {
+                if (window.hierarchicalThreads.length > 0 && window.hierarchicalThreads[0] !== undefined)
+                {
+                    window.minTime = window.hierarchicalThreads[0].minTime;
+                    window.maxTime = window.hierarchicalThreads[0].maxTime;
+                    for (var threadIndex = 1; threadIndex < window.hierarchicalThreads.length; threadIndex++)
+                    {
+                        window.minTime = Math.min(window.minTime, window.hierarchicalThreads[threadIndex].minTime);
+                        window.maxTime = Math.min(window.maxTime, window.hierarchicalThreads[threadIndex].maxTime);
+                    }
+                }
+            }
+
+            function BuildHierarchy()
+            {
+                //build hierarchy
+                window.hierarchicalThreads = [];
+                
+                var threadsCount = window.threads.length;
+                for(var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
+                {
+                    console.log("thread");
+                    var thread = window.threads[threadIndex];
+                    hierarchicalThreads.push( BuildThreadHierarchy(thread) );
+                }
+                
+                UpdateMinMaxTime();
+            }
+         
+            
+            function CreateRequest(url)
+            {
+              var req = new XMLHttpRequest();
+              req.open('GET', url, true);
+              return req;
+            }
+            
+            function OnCaptureStop()
+            {
+                ProfilerStop();
+                w2popup.close();
+            }
+            
+            
+            function ProfilerStop()
+            {
+                clearInterval(intervId);
+                
+                BuildHierarchy();
+                ProfilerDraw();
+            }
+            
+            function CaptureData()
+            {
+                console.log("capture");
+                
+                $('#popup-capture').w2popup({modal : true, showClose : false});
+                               
+                threads = [];
+                window.eventsReceived = 0;
+
+                var updateTimeMs = 50;
+                console.log("start : " + updateTimeMs + "ms");
+        
+                intervId = window.setInterval(ProfilerUpdate, updateTimeMs);
+                ProfilerUpdate();
+            }
+
+            function ProfilerStart()
+            {
+                if (window.hierarchicalThreads.length > 0)
+                {
+                    w2confirm('All captured data will be destroyed. Continue?', function (btnState)
+                    {
+                        console.log(btnState);
+                        
+                        if (btnState === 'Yes')
+                        {
+                            CaptureData();
+                        }
+                        
+                    })
+                } else
+                {
+                    CaptureData();
+                }
+                
+            }
+            
+            function AppendData(profilerJson)
+            {
+                var jsonThreadsCount = profilerJson.threads.length;
+                
+                var eventsReceived = 0;
+
+                for(var threadIndex = 0; threadIndex < jsonThreadsCount; threadIndex++)
+                {
+                    var jsonThread = profilerJson.threads[threadIndex];
+
+                    var capturedThread = window.threads[threadIndex];
+                    if (capturedThread === undefined)
+                    {
+                        capturedThread = { events:[] };
+                        window.threads[threadIndex] = capturedThread;
+                    }
+
+                    var jsonThreadEventsCount = jsonThread.events.length;
+                    eventsReceived += jsonThreadEventsCount;
+                    for (var eventIndex = 0; eventIndex < jsonThreadEventsCount; eventIndex++)
+                    {
+                        var jsonEvenThreadEvent = jsonThread.events[eventIndex];
+
+                        // type: RESUME = 0, YIELD = 1,DONE = 2
+                        if (jsonEvenThreadEvent.type === 0)
+                        {
+                            //begin event
+                            eventIndex++;
+                            if (eventIndex < jsonThreadEventsCount)
+                            {
+                                // full event
+                                var jsonOddThreadEvent = jsonThread.events[eventIndex];
+                                
+                                capturedThread.events.push({
+                                    start: jsonEvenThreadEvent.time,
+                                    end: jsonOddThreadEvent.time,
+                                    id: jsonEvenThreadEvent.id,
+                                    color:jsonEvenThreadEvent.color 
+                                });
+                            } else
+                            {
+                                //there is no end event
+
+                                capturedThread.events.push({
+                                    start: jsonEvenThreadEvent.time,
+                                    end: jsonEvenThreadEvent.time,
+                                    id: jsonEvenThreadEvent.id,
+                                    color:jsonEvenThreadEvent.color 
+                                });
+
+                            }
+
+                        } else
+                        {
+                            //we have only end event, append to last event
+                            if (capturedThread.events.length > 0)
+                            {
+                                var eventDesc = capturedThread.events[capturedThread.events.length - 1];
+                                eventDesc.end = jsonEvenThreadEvent.time;
+                            } else
+                            {
+                                console.log('There was an error!');
+                            }
+                        }
+
+                    } // events loop
+
+                }      
+                
+                window.eventsReceived += eventsReceived;
+                
+                $('.status_text').text("Events captured : " + window.eventsReceived);
+                
+            }
+            
+            function ProfilerUpdate()
+            {                               
+                var req = CreateRequest('data.json');
+                
+                req.onload = function()
+                {
+                    var profilerJson = JSON.parse(req.responseText);
+                    AppendData(profilerJson);
+                };
+
+                req.onerror = function()
+                {
+                   console.log('There was an error!');
+                };
+
+                req.send();  
+        
+            }
+            
+            
+            function IsIntersect(ax1, ax2, bx1, bx2)
+            {
+                /*
+                if (ax1 > ax2)
+                {
+                    var tmp = ax1;
+                    ax1 = ax2;
+                    ax2 = tmp;
+                }
+                
+                if (bx1 > bx2)
+                {
+                    var tmp = bx1;
+                    bx1 = bx2;
+                    bx2 = tmp;
+                }
+                */
+                
+                if (ax1 <= bx1 && ax2 >= bx2)
+                {
+                    return true;
+                }
+                
+                if (ax1 >= bx1 && ax1 <= bx2)
+                {
+                    return true;
+                }
+                
+                if (ax2 >= bx1 && ax2 <= bx2)
+                {
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            
+            function RecurseDrawBlock(context, y, currentBlock, timeStart, timeEnd)
+            {
+                //1000 microseconds = 1 ms
+                var minTime = (currentBlock.minTime - window.minTime) / 1000;
+                var maxTime = (currentBlock.maxTime - window.minTime) / 1000;
+                
+                
+                if (IsIntersect(minTime, maxTime, timeStart, timeEnd) !== true)
+                {
+                    return;
+                }
+                
+                var x1 = TimeToScreen(minTime);
+                var x2 = TimeToScreen(maxTime);
+                
+                
+                var drawNow = (currentBlock.children.length === 0);
+                
+                if (drawNow === false)
+                {
+                    for (var i = 0; i < currentBlock.children.length; i++)
+                    {
+                        var chMinTime = (currentBlock.children[i].minTime - window.minTime) / 1000;
+                        var chMaxTime = (currentBlock.children[i].maxTime - window.minTime) / 1000;
+                        
+                        var chDurationMs = (chMaxTime - chMinTime);
+                        
+                        if (chDurationMs > 0.05)
+                        {
+                            var chWidth = TimeToScreen(chMaxTime) - TimeToScreen(chMinTime);
+
+                            if (chWidth < (threadHeight+6))
+                            {
+                                drawNow = true;
+                                break;
+                            }
+                        }
+
+                    }
+                }
+                
+                
+                
+                if (drawNow === false)
+                {
+                    for (var i = 0; i < currentBlock.children.length; i++)
+                    {
+                        RecurseDrawBlock(context, y, currentBlock.children[i], timeStart, timeEnd);
+                    }
+                    return;
+                }
+
+                //console.log("min time: " + window.minTime);
+                //console.log("draw (ms): " + minTime + " to " + maxTime);
+                //console.log("draw: " + x1 + " to " + x2);
+
+                context.beginPath();
+                
+                if ((x2 - x1) > threadHeight)
+                {
+                    context.lineCap = 'round';
+                } else
+                {
+                    context.lineCap = 'butt';
+                }
+                context.moveTo(x1 + threadHeight * 0.5, y + threadHeight * 0.5);
+                context.lineTo(x2 - threadHeight * 0.5, y + threadHeight * 0.5);
+                context.lineWidth = threadHeight;
+                
+                /*
+                if (currentBlock.label === '#')
+                {
+                    context.strokeStyle = 'rgba(207, 220, 234, 0.6)';
+                } else */
+                {
+                    context.strokeStyle = '#6b6b6b';
+                    if (currentBlock.children.length === 0)
+                    {
+                        if (currentBlock.color >= 0 && currentBlock.color < blockColors.length)
+                        {
+                            context.strokeStyle = blockColors[currentBlock.color]
+                        } else
+                        {
+                            context.strokeStyle = '#6a8002';
+                        }
+                    }
+                }
+                
+                context.stroke();
+                
+                
+                if (currentBlock.label !== '#')
+                {
+                    context.fillStyle = '#ffffff';
+                    context.fillText(currentBlock.label, x1+6, y + threadHeight * 0.5+3);
+                }
+/*                
+                context.save();
+                context.fillStyle = '#ffffff';
+                context.beginPath();
+                context.rect(x1, y, x2-x1, threadHeight);
+                context.clip();
+                context.fillText("XUI", x1+2, y + threadHeight * 0.5+3);
+                context.restore();                
+*/        
+            }
+            
+            
+            function roundRect(ctx, x, y, width, height, radius, fill, stroke)
+            {
+              if (typeof stroke == "undefined" )
+              {
+                stroke = true;
+              }
+              
+              if (typeof radius === "undefined")
+              {
+                radius = 5;
+              }
+              ctx.beginPath();
+              ctx.moveTo(x + radius, y);
+              ctx.lineTo(x + width - radius, y);
+              ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+              ctx.lineTo(x + width, y + height - radius);
+              ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+              ctx.lineTo(x + radius, y + height);
+              ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+              ctx.lineTo(x, y + radius);
+              ctx.quadraticCurveTo(x, y, x + radius, y);
+              ctx.closePath();
+              
+              if (stroke)
+              {
+                ctx.stroke();
+              }
+              
+              if (fill)
+              {
+                ctx.fill();
+              }        
+            }  
+            
+            
+            function OnResize()
+            {
+                ProfilerDraw();
+            }
+            
+            function ProfilerDraw()
+            {
+                var context = window.canvas.getContext("2d");
+                
+                context.canvas.width  = window.innerWidth;
+                context.canvas.height = 300;
+                
+                context.fillStyle = '#383838';
+                context.fillRect ( 0, 0, window.canvas.width, window.canvas.height );
+                context.fillStyle = '#A0A0A0';
+                
+                if (window.hierarchicalThreads.length === 0)
+                {
+                    context.font="15px sans-serif";
+                    
+                    var message = "Drop saved data here";
+                    
+                    var msgSize = context.measureText(message);
+                    msgSize.height = 9;
+                    
+                    var x = window.canvas.width * 0.5 - msgSize.width * 0.5;
+                    var y = 100;
+                    
+                    
+                    var rectHeight = 50;
+                    var rectIndent = 100;
+                    
+                    
+                    var y1 = y - msgSize.height * 0.5 - rectHeight * 0.5;
+                    
+                    console.log(y1);
+                    
+                    context.strokeStyle = '#6b6b6b';
+                    context.setLineDash([5]);
+                    roundRect(context, x - rectIndent, y1, msgSize.width + rectIndent * 2, rectHeight, 30, false, true);
+                    
+                    context.fillText(message, x, y);
+                    
+                    return;
+                }
+                
+                context.font="10px sans-serif";
+                
+                context.fillStyle = '#A0A0A0';
+                context.setLineDash([]);
+                
+                
+                context.save();
+                context.beginPath();
+                context.rect(30, 0, window.canvas.width, window.canvas.height);
+                context.clip();
+                
+                context.strokeStyle = '#A0A0A0';
+                DrawRuler(context);
+                
+                var timeStart = ScreenToTime(0);
+                var timeEnd = ScreenToTime(window.canvas.width);
+                
+                var threadsCount = window.hierarchicalThreads.length;
+                 
+                var y = 6;
+                for (var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
+                {
+                    var currentBlock = window.hierarchicalThreads[threadIndex];
+                    
+                    if (currentBlock !== undefined)
+                    {
+                        RecurseDrawBlock(context, y, currentBlock, timeStart, timeEnd);
+                    }
+
+                    y += threadHeight;
+                    y += 6;
+                }
+
+                context.restore();
+                context.lineCap = 'butt';
+                
+                
+                context.beginPath();
+                context.moveTo(30.5, 0);
+                context.lineTo(30.5, window.canvas.height);
+                context.lineWidth = 0.75;
+                context.strokeStyle = '#A0A0A0';
+                context.stroke();
+                
+                y = 6;
+                for (var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
+                {
+                    context.fillText(threadIndex, 5, y + threadHeight * 0.5 + 3);
+
+                    y += threadHeight;
+                    y += 3;
+
+                    context.beginPath();
+                    context.moveTo(0, y+0.5);
+                    context.lineTo(window.canvas.width, y+0.5);
+                    context.lineWidth = 0.75;
+                    context.strokeStyle = '#5b5b5b';
+                    context.stroke();
+
+                    y += 3;
+                }
+            }
+            
+            
+            function Clear()
+            {
+                window.threads = [];
+                window.hierarchicalThreads = [];
+                window.scrollParams.offset = maxScrollOffset;
+                window.scrollParams.scale = 200.0;
+            }
+            
+            function ClearAll()
+            {
+                console.log("ClearAll");
+                
+                w2confirm('All captured data will be destroyed. Continue?', function (btnState)
+                {
+                    if (btnState === 'Yes')
+                    {
+                        console.log("clear command");
+                        Clear();
+                        ProfilerDraw();
+                    }
+                    console.log(btnState);
+                })
+          
+            }
+            
+            
+            function SaveData()
+            {
+                var json = JSON.stringify(hierarchicalThreads);
+                var blob = new Blob([json], {type: "octet/stream"});
+                
+                saveAs(blob, "Data.json");
+            }
+            
+            function ReadData(event)
+            {
+                var file = event.dataTransfer.files[0];
+                var fileReader = new FileReader();
+
+                if (file)
+                {
+                    if (fileReader)
+                    {
+                        fileReader.addEventListener("loadend", function(e)
+                        {
+                            console.log("read done!");
+                            console.log(file.name);
+                            console.log(file.size);
+                            
+                            Clear();
+                            hierarchicalThreads = JSON.parse(e.target.result);
+                            UpdateMinMaxTime();
+
+                            
+                            //console.log(e.target.result);
+                            
+                            ProfilerDraw();
+                            
+                        }, false);
+                        fileReader.readAsText(file);
+                    } else
+                    {
+                            alert("Bad browser!");
+                    }
+                }                
+            }
+            
+            function Init()
+            {
+                window.canvas = document.getElementById("ProfilerCanvas");
+                
+                $('#ProfilerCanvas').bind('mousewheel', function(event) {
+                    OnMouseWheel(event);
+                });    
+                
+
+                window.canvas.addEventListener("dragover", function(event) {
+                    console.log("over");
+                    event.preventDefault();
+                }, false);
+
+        
+                window.canvas.addEventListener("dragenter", function(event) {
+                    console.log("in");
+                    event.preventDefault();
+                }, false);
+                
+                window.canvas.addEventListener("dragleave", function(event) {
+                    console.log("out");
+                    event.preventDefault();
+                }, false);
+                
+                window.canvas.addEventListener("drop",  function(event) {
+                    console.log("drop");
+                    ReadData(event);
+                    event.preventDefault();
+                }, false);
+                
+                
+                window.addEventListener("resize", function(event) {
+                    OnResize(event);
+                });    
+                
+                ProfilerDraw();
+            }
+
+
+
+            $(function ()
+            {
+                
+                $('#toolbar').w2toolbar({
+                       name: 'toolbar',
+                       items: [
+                           { type: 'button',  id: 'capture',  img: 'icon-capture', hint: 'Capture data from the application' },
+                           { type: 'break',  id: 'break0' },
+                           { type: 'button',  id: 'save',  img: 'icon-save', hint: 'Save captured data' },
+                           { type: 'break',  id: 'break1' },
+                           { type: 'button',  id: 'clear',  img: 'icon-trash', hint: 'Clear captured data' }
+                       ],
+                       onClick: function (event)
+                       {
+                            switch (event.target)
+                            {
+                                case 'save':
+                                    SaveData();
+                                    break;
+                                case 'capture':
+                                    ProfilerStart();
+                                    break;
+                                case 'clear':
+                                    ClearAll();
+                                    break;
+                            }
+                           
+                           //console.log('Target: '+ event.target, event);
+                       }
+                   });
+            
+            });
+        </script>
+    </head>
+    
+    
+    <body  bgcolor="#383838" onload="Init()" oncontextmenu="return false">
+        
+        <div id="toolbar" style="padding: 4px; border: 1px solid silver; border-radius: 3px"></div>
+
+
+        <canvas id="ProfilerCanvas" onmousemove="OnMouseMove(event)" onmousedown="OnMouseDown(event)" onmouseup="OnMouseUp(event)" onmouseout="OnMouseLeave()" onmouseenter="OnMouseEnter()" oncontextmenu="CustomContextMenu()"></canvas>
+                
+        
+        <div id="popup-capture" style="display: none; width: 400px; height: 200px; overflow: hidden">
+            <div rel="title">
+                Capture in progress
+            </div>
+            <div rel="body">
+                <div style="width: 100%; height: 40px"></div>
+                <p class="status_text">
+                  Events captured : 
+                </p>
+                <div style="width: 100%; height: 32px"></div>
+                <div class="infinite-bar" style="width: 100%; height: 16px"></div>
+            </div>
+            
+            <div rel="buttons">
+                <button class="btn" onclick="OnCaptureStop()">Stop</button>
+            </div>
+        </div>        
       
-    var minTime = 0;
-    var maxTime = 0;
-    var isInitialized = false;
-    for(var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
-    {
-        var thread = profilerJson.threads[threadIndex];
-        var eventsCount = thread.events.length;
-        for(var eventIndex = 0; eventIndex < eventsCount; eventIndex++)
-        {
-            var event = thread.events[eventIndex];
-            
-            if (isInitialized === false)
-            {
-                minTime = event.time;
-                maxTime = event.time;
-                isInitialized = true;
-            } else
-            {
-                minTime = Math.min(minTime, event.time);
-                maxTime = Math.max(maxTime, event.time);
-            }
-        }
-    }
-       
-    var timeRangeMicroSeconds = maxTime - minTime;
-   
-    if (timeRangeMicroSeconds < 1)
-    {
-        timeRangeMicroSeconds = 1;
-    }
-    
-    //1000 microseconds = 1 ms
-   
-
-    var x = 20;
-    var y = 20;
-    for(var threadIndex = 0; threadIndex < threadsCount; threadIndex++)
-    {
-// Task type: RESUME = 0, YIELD = 1,DONE = 2
-        context.fillText(threadIndex, 5, y);
         
-        var thread = profilerJson.threads[threadIndex];
-        var eventsCount = thread.events.length;
-        var parity = 0;
-        for(var eventIndex = 0; eventIndex < (eventsCount-1); eventIndex++)
-        {
-            var eventFrom = thread.events[eventIndex];
-            
-            if (eventFrom.type !== 0)
-            {
-                continue;
-            }
-            
-            eventIndex++;
-            var eventTo = thread.events[eventIndex];
-            
-            var from = x + ((eventFrom.time - minTime) / timeRangeMicroSeconds) * canvasWidth;
-            var to = x + ((eventTo.time - minTime) / timeRangeMicroSeconds) * canvasWidth;
-            
-            context.beginPath();
-            context.moveTo(from, y);
-            context.lineTo(to, y);
-            context.lineWidth = 10;
-
-            // set line color
-            
-            if (parity === 0)
-            {
-               context.strokeStyle = '#008000';
-               parity = 1;
-            } else
-            {
-               context.strokeStyle = '#00ff00';
-               parity = 0;
-            }
-            context.stroke();
-        }
-        
-        y += 10;
-        
-        context.beginPath();
-        context.moveTo(0, y);
-        context.lineTo(canvasWidth, y);
-        context.lineWidth = 0.5;
-        context.strokeStyle = '#404040';
-        context.stroke();
-        
-        y += 22;
-    }
+    </body>
     
-    
-    
-    var msTicksCount = timeRangeMicroSeconds / 1000;
-    
-    
-    console.log(msTicksCount);
-    
-    var timeNow = 0;
-    for(var i = 0; i < msTicksCount; i++)
-    {
-        var tickX = x + (timeNow / timeRangeMicroSeconds) * canvasWidth;
-        
-        context.beginPath();
-        context.moveTo(tickX, threadsCount * 32);
-        context.lineTo(tickX, threadsCount * 33);
-        context.lineWidth = 0.5;
-        context.stroke();
-        
-        context.fillText(timeNow / 1000, tickX, threadsCount * 34);
-        
-        timeNow += 1000;
-    }    
-    
-    
-    
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, canvasHeight);
-    context.lineWidth = 0.5;
-    context.stroke();
-    
-    
-/*
-    var x = 250;
-    var y = 200;
-    context.fillText("test", x, y);
-
-    context.beginPath();
-    context.moveTo(100, 150);
-    context.lineTo(450, 50);
-    context.lineWidth = 10;
-
-    // set line color
-    context.strokeStyle = '#ff0000';
-    context.stroke();
-*/    
-}
-
-
-function RefreshData()
-{
-    //console.log('Load data!');
-    
-    var req = CreateRequest('data.json');
-
-    req.onload = function()
-    {
-      window.profilerJson = JSON.parse(req.responseText);
-      Draw();
-    };
-
-    req.onerror = function()
-    {
-       console.log('There was an error!');
-    };
-
-    req.send();  
-}
-
-function Init()
-{
-    window.canvas = document.getElementById("ProfilerCanvas");
-    window.addEventListener('keydown', KeyDown);
-    
-    //window.setInterval(RefreshData, 1000);
-
-    RefreshData();
-}
- 
-</script>
-</head>
-<body onload="Init()">
-	<canvas id="ProfilerCanvas" width="1920" height="600"></canvas>
-</body>
 </html>

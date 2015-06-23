@@ -12,6 +12,8 @@ namespace SimpleWaitFromSubtask
 
 	struct Subtask : public MT::TaskBase<Subtask>
 	{
+		DECLARE_DEBUG("Subtask", DEFAULT_COLOR);
+
 		void Do(MT::FiberContext&)
 		{
 			MT::Thread::SpinSleep(2);
@@ -22,6 +24,8 @@ namespace SimpleWaitFromSubtask
 
 	struct Task : public MT::TaskBase<Task>
 	{
+		DECLARE_DEBUG("Task", DEFAULT_COLOR);
+
 		void Do(MT::FiberContext& ctx)
 		{
 			Subtask tasks[2];

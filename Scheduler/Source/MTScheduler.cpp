@@ -36,7 +36,7 @@ namespace MT
 #endif
 
 		//query number of processor
-		threadsCount = Max(Thread::GetNumberOfHardwareThreads() - 2, 1);
+		threadsCount = Max((uint32)Thread::GetNumberOfHardwareThreads() >> 1, (uint32)1);
 
 		if (threadsCount > MT_MAX_THREAD_COUNT)
 		{
@@ -223,24 +223,33 @@ namespace MT
 	}
 
 
-	bool TaskScheduler::StealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task)
+	bool TaskScheduler::TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount)
 	{
-		// Try to steal tasks from random worker thread
-		uint32 workersCount = threadContext.taskScheduler->GetWorkerCount();
 		if (workersCount <= 1)
 		{
 			return false;
 		}
 
-		uint32 victimIndex = threadContext.random.Get() % workersCount;
-		if (victimIndex == threadContext.workerIndex)
-		{
-			victimIndex = victimIndex++;
-			victimIndex = victimIndex % workersCount;
-		}
+		uint32 victimIndex = threadContext.random.Get();
 
-		internal::ThreadContext& victimContext = threadContext.taskScheduler->threadContext[victimIndex];
-		return victimContext.queue.TryPop(task);
+		for (uint32 attempt = 0; attempt < workersCount; attempt++)
+		{
+			uint32 index = victimIndex % workersCount;
+			if (index == threadContext.workerIndex)
+			{
+				victimIndex++;
+				index = victimIndex % workersCount;
+			}
+
+			internal::ThreadContext& victimContext = threadContext.taskScheduler->threadContext[index];
+			if (victimContext.queue.TryPop(task))
+			{
+				return true;
+			}
+
+			victimIndex++;
+		}
+		return false;
 	}
 
 	void TaskScheduler::ThreadMain( void* userData )
@@ -249,10 +258,12 @@ namespace MT
 		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 		context.schedulerFiber.CreateFromThread(context.thread);
 
+		uint32 workersCount = context.taskScheduler->GetWorkerCount();
+
 		while(context.state.Get() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
-			if (context.queue.TryPop(task) || StealTask(context, task) )
+			if (context.queue.TryPop(task) || TryStealTask(context, task, workersCount) )
 			{
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
@@ -262,7 +273,7 @@ namespace MT
 				while(fiberContext)
 				{
 #ifdef MT_INSTRUMENTED_BUILD
-					context.NotifyTaskResumed(task.desc);
+					context.NotifyTaskResumed(fiberContext->currentTask);
 #endif
 
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
@@ -307,9 +318,19 @@ namespace MT
 
 			} else
 			{
+#ifdef MT_INSTRUMENTED_BUILD
+				int64 waitFrom = MT::GetTimeMicroSeconds();
+#endif
+
 				// Queue is empty and stealing attempt failed
 				// Wait new events
 				context.hasNewTasksEvent.Wait(2000);
+
+#ifdef MT_INSTRUMENTED_BUILD
+				int64 waitTo = MT::GetTimeMicroSeconds();
+				context.NotifyWorkerAwait(waitFrom, waitTo);
+#endif
+
 			}
 
 		} // main thread loop

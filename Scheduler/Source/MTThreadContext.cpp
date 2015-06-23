@@ -93,9 +93,9 @@ namespace MT
 
 		void ThreadContext::NotifyTaskFinished(const internal::TaskDesc & desc)
 		{
-			desc;
-
 			ProfileEventDesc eventDesc;
+			eventDesc.id = desc.debugID;
+			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_DONE;
 			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
@@ -103,9 +103,9 @@ namespace MT
 
 		void ThreadContext::NotifyTaskResumed(const internal::TaskDesc & desc)
 		{
-			desc;
-
 			ProfileEventDesc eventDesc;
+			eventDesc.id = desc.debugID;
+			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_RESUME;
 			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
@@ -113,13 +113,38 @@ namespace MT
 
 		void ThreadContext::NotifyTaskYielded(const internal::TaskDesc & desc)
 		{
-			desc;
-
 			ProfileEventDesc eventDesc;
+			eventDesc.id = desc.debugID;
+			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_YIELD;
 			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
+
+		void ThreadContext::NotifyWorkerAwait(int64 waitFrom, int64 waitTo)
+		{
+			waitFrom;
+			waitTo;
+/*
+			if ((waitTo - waitFrom) > 100)
+			{
+				ProfileEventDesc eventDesc;
+				eventDesc.id = "#";
+				eventDesc.colorIndex = YELLOW_COLOR;
+				eventDesc.type = ProfileEventType::TASK_RESUME;
+				eventDesc.timeStampMicroSeconds = waitFrom - MT::TaskScheduler::GetStartTime();
+				profileEvents.Push(std::move(eventDesc));
+
+				eventDesc.id = "#";
+				eventDesc.colorIndex = YELLOW_COLOR;
+				eventDesc.type = ProfileEventType::TASK_DONE;
+				eventDesc.timeStampMicroSeconds = waitTo - MT::TaskScheduler::GetStartTime();
+				profileEvents.Push(std::move(eventDesc));
+			}
+*/
+
+		}
+
 
 
 #endif

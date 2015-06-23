@@ -31,7 +31,7 @@
 #include "malloc.h"
 
 #define MAX_REQUEST_SIZE (8192)
-#define MAX_ANSWER_SIZE (262144)
+#define MAX_ANSWER_SIZE (4*128*1024)
 #define MAX_STRINGFORMAT_BUFFER_SIZE (65536)
 
 #ifdef _WIN32
@@ -42,7 +42,7 @@
 #else
 
 #include <sys/types.h>
-#include <sys/socket.h>
+FILE* file#include <sys/socket.h>
 #include <netinet/ip.h>
 #include <string.h>
 #include <strings.h>
@@ -194,6 +194,26 @@ int32 MicroWebServer::Serve(uint16 portRangeMin, uint16 portRangeMax)
 	return webServerPort;
 }
 
+void MicroWebServer::AppendFromFile(FILE* file)
+{
+	fseek(file, 0, SEEK_END);
+	int fileSize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	if (answerSize + fileSize + 1 >= MAX_ANSWER_SIZE)
+	{
+		return;
+	}
+
+	char* const pBuffer = answerData + answerSize;
+
+	int nRead = (int)fread(pBuffer, 1, fileSize, file);
+	ASSERT(nRead == fileSize, "File read error");
+	fclose(file);
+	answerSize += fileSize;
+	answerData[answerSize] = '\0';
+}
+
 void MicroWebServer::Append(const char * txt)
 {
 	size_t stringLen = strlen(txt);
@@ -222,18 +242,6 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 	MT::ProfileEventDesc eventsBuffer[4096];
 
 	TcpSocket clientSocket = accept(listenerSocket, 0, 0);
-	if (!IsValidSocket(clientSocket))
-	{
-		//clear profiler data
-		uint32 threadCount = scheduler.GetWorkerCount();
-		for(uint32 workerId = 0; workerId < threadCount; workerId++)
-		{
-			scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
-		}
-
-		return;
-	}
-
 	SetSocketMode(clientSocket, SocketMode::BLOCKING);
 
 	int numBytesReceived = recv(clientSocket, requestData, (MAX_REQUEST_SIZE-1), 0);
@@ -250,12 +258,20 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 		{
 			//document uri
 			char* pDocument = pGet + sizeof(WEB_GET) - 1;
+			char* pDocumentExt = pDocument;
 			for(char* ch = pDocument;; ch++)
 			{
 				if (*ch == ' ' || *ch == '\0')
 				{
 					*ch = '\0';
 					break;
+				} else
+				{
+					if (*ch == '.')
+					{
+						pDocumentExt = ch;
+					}
+
 				}
 			}
 
@@ -284,7 +300,9 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 						MT::ProfileEventDesc evt = eventsBuffer[eventId];
 
 						Append(StringFormat("\"time\" : %llu,", evt.timeStampMicroSeconds));
-						Append(StringFormat("\"type\" : %d", evt.type));
+						Append(StringFormat("\"type\" : %d,", evt.type));
+						Append(StringFormat("\"id\" : \"%s\",", evt.id));
+						Append(StringFormat("\"color\" : %d", evt.colorIndex));
 
 						if ((eventId + 1) < eventsCount)
 						{
@@ -315,22 +333,26 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 				FILE* file = fopen(pDocument, "rb");
 				if (file != nullptr)
 				{
-					fseek(file, 0, SEEK_END);
-					int fileSize = ftell(file);
-					fseek(file, 0, SEEK_SET);
 
-					Append("HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n");
+					if (pDocumentExt[0] == '.' && pDocumentExt[1] == 'c' && pDocumentExt[2] == 's' && pDocumentExt[3] == 's')
+					{
+						Append("HTTP/1.0 200 OK\r\nContent-Type: text/css \r\n\r\n");
+					} else
+					{
+						if (pDocumentExt[0] == '.' && pDocumentExt[1] == 'j' && pDocumentExt[2] == 's')
+						{
+							Append("HTTP/1.0 200 OK\r\nContent-Type: text/javascript \r\n\r\n");
+						} else
+						{
+							Append("HTTP/1.0 200 OK\r\nContent-Type: text/html \r\n\r\n");
+						}
+					}
 
-					char* const pBuffer = (char*)alloca(fileSize+1);
-					int nRead = (int)fread(pBuffer, 1, fileSize, file);
-					ASSERT(nRead == fileSize, "File read error");
-					fclose(file);
-					pBuffer[fileSize] = '\0';
+					AppendFromFile(file);
 
-					Append(pBuffer);
 				} else
 				{
-					Append("HTTP/1.1 404 Not Found\r\n\r\nError 404. Page '");
+					Append("HTTP/1.1 404 Not Found\r\n\r\nError 404. File '");
 					Append(pDocument);
 					Append("' Not Found.");
 				}

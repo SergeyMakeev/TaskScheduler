@@ -4,6 +4,7 @@
 
 #include <squish.h>
 #include <string.h>
+#include <conio.h>
 
 namespace EmbeddedImage
 {
@@ -21,6 +22,8 @@ namespace DxtCompress
 
 	struct SimpleRunParams : public MT::TaskBase<SimpleRunParams>
 	{
+		DECLARE_DEBUG("SimpleRunParams", DEFAULT_COLOR);
+
 		uint32 width;
 		uint32 height;
 		uint32 stride;
@@ -130,6 +133,8 @@ namespace DxtCompress
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ComplexRunBlockSubtask : public MT::TaskBase<ComplexRunBlockSubtask>
 	{
+		DECLARE_DEBUG("CompressDxtBlock", BLUE_COLOR);
+
 		int srcX;
 		int srcY;
 
@@ -180,6 +185,8 @@ namespace DxtCompress
 
 	struct ComplexRunParams : public MT::TaskBase<ComplexRunParams>
 	{
+		DECLARE_DEBUG("CompressImage", DEFAULT_COLOR);
+
 		uint32 width;
 		uint32 height;
 		uint32 stride;
@@ -263,6 +270,18 @@ namespace DxtCompress
 		CHECK_ARRAY_EQUAL(complexTask.dstBlocks, EmbeddedImage::lenaColorDXT1, dxtBlocksTotalSize);
 
 		free(complexTask.dstBlocks);
+
+#ifdef MT_INSTRUMENTED_BUILD
+		printf("Press any key to continue\n");
+		while(true)
+		{
+			scheduler.UpdateProfiler();
+			if (_kbhit() != 0)
+			{
+				break;
+			}
+		}
+#endif
 	}
 
 

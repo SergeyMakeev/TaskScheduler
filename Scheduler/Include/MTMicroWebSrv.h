@@ -75,6 +75,7 @@ namespace MT
 			char * requestData;
 
 			void Append(const char * txt);
+			void AppendFromFile(FILE* file);
 			const char * StringFormat(const char * formatString, ...);
 
 			char * answerData;

@@ -34,7 +34,7 @@ namespace MT
 		WrapperArray<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
 
 		size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-		WrapperArray<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		WrapperArray<internal::TaskBucket> buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
 		RunSubtasksAndYieldImpl(buckets);

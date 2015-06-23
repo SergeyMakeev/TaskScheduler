@@ -47,16 +47,29 @@ namespace MT
 			//Task user data (task context)
 			void* userData;
 
+#ifdef MT_INSTRUMENTED_BUILD
+			const char * debugID;
+			int colorIndex;
+#endif
+
 			TaskDesc()
 				: taskFunc(nullptr)
 				, userData(nullptr)
 			{
+#ifdef MT_INSTRUMENTED_BUILD
+				debugID = nullptr;
+				colorIndex = 0;
+#endif
 			}
 
 			TaskDesc(TTaskEntryPoint _taskFunc, void* _userData)
 				: taskFunc(_taskFunc)
 				, userData(_userData)
 			{
+#ifdef MT_INSTRUMENTED_BUILD
+				debugID = nullptr;
+				colorIndex = 0;
+#endif
 			}
 
 			bool IsValid()

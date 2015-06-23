@@ -7,6 +7,8 @@ SUITE(SimpleTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SimpleTask : public MT::TaskBase<SimpleTask>
 {
+	DECLARE_DEBUG("SimpleTask", DEFAULT_COLOR);
+
 	static const int sourceData = 0xFF33FF;
 	int resultData;
 
@@ -39,6 +41,8 @@ TEST(RunOneSimpleTask)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct ALotOfTasks : public MT::TaskBase<ALotOfTasks>
 {
+	DECLARE_DEBUG("ALotOfTasks", DEFAULT_COLOR);
+
 	MT::AtomicInt* counter;
 
 	void Do(MT::FiberContext&)
