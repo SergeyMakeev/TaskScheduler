@@ -1,16 +1,13 @@
-Multithreaded task scheduler experiments
-
-now with integrated profiler!
-
+**Multithreaded task scheduler experiments
+Now with integrated profiler!**
 ![alt tag](https://raw.githubusercontent.com/SergeyMakeev/TaskScheduler/master/Images/profiler_ui.jpg)
 
-Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling
+**Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
 
-Compiled on : Clang 3.4, GCC 4.8.2, MSVC 2010
+Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010**
 
 
-
-Useful reading:
+Useful reading (in random order):
 
 Parallelizing the Naughty Dog engine using fibers
 http://www.swedishcoding.com/wp-content/uploads/2015/03/parallelizing_the_naughty_dog_engine_using_fibers.pdf
