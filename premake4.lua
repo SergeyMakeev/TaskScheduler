@@ -9,7 +9,7 @@ if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION 
 	isVisualStudio = true
 end
 
-if _ACTION == "codeblocks"
+if _ACTION == "codeblocks" or _ACTION == "gmake"
 then
 	isPosix = true
 end
