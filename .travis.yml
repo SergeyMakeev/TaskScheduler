@@ -1,13 +1,15 @@
-language: cpp
+language:
+  - cpp
 
 before_install:
   - sudo bash -c "echo 'deb http://lgp203.free.fr/ubuntu quantal universe' >> /etc/apt/sources.list.d/lgp203.free.fr.source.list"
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update
-  - sudo apt-get install g++-4.8
-  - export CXX="g++-4.8" CC="gcc-4.8"
 
-install: sudo apt-get install --force-yes make premake4
+install:
+  - sudo apt-get install --force-yes make premake4
+  - sudo apt-get install -qq gcc-4.8 g++-4.8 
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
 
 compiler:
   - gcc
