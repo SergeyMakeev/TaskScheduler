@@ -8,6 +8,10 @@
 Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010**
 
 
+## Build status
+
+![alt tag](https://api.travis-ci.org/SergeyMakeev/TaskScheduler.svg?branch=master)
+
 ## Useful reading (in random order):
 
 Parallelizing the Naughty Dog engine using fibers
