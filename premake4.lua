@@ -76,7 +76,7 @@ end
 for _, config in ipairs(config_list) do
 	for _, plat in ipairs(platform_list) do
 		configuration { config, plat }
-		objdir    ( "build/" .. _ACTION .. "/tmp/"  .. config  .. "-" .. plat )
+		objdir    ( "Build/" .. _ACTION .. "/tmp/"  .. config  .. "-" .. plat )
 	end
 end
 
