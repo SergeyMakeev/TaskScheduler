@@ -12,7 +12,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Subtask : public MT::TaskBase<Subtask>
 	{
-		DECLARE_DEBUG("Subtask", DEFAULT_COLOR);
+		DECLARE_DEBUG("Subtask", MT_COLOR_DEFAULT);
 
 		void Do(MT::FiberContext&)
 		{
@@ -24,12 +24,12 @@ namespace SimpleWaitFromSubtask
 
 	struct Task : public MT::TaskBase<Task>
 	{
-		DECLARE_DEBUG("Task", DEFAULT_COLOR);
+		DECLARE_DEBUG("Task", MT_COLOR_DEFAULT);
 
 		void Do(MT::FiberContext& ctx)
 		{
 			Subtask tasks[2];
-			ctx.RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], ARRAY_SIZE(tasks));
+			ctx.RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 			ctx.WaitGroupAndYield(MT::TaskGroup::GROUP_2);
 
@@ -47,15 +47,15 @@ namespace SimpleWaitFromSubtask
 		MT::TaskScheduler scheduler;
 
 		Task tasks[16];
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
+		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(2000));
 
 		int subTaskCountFinisehd = subTaskCount.Get();
-		CHECK(subTaskCountFinisehd == ARRAY_SIZE(tasks) * 2);
+		CHECK(subTaskCountFinisehd == MT_ARRAY_SIZE(tasks) * 2);
 
 		int taskCountFinished = taskCount.Get();
-		CHECK(taskCountFinished == ARRAY_SIZE(tasks));
+		CHECK(taskCountFinished == MT_ARRAY_SIZE(tasks));
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

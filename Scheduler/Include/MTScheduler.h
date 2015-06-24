@@ -107,7 +107,9 @@ namespace MT
 
 	public:
 
-		TaskScheduler();
+		/// \brief Initializes a new instance of the TaskScheduler class.
+		/// \param workerThreadsCount Worker threads count. Automatically determines the required number of threads if workerThreadsCount set to 0
+		TaskScheduler(uint32 workerThreadsCount = 0);
 		~TaskScheduler();
 
 		template<class TTask>

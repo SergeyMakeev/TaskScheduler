@@ -50,17 +50,17 @@ namespace MT
 
 		~Thread()
 		{
-			ASSERT(thread == nullptr, "Thread is not stopped!");
+			MT_ASSERT(thread == nullptr, "Thread is not stopped!");
 		}
 
 		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
-			ASSERT(thread == nullptr, "Thread already started");
+			MT_ASSERT(thread == nullptr, "Thread already started");
 
 			func = entryPoint;
 			funcData = userData;
 			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, 0, &threadId );
-			ASSERT(thread != nullptr, "Can't create thread");
+			MT_ASSERT(thread != nullptr, "Can't create thread");
 		}
 
 		void Stop()
@@ -72,7 +72,7 @@ namespace MT
 
 			::WaitForSingleObject(thread, INFINITE);
 			BOOL res = CloseHandle(thread);
-			ASSERT(res != 0, "Can't close thread handle");
+			MT_ASSERT(res != 0, "Can't close thread handle");
 			thread = nullptr;
 		}
 

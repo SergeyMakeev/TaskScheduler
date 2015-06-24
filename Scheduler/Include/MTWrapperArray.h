@@ -46,18 +46,18 @@ namespace MT
 			: data((T*)memoryChunk)
 			, count(instanceCount)
 		{
-			ASSERT(count == 0 || data, "Invalid data array");
+			MT_ASSERT(count == 0 || data, "Invalid data array");
 		}
 
 		const T &operator[]( size_t i ) const
 		{
-			ASSERT( i < Size(), "bad index" );
+			MT_ASSERT( i < Size(), "bad index" );
 			return data[i];
 		}
 
 		T &operator[]( size_t i )
 		{
-			ASSERT( i < Size(), "bad index" );
+			MT_ASSERT( i < Size(), "bad index" );
 			return data[i];
 		}
 

@@ -72,14 +72,14 @@ namespace MT
 
 		void CreateFromThread(Thread & thread)
 		{
-			ASSERT(!isInitialized, "Already initialized");
-			ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
+			MT_ASSERT(!isInitialized, "Already initialized");
+			MT_ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
 			ucontext_t m;
 			fiberContext.uc_link = &m;
 
 			int res = getcontext(&fiberContext);
-			ASSERT(res == 0, "getcontext - failed");
+			MT_ASSERT(res == 0, "getcontext - failed");
 
 			fiberContext.uc_link = nullptr;
 			fiberContext.uc_stack.ss_sp = thread.GetStackBase();
@@ -95,13 +95,13 @@ namespace MT
 
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
-			ASSERT(!isInitialized, "Already initialized");
+			MT_ASSERT(!isInitialized, "Already initialized");
 
 			func = entryPoint;
 			funcData = userData;
 
 			int res = getcontext(&fiberContext);
-			ASSERT(res == 0, "getcontext - failed");
+			MT_ASSERT(res == 0, "getcontext - failed");
 
 			fiberContext.uc_link = nullptr;
 			fiberContext.uc_stack.ss_sp = malloc(stackSize);
@@ -116,10 +116,10 @@ namespace MT
 		{
 			 __sync_synchronize();
 
-			ASSERT(from.isInitialized, "Invalid from fiber");
-			ASSERT(to.isInitialized, "Invalid to fiber");
+			MT_ASSERT(from.isInitialized, "Invalid from fiber");
+			MT_ASSERT(to.isInitialized, "Invalid to fiber");
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);
-			ASSERT(res == 0, "setcontext - failed");
+			MT_ASSERT(res == 0, "setcontext - failed");
 		}
 
 

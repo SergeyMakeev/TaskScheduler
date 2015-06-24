@@ -29,10 +29,10 @@
 #include <MTWrapperArray.h>
 
 
-#define DEFAULT_COLOR (0)
-#define BLUE_COLOR (1)
-#define RED_COLOR (2)
-#define YELLOW_COLOR (3)
+#define MT_COLOR_DEFAULT (0)
+#define MT_COLOR_BLUE (1)
+#define MT_COLOR_RED (2)
+#define MT_COLOR_YELLOW (3)
 
 #ifdef MT_INSTRUMENTED_BUILD
 

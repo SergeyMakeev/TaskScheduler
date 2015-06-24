@@ -56,7 +56,7 @@ TEST(QueueTest)
 	CHECK(lifoQueue.IsEmpty() == false);
 
 	int tempData[16];
-	size_t elementsCount = lifoQueue.PopAll(tempData, ARRAY_SIZE(tempData));
+	size_t elementsCount = lifoQueue.PopAll(tempData, MT_ARRAY_SIZE(tempData));
 	CHECK_EQUAL(elementsCount, (size_t)5);
 
 	CHECK_EQUAL(tempData[0], 101);
@@ -75,7 +75,7 @@ TEST(RingBufferTest)
 	ringBuffer.Push(1);
 
 	int tempData[32];
-	size_t elementsCount = ringBuffer.PopAll(tempData, ARRAY_SIZE(tempData));
+	size_t elementsCount = ringBuffer.PopAll(tempData, MT_ARRAY_SIZE(tempData));
 	CHECK_EQUAL(elementsCount, (size_t)2);
 
 	CHECK_EQUAL(tempData[0], -1);
@@ -87,7 +87,7 @@ TEST(RingBufferTest)
 		ringBuffer.Push(3 + i);
 	}
 
-	elementsCount = ringBuffer.PopAll(tempData, ARRAY_SIZE(tempData));
+	elementsCount = ringBuffer.PopAll(tempData, MT_ARRAY_SIZE(tempData));
 	CHECK_EQUAL(elementsCount, (size_t)32);
 
 	for(i = 0; i < elementsCount; i++)

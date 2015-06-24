@@ -74,7 +74,7 @@ namespace MT
 		inline StackArray(size_t _count, const T & defaultElement = T())
 			: count(_count)
 		{
-			ASSERT(count <= capacity, "Too big size");
+			MT_ASSERT(count <= capacity, "Too big size");
 			for (size_t i = 0; i < count; i++)
 			{
 				CopyCtor(Begin() + i, defaultElement);
@@ -91,19 +91,19 @@ namespace MT
 
 		inline const T &operator[]( uint32 i ) const
 		{
-			ASSERT( i < Size(), "bad index" );
+			MT_ASSERT( i < Size(), "bad index" );
 			return Buffer()[i];
 		}
 
 		inline T &operator[]( uint32 i )
 		{
-			ASSERT( i < Size(), "bad index" );
+			MT_ASSERT( i < Size(), "bad index" );
 			return Buffer()[i];
 		}
 
 		inline void PushBack(T && val)
 		{
-			ASSERT(count < capacity, "Can't add element");
+			MT_ASSERT(count < capacity, "Can't add element");
 			size_t lastElementIndex = count;
 			count++;
 			MoveCtor( Buffer() + lastElementIndex, std::move(val) );

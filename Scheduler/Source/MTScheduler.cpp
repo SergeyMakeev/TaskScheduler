@@ -25,7 +25,7 @@
 namespace MT
 {
 
-	TaskScheduler::TaskScheduler()
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount)
 		: roundRobinThreadIndex(0)
 	{
 #ifdef MT_INSTRUMENTED_BUILD
@@ -35,13 +35,20 @@ namespace MT
 		TaskScheduler::GetStartTime();
 #endif
 
-		//query number of processor
-		threadsCount = Max((uint32)Thread::GetNumberOfHardwareThreads() >> 1, (uint32)1);
 
-		if (threadsCount > MT_MAX_THREAD_COUNT)
+		if (workerThreadsCount != 0)
 		{
-			threadsCount = MT_MAX_THREAD_COUNT;
+			threadsCount = workerThreadsCount;
+		} else
+		{
+			//query number of processor
+			threadsCount = Max((uint32)Thread::GetNumberOfHardwareThreads() - 2, (uint32)1);
+			if (threadsCount > MT_MAX_THREAD_COUNT)
+			{
+				threadsCount = MT_MAX_THREAD_COUNT;
+			}
 		}
+
 
 		// create fiber pool
 		for (uint32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
@@ -85,7 +92,7 @@ namespace MT
 
 		if (!availableFibers.TryPop(fiberContext))
 		{
-			ASSERT(false, "Fibers pool is empty");
+			MT_ASSERT(false, "Fibers pool is empty");
 		}
 
 		fiberContext->currentTask = task.desc;
@@ -96,18 +103,18 @@ namespace MT
 
 	void TaskScheduler::ReleaseFiberContext(FiberContext* fiberContext)
 	{
-		ASSERT(fiberContext != nullptr, "Can't release nullptr Fiber");
+		MT_ASSERT(fiberContext != nullptr, "Can't release nullptr Fiber");
 		fiberContext->Reset();
 		availableFibers.Push(fiberContext);
 	}
 
 	FiberContext* TaskScheduler::ExecuteTask(internal::ThreadContext& threadContext, FiberContext* fiberContext)
 	{
-		ASSERT(threadContext.thread.IsCurrentThread(), "Thread context sanity check failed");
+		MT_ASSERT(threadContext.thread.IsCurrentThread(), "Thread context sanity check failed");
 
-		ASSERT(fiberContext, "Invalid fiber context");
-		ASSERT(fiberContext->currentTask.IsValid(), "Invalid task");
-		ASSERT(fiberContext->currentGroup < TaskGroup::COUNT, "Invalid task group");
+		MT_ASSERT(fiberContext, "Invalid fiber context");
+		MT_ASSERT(fiberContext->currentTask.IsValid(), "Invalid task");
+		MT_ASSERT(fiberContext->currentGroup < TaskGroup::COUNT, "Invalid task group");
 
 		// Set actual thread context to fiber
 		fiberContext->SetThreadContext(&threadContext);
@@ -115,7 +122,7 @@ namespace MT
 		// Update task status
 		fiberContext->SetStatus(FiberTaskStatus::RUNNED);
 
-		ASSERT(fiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
+		MT_ASSERT(fiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		// Run current task code
 		Fiber::SwitchTo(threadContext.schedulerFiber, fiberContext->fiber);
@@ -125,11 +132,11 @@ namespace MT
 		if (taskStatus == FiberTaskStatus::FINISHED)
 		{
 			TaskGroup::Type taskGroup = fiberContext->currentGroup;
-			ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+			MT_ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
 
 			// Update group status
 			int groupTaskCount = threadContext.taskScheduler->groupStats[taskGroup].inProgressTaskCount.Dec();
-			ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 			if (groupTaskCount == 0)
 			{
 				// Restore awaiting tasks
@@ -139,7 +146,7 @@ namespace MT
 
 			// Update total task count
 			groupTaskCount = threadContext.taskScheduler->allGroupStats.inProgressTaskCount.Dec();
-			ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 			if (groupTaskCount == 0)
 			{
 				// Notify all tasks in all group finished
@@ -150,18 +157,18 @@ namespace MT
 			if (parentFiberContext != nullptr)
 			{
 				int childrenFibersCount = parentFiberContext->childrenFibersCount.Dec();
-				ASSERT(childrenFibersCount >= 0, "Sanity check failed!");
+				MT_ASSERT(childrenFibersCount >= 0, "Sanity check failed!");
 
 				if (childrenFibersCount == 0)
 				{
 					// This is a last subtask. Restore parent task
-#if FIBER_DEBUG
+#if MT_FIBER_DEBUG
 
 					int ownerThread = parentFiberContext->fiber.GetOwnerThread();
 					FiberTaskStatus::Type parentTaskStatus = parentFiberContext->GetStatus();
 					internal::ThreadContext * parentThreadContext = parentFiberContext->GetThreadContext();
 					int fiberUsageCounter = parentFiberContext->fiber.GetUsageCounter();
-					ASSERT(fiberUsageCounter == 0, "Parent fiber in invalid state");
+					MT_ASSERT(fiberUsageCounter == 0, "Parent fiber in invalid state");
 
 					ownerThread;
 					parentTaskStatus;
@@ -169,13 +176,13 @@ namespace MT
 					fiberUsageCounter;
 #endif
 
-					ASSERT(threadContext.thread.IsCurrentThread(), "Thread context sanity check failed");
-					ASSERT(parentFiberContext->GetThreadContext() == nullptr, "Inactive parent should not have a valid thread context");
+					MT_ASSERT(threadContext.thread.IsCurrentThread(), "Thread context sanity check failed");
+					MT_ASSERT(parentFiberContext->GetThreadContext() == nullptr, "Inactive parent should not have a valid thread context");
 
 					// WARNING!! Thread context can changed here! Set actual current thread context.
 					parentFiberContext->SetThreadContext(&threadContext);
 
-					ASSERT(parentFiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
+					MT_ASSERT(parentFiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 					// All subtasks is done.
 					// Exiting and return parent fiber to scheduler
@@ -194,7 +201,7 @@ namespace MT
 			}
 		}
 
-		ASSERT(taskStatus != FiberTaskStatus::RUNNED, "Incorrect task status")
+		MT_ASSERT(taskStatus != FiberTaskStatus::RUNNED, "Incorrect task status")
 		return nullptr;
 	}
 
@@ -204,10 +211,10 @@ namespace MT
 		FiberContext& fiberContext = *(FiberContext*)(userData);
 		for(;;)
 		{
-			ASSERT(fiberContext.currentTask.IsValid(), "Invalid task in fiber context");
-			ASSERT(fiberContext.currentGroup < TaskGroup::COUNT, "Invalid task group");
-			ASSERT(fiberContext.GetThreadContext(), "Invalid thread context");
-			ASSERT(fiberContext.GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
+			MT_ASSERT(fiberContext.currentTask.IsValid(), "Invalid task in fiber context");
+			MT_ASSERT(fiberContext.currentGroup < TaskGroup::COUNT, "Invalid task group");
+			MT_ASSERT(fiberContext.GetThreadContext(), "Invalid thread context");
+			MT_ASSERT(fiberContext.GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 			fiberContext.currentTask.taskFunc( fiberContext, fiberContext.currentTask.userData );
 
@@ -255,7 +262,7 @@ namespace MT
 	void TaskScheduler::ThreadMain( void* userData )
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
-		ASSERT(context.taskScheduler, "Task scheduler must be not null!");
+		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 		context.schedulerFiber.CreateFromThread(context.thread);
 
 		uint32 workersCount = context.taskScheduler->GetWorkerCount();
@@ -267,8 +274,8 @@ namespace MT
 			{
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
-				ASSERT(fiberContext, "Can't get execution context from pool");
-				ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
+				MT_ASSERT(fiberContext, "Can't get execution context from pool");
+				MT_ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
 
 				while(fiberContext)
 				{
@@ -289,19 +296,19 @@ namespace MT
 					// Can drop fiber context - task is finished
 					if (taskStatus == FiberTaskStatus::FINISHED)
 					{
-						ASSERT( childrenFibersCount == 0, "Sanity check failed");
+						MT_ASSERT( childrenFibersCount == 0, "Sanity check failed");
 						context.taskScheduler->ReleaseFiberContext(fiberContext);
 
 						// If parent fiber is exist transfer flow control to parent fiber, if parent fiber is null, exit
 						fiberContext = parentFiber;
 					} else
 					{
-						ASSERT( childrenFibersCount >= 0, "Sanity check failed");
+						MT_ASSERT( childrenFibersCount >= 0, "Sanity check failed");
 
 						// No subtasks here and status is not finished, this mean all subtasks already finished before parent return from ExecuteTask
 						if (childrenFibersCount == 0)
 						{
-							ASSERT(parentFiber == nullptr, "Sanity check failed");
+							MT_ASSERT(parentFiber == nullptr, "Sanity check failed");
 						} else
 						{
 							// If subtasks still exist, drop current task execution. task will be resumed when last subtask finished
@@ -356,7 +363,7 @@ namespace MT
 			{
 				internal::GroupedTask & task = bucket.tasks[taskIndex];
 
-				ASSERT(task.group < TaskGroup::COUNT, "Invalid group.");
+				MT_ASSERT(task.group < TaskGroup::COUNT, "Invalid group.");
 
 				task.parentFiber = parentFiber;
 				taskCountInGroup[task.group]++;
@@ -406,14 +413,14 @@ namespace MT
 
 	bool TaskScheduler::WaitGroup(TaskGroup::Type group, uint32 milliseconds)
 	{
-		VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
+		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
 		return groupStats[group].allDoneEvent.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
-		VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
+		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
 
 		return allGroupStats.allDoneEvent.Wait(milliseconds);
 	}

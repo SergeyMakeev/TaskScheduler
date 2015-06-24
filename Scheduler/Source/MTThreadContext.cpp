@@ -38,7 +38,7 @@ namespace MT
 
 		uint32 GetPrimeNumber(uint32 index)
 		{
-			return primeNumbers[index % ARRAY_SIZE(primeNumbers)];
+			return primeNumbers[index % MT_ARRAY_SIZE(primeNumbers)];
 		}
 
 
@@ -65,8 +65,8 @@ namespace MT
 
 		void ThreadContext::RestoreAwaitingTasks(TaskGroup::Type taskGroup)
 		{
-			ASSERT(taskScheduler, "Invalid Task Scheduler");
-			ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
+			MT_ASSERT(taskScheduler, "Invalid Task Scheduler");
+			MT_ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 
 			ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskScheduler->waitTaskQueues[taskGroup];
 
@@ -83,7 +83,7 @@ namespace MT
 
 			TaskScheduler & scheduler = *(taskScheduler);
 			size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
-			WrapperArray<internal::TaskBucket>	buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+			WrapperArray<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.Begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);
@@ -130,13 +130,13 @@ namespace MT
 			{
 				ProfileEventDesc eventDesc;
 				eventDesc.id = "#";
-				eventDesc.colorIndex = YELLOW_COLOR;
+				eventDesc.colorIndex = MT_COLOR_YELLOW;
 				eventDesc.type = ProfileEventType::TASK_RESUME;
 				eventDesc.timeStampMicroSeconds = waitFrom - MT::TaskScheduler::GetStartTime();
 				profileEvents.Push(std::move(eventDesc));
 
 				eventDesc.id = "#";
-				eventDesc.colorIndex = YELLOW_COLOR;
+				eventDesc.colorIndex = MT_COLOR_YELLOW;
 				eventDesc.type = ProfileEventType::TASK_DONE;
 				eventDesc.timeStampMicroSeconds = waitTo - MT::TaskScheduler::GetStartTime();
 				profileEvents.Push(std::move(eventDesc));

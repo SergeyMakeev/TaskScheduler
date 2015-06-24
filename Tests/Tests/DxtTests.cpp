@@ -22,7 +22,7 @@ namespace DxtCompress
 
 	struct SimpleRunParams : public MT::TaskBase<SimpleRunParams>
 	{
-		DECLARE_DEBUG("SimpleRunParams", DEFAULT_COLOR);
+		DECLARE_DEBUG("SimpleRunParams", MT_COLOR_DEFAULT);
 
 		uint32 width;
 		uint32 height;
@@ -93,11 +93,11 @@ namespace DxtCompress
 	// dxt compressor simple test
 	TEST(RunSimpleDxtCompress)
 	{
-		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
-		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
 		SimpleRunParams simpleTask(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
-		ASSERT ((simpleTask.width & 3) == 0 && (simpleTask.height & 3) == 0, "Image size must be a multiple of 4");
+		MT_ASSERT ((simpleTask.width & 3) == 0 && (simpleTask.height & 3) == 0, "Image size must be a multiple of 4");
 
 		int dxtBlocksTotalSize = simpleTask.blkWidth * simpleTask.blkHeight * 8;
 		simpleTask.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );
@@ -123,7 +123,7 @@ namespace DxtCompress
 
 /*
 		FILE * file = fopen("lena_dxt1.dds", "w+b");
-		fwrite(&EmbeddedImage::ddsHeader[0], ARRAY_SIZE(EmbeddedImage::ddsHeader), 1, file);
+		fwrite(&EmbeddedImage::ddsHeader[0], MT_ARRAY_SIZE(EmbeddedImage::ddsHeader), 1, file);
 		fwrite(taskParams.dstBlocks, dxtBlocksTotalSize, 1, file);
 		fclose(file);
 */
@@ -133,7 +133,7 @@ namespace DxtCompress
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ComplexRunBlockSubtask : public MT::TaskBase<ComplexRunBlockSubtask>
 	{
-		DECLARE_DEBUG("CompressDxtBlock", BLUE_COLOR);
+		DECLARE_DEBUG("CompressDxtBlock", MT_COLOR_BLUE);
 
 		int srcX;
 		int srcY;
@@ -185,7 +185,7 @@ namespace DxtCompress
 
 	struct ComplexRunParams : public MT::TaskBase<ComplexRunParams>
 	{
-		DECLARE_DEBUG("CompressImage", DEFAULT_COLOR);
+		DECLARE_DEBUG("CompressImage", MT_COLOR_DEFAULT);
 
 		uint32 width;
 		uint32 height;
@@ -236,11 +236,11 @@ namespace DxtCompress
 	// dxt compressor complex test
 	TEST(RunComplexDxtCompress)
 	{
-		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
-		static_assert(ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
 		ComplexRunParams complexTask(128, 128, 384, (uint8 *)&EmbeddedImage::lenaColor[0]);
-		ASSERT ((complexTask.width & 3) == 0 && (complexTask.height & 4) == 0, "Image size must be a multiple of 4");
+		MT_ASSERT ((complexTask.width & 3) == 0 && (complexTask.height & 3) == 0, "Image size must be a multiple of 4");
 
 		int dxtBlocksTotalSize = complexTask.blkWidth * complexTask.blkHeight * 8;
 		complexTask.dstBlocks = (uint8 *)malloc( dxtBlocksTotalSize );

@@ -75,37 +75,37 @@ namespace MT
 
 		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
-			ASSERT(!isStarted, "Thread already stared");
+			MT_ASSERT(!isStarted, "Thread already stared");
 
-			ASSERT(func == nullptr, "Thread already started");
+			MT_ASSERT(func == nullptr, "Thread already started");
 
 			func = entryPoint;
 			funcData = userData;
 
 			stackSize = _stackSize;
 
-			ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
+			MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
 
 			stackBase = (void *)malloc(stackSize);
 
 			int err = pthread_attr_init(&threadAttr);
-			ASSERT(err == 0, "pthread_attr_init - error");
+			MT_ASSERT(err == 0, "pthread_attr_init - error");
 
 			err = pthread_attr_setstack(&threadAttr, stackBase, stackSize);
-			ASSERT(err == 0, "pthread_attr_setstack - error");
+			MT_ASSERT(err == 0, "pthread_attr_setstack - error");
 
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
-			ASSERT(err == 0, "pthread_attr_setdetachstate - error");
+			MT_ASSERT(err == 0, "pthread_attr_setdetachstate - error");
 
 			err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, this);
-			ASSERT(err == 0, "pthread_create - error");
+			MT_ASSERT(err == 0, "pthread_create - error");
 
 			isStarted = true;
 		}
 
 		void Stop()
 		{
-			ASSERT(isStarted, "Thread is not started");
+			MT_ASSERT(isStarted, "Thread is not started");
 
 			if (func == nullptr)
 			{
@@ -114,10 +114,10 @@ namespace MT
 
 			void *threadStatus = nullptr;
 			int err = pthread_join(thread, &threadStatus);
-			ASSERT(err == 0, "pthread_join - error");
+			MT_ASSERT(err == 0, "pthread_join - error");
 
 			err = pthread_attr_destroy(&threadAttr);
-			ASSERT(err == 0, "pthread_attr_destroy - error");
+			MT_ASSERT(err == 0, "pthread_attr_destroy - error");
 
 			func = nullptr;
 			funcData = nullptr;

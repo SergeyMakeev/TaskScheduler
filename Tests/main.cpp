@@ -27,7 +27,7 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	webSrv.Serve(8080, 8080);
 
 	char xxx[8192];
-	GetCurrentDirectoryA(ARRAY_SIZE(xxx), xxx);
+	GetCurrentDirectoryA(MT_ARRAY_SIZE(xxx), xxx);
 	printf("%s\n", xxx);
 
 	for(;;)

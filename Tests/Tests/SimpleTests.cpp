@@ -7,7 +7,7 @@ SUITE(SimpleTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SimpleTask : public MT::TaskBase<SimpleTask>
 {
-	DECLARE_DEBUG("SimpleTask", DEFAULT_COLOR);
+	DECLARE_DEBUG("SimpleTask", MT_COLOR_DEFAULT);
 
 	static const int sourceData = 0xFF33FF;
 	int resultData;
@@ -41,7 +41,7 @@ TEST(RunOneSimpleTask)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct ALotOfTasks : public MT::TaskBase<ALotOfTasks>
 {
-	DECLARE_DEBUG("ALotOfTasks", DEFAULT_COLOR);
+	DECLARE_DEBUG("ALotOfTasks", MT_COLOR_DEFAULT);
 
 	MT::AtomicInt* counter;
 
@@ -63,10 +63,10 @@ TEST(ALotOfTasks)
 
 	ALotOfTasks tasks[TASK_COUNT];
 
-	for (size_t i = 0; i < ARRAY_SIZE(tasks); ++i)
+	for (size_t i = 0; i < MT_ARRAY_SIZE(tasks); ++i)
 		tasks[i].counter = &counter;
 
-	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], ARRAY_SIZE(tasks));
+	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 4;
 

@@ -40,7 +40,7 @@ namespace MT
 		template<>
 		inline internal::GroupedTask GetGroupedTask(TaskGroup::Type group, FiberContext ** src)
 		{
-			ASSERT(group == TaskGroup::GROUP_UNDEFINED, "Group must be GROUP_UNDEFINED");
+			MT_ASSERT(group == TaskGroup::GROUP_UNDEFINED, "Group must be GROUP_UNDEFINED");
 			FiberContext * fiberContext = *src;
 			internal::GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
 			groupedTask.awaitingFiber = fiberContext;
@@ -75,7 +75,7 @@ namespace MT
 				buckets[bucketIndex] = internal::TaskBucket(&descriptions[bucketStartIndex], index - bucketStartIndex);
 			}
 
-			ASSERT(index == descriptions.Size(), "Sanity check");
+			MT_ASSERT(index == descriptions.Size(), "Sanity check");
 			return index > 0;
 		}
 
@@ -88,12 +88,12 @@ namespace MT
 	template<class TTask>
 	void TaskScheduler::RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 taskCount)
 	{
-		ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
+		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
-		WrapperArray<internal::GroupedTask> buffer(ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
+		WrapperArray<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
 
 		size_t bucketCount = Min(threadsCount, taskCount);
-		WrapperArray<internal::TaskBucket> buckets(ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		WrapperArray<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);
 		RunTasksImpl(buckets, nullptr, false);

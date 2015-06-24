@@ -46,16 +46,16 @@ inline void ThrowException()
 
 #ifdef _DEBUG
 
-#define REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line); ThrowException();
+#define MT_REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line); ThrowException();
 
-#define ASSERT( condition, description ) { if ( !(condition) ) { REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) } }
-#define VERIFY( condition, description, operation ) { if ( !(condition) ) { { REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) }; operation; } }
+#define MT_ASSERT( condition, description ) { if ( !(condition) ) { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) } }
+#define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) }; operation; } }
 
 #else
 
-//TODO: Remove condition from ASSERT
+//TODO: Remove condition from MT_ASSERT
 //      Currently condition removal produces too many unused variable warnings when compiling
-#define ASSERT( condition, description ) { if ( !(condition) ) {} }
-#define VERIFY( condition, description, operation ) { if ( !(condition) ) { { }; operation; } }
+#define MT_ASSERT( condition, description ) { if ( !(condition) ) {} }
+#define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { }; operation; } }
 
 #endif

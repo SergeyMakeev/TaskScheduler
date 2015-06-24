@@ -81,7 +81,7 @@ namespace MT
 
 		void Create(EventReset::Type _resetType, bool initialState)
 		{
-			ASSERT (!isInitialized, "Event already initialized");
+			MT_ASSERT (!isInitialized, "Event already initialized");
 
 			resetType = _resetType;
 
@@ -94,7 +94,7 @@ namespace MT
 
 		void Signal()
 		{
-			ASSERT (isInitialized, "Event not initialized");
+			MT_ASSERT (isInitialized, "Event not initialized");
 
 			val.Set(SIGNALED);
 			pthread_cond_broadcast( &condition );
@@ -102,14 +102,14 @@ namespace MT
 
 		void Reset()
 		{
-			ASSERT (isInitialized, "Event not initialized");
+			MT_ASSERT (isInitialized, "Event not initialized");
 
 			val.Set(NOT_SIGNALED);
 		}
 
 		bool Wait(uint32 milliseconds)
 		{
-			ASSERT (isInitialized, "Event not initialized");
+			MT_ASSERT (isInitialized, "Event not initialized");
 
 			// early exit if event already signaled
 			if ( val.Get() != NOT_SIGNALED )

@@ -69,7 +69,7 @@ MicroWebServer::MicroWebServer()
 #ifdef _WIN32
 	WSADATA wsa;
 	int res = WSAStartup(MAKEWORD(2, 2), &wsa);
-	ASSERT(res == 0, "Can't WSAStartup");
+	MT_ASSERT(res == 0, "Can't WSAStartup");
 #endif
 
 	requestData = (char*)malloc(MAX_REQUEST_SIZE);
@@ -164,7 +164,7 @@ void MicroWebServer::Cleanup()
 
 int32 MicroWebServer::Serve(uint16 portRangeMin, uint16 portRangeMax)
 {
-	ASSERT(portRangeMin <= portRangeMax, "Invalid port range");
+	MT_ASSERT(portRangeMin <= portRangeMax, "Invalid port range");
 
 	listenerSocket = socket(PF_INET, SOCK_STREAM, 6);
 	SetSocketMode(listenerSocket, SocketMode::NONBLOCKING);
@@ -208,7 +208,7 @@ void MicroWebServer::AppendFromFile(FILE* file)
 	char* const pBuffer = answerData + answerSize;
 
 	int nRead = (int)fread(pBuffer, 1, fileSize, file);
-	ASSERT(nRead == fileSize, "File read error");
+	MT_ASSERT(nRead == fileSize, "File read error");
 	fclose(file);
 	answerSize += fileSize;
 	answerData[answerSize] = '\0';
@@ -289,7 +289,7 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 				{
 					Append("{");
 
-					size_t eventsCount = scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], ARRAY_SIZE(eventsBuffer));
+					size_t eventsCount = scheduler.GetProfilerEvents(workerId, &eventsBuffer[0], MT_ARRAY_SIZE(eventsBuffer));
 
 					Append("\"events\": [");
 

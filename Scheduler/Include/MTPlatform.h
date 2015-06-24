@@ -27,7 +27,7 @@
 
 typedef void (*TThreadEntryPoint)(void* userData);
 
-#define ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
+#define MT_ARRAY_SIZE( arr ) ( sizeof( arr ) / sizeof( (arr)[0] ) )
 
 namespace MT
 {
