@@ -5,3 +5,4 @@ install: sudo apt-get install --force-yes make premake4
 compiler: clang
 
 script: premake4 gmake && pushd Build/gmake/ && make && popd
+
