@@ -8,5 +8,5 @@ install: sudo apt-get install --force-yes make premake4
 
 compiler: gcc
 
-script: premake4 gmake && pushd Build/gmake/ && make && popd
+script: gcc --version && g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
 
