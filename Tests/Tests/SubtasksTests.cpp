@@ -2,6 +2,8 @@
 #include <UnitTest++.h>
 #include <MTScheduler.h>
 
+#define MT_DEFAULT_WAIT_TIME (5000)
+
 SUITE(SubtasksTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +64,7 @@ TEST(DeepSubtaskQueue)
 		DeepSubtaskQueue<12> task;
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
-		CHECK(scheduler.WaitAll(200));
+		CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
 		CHECK_EQUAL(task.result, 144);
 	}
@@ -118,7 +120,7 @@ TEST(SubtaskGroup)
 	GroupTask task;
 	scheduler.RunAsync(sourceGroup, &task, 1);
 
-	CHECK(scheduler.WaitAll(200));
+	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
 	CHECK_EQUAL(sourceGroup, resultGroup);
 }
@@ -129,7 +131,7 @@ TEST(OneTaskManySubtasks)
 	MT::TaskScheduler scheduler;
 	TaskWithManySubtasks task;
 	scheduler.RunAsync(sourceGroup, &task, 1);
-	CHECK(scheduler.WaitAll(100));
+	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 }
 
 // Checks many simple task with subtasks
@@ -139,11 +141,21 @@ TEST(ManyTasksOneSubtask)
 
 	bool waitAllOK = true;
 
-	for (int i = 0; i < 100000 && waitAllOK; ++i)
+	for (int i = 0; i < 100000; ++i)
 	{
-		GroupSubtask group;
+		GroupTask group;
 		scheduler.RunAsync(sourceGroup, &group, 1);
-		waitAllOK = waitAllOK && scheduler.WaitAll(200);
+		//if (!scheduler.WaitAll(MT_DEFAULT_WAIT_TIME))
+		if (!scheduler.WaitGroup(sourceGroup, MT_DEFAULT_WAIT_TIME))
+		{
+			printf("Failed iteration %d\n", i);
+			if (!scheduler.WaitGroup(sourceGroup, MT_DEFAULT_WAIT_TIME))
+			{
+				printf("Shit %d\n", i);
+			}
+			waitAllOK = false;
+			break;
+		}
 	}
 
 	CHECK(waitAllOK);
@@ -217,7 +229,7 @@ TEST(TaskSubtaskCombo)
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task[i], 1);
 	}
 
-	CHECK(scheduler.WaitAll(200));
+	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
 	CHECK_EQUAL(sum.Get(), 256);
 }

@@ -29,28 +29,31 @@ SUITE(PlatformTests)
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	MT::Event g_Event;
+	MT::Event *pEvent = nullptr;
 
 	void MyThreadFunc2(void*)
 	{
 		MT::Thread::SpinSleep(300);
-		g_Event.Signal();
+		pEvent->Signal();
 	}
 
 	TEST(EventTest)
 	{
-		g_Event.Create(MT::EventReset::MANUAL, false);
+		MT::Event event;
+		event.Create(MT::EventReset::MANUAL, false);
+		pEvent = &event;
 
 		MT::Thread thread;
 		thread.Start(32768, MyThreadFunc2, nullptr);
 
-		bool res0 = g_Event.Wait(100);
-		bool res1 = g_Event.Wait(1000);
+		bool res0 = event.Wait(100);
+		bool res1 = event.Wait(1000);
 
 		CHECK(!res0);
 		CHECK(res1);
 
 		thread.Stop();
+
 	}
 
 	TEST(SleepTest)

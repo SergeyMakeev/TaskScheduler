@@ -17,24 +17,8 @@
 #include <MTScheduler.h>
 #include "Tests/Tests.h"
 
-
-//#include <MTMicroWebSrv.h>
-
 int main(int UNUSED(argc), char ** UNUSED(argv))
 {
-/*
-	MT::MicroWebServer webSrv;
-	webSrv.Serve(8080, 8080);
-
-	char xxx[8192];
-	GetCurrentDirectoryA(MT_ARRAY_SIZE(xxx), xxx);
-	printf("%s\n", xxx);
-
-	for(;;)
-	{
-		webSrv.Update();
-	}
-*/
 
 #ifdef _WIN32
 	timeBeginPeriod(1);
@@ -42,7 +26,7 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
-	//while(true)
+	while(true)
 	{
 		Tests::RunAll();
 	}
