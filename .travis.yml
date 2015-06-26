@@ -11,6 +11,7 @@ install:
   - sudo apt-get install -qq gcc-4.8 g++-4.8 
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
   - sudo apt-get -y install gcc-4.8-multilib g++-4.8-multilib
+  - sudo apt-get install lshw
 
 compiler:
   - gcc
