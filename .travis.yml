@@ -17,5 +17,7 @@ compiler:
 
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
-  - Bin/TaskScheduler
+  - dir
+  - pushd Bin && dir && popd
+
 
