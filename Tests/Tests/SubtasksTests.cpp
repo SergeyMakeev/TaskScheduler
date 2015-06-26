@@ -149,10 +149,6 @@ TEST(ManyTasksOneSubtask)
 		if (!scheduler.WaitGroup(sourceGroup, MT_DEFAULT_WAIT_TIME))
 		{
 			printf("Failed iteration %d\n", i);
-			if (!scheduler.WaitGroup(sourceGroup, MT_DEFAULT_WAIT_TIME))
-			{
-				printf("Shit %d\n", i);
-			}
 			waitAllOK = false;
 			break;
 		}

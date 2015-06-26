@@ -111,13 +111,6 @@ namespace MT
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
 
-			// early exit if event already signaled
-			if ( val.Get() != NOT_SIGNALED )
-			{
-				AutoResetIfNeed();
-				return true;
-			}
-
 			//convert milliseconds to posix time
 			struct timeval tv;
 			gettimeofday( &tv, nullptr );
