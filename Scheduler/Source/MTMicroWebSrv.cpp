@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
-// 
+//
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
 // 	in the Software without restriction, including without limitation the rights
 // 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // 	copies of the Software, and to permit persons to whom the Software is
 // 	furnished to do so, subject to the following conditions:
-// 
+//
 //  The above copyright notice and this permission notice shall be included in
 // 	all copies or substantial portions of the Software.
-// 
+//
 // 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,11 +42,12 @@
 #else
 
 #include <sys/types.h>
-FILE* file#include <sys/socket.h>
+#include <sys/socket.h>
 #include <netinet/ip.h>
 #include <string.h>
 #include <strings.h>
 #include <alloca.h>
+#include <stdarg.h>
 #define BAD_SOCKET (-1)
 
 #endif
@@ -121,7 +122,7 @@ bool MicroWebServer::StringEqualCaseInsensitive(const char * str1, const char * 
 #ifdef _WIN32
 	return (_stricmp(str1, str2) == 0);
 #else
-	return (strcasecmp(str1, str2) == 0)
+	return (strcasecmp(str1, str2) == 0);
 #endif
 }
 
@@ -232,7 +233,11 @@ const char * MicroWebServer::StringFormat(const char * formatString, ...)
 {
 	va_list va;
 	va_start( va, formatString );
+#ifdef _WIN32
 	_vsnprintf_s( stringFormatBuffer, MAX_STRINGFORMAT_BUFFER_SIZE, MAX_STRINGFORMAT_BUFFER_SIZE - 1, formatString, va );
+#else
+	vsprintf( stringFormatBuffer, formatString, va );
+#endif // _WIN32
 	va_end( va );
 	return stringFormatBuffer;
 }
@@ -284,7 +289,7 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 				uint32 threadCount = scheduler.GetWorkerCount();
 
 				Append("\"threads\": [");
-				
+
 				for(uint32 workerId = 0; workerId < threadCount; workerId++)
 				{
 					Append("{");
@@ -329,6 +334,11 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 				Append("}");
 			} else
 			{
+				if (pDocument[0] == '\0')
+				{
+					pDocument = "Profiler.html";
+				}
+
 				// profiler web page
 				FILE* file = fopen(pDocument, "rb");
 				if (file != nullptr)

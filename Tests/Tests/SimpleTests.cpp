@@ -33,7 +33,7 @@ TEST(RunOneSimpleTask)
 	SimpleTask task;
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
 
-	CHECK(scheduler.WaitAll(100));
+	CHECK(scheduler.WaitAll(1000));
 	CHECK_EQUAL(task.GetSourceData(), task.resultData);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

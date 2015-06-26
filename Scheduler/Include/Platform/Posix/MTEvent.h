@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
-// 
+//
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
 // 	in the Software without restriction, including without limitation the rights
 // 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // 	copies of the Software, and to permit persons to whom the Software is
 // 	furnished to do so, subject to the following conditions:
-// 
+//
 //  The above copyright notice and this permission notice shall be included in
 // 	all copies or substantial portions of the Software.
-// 
+//
 // 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -96,8 +96,12 @@ namespace MT
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
 
+			pthread_mutex_lock( &mutex );
+
 			val.Set(SIGNALED);
 			pthread_cond_broadcast( &condition );
+
+			pthread_mutex_unlock( &mutex );
 		}
 
 		void Reset()
@@ -111,14 +115,22 @@ namespace MT
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
 
+			pthread_mutex_lock( &mutex );
+
+			// early exit if event already signaled
+			if ( val.Get() != NOT_SIGNALED )
+			{
+				AutoResetIfNeed();
+				pthread_mutex_unlock( &mutex );
+				return true;
+			}
+
 			//convert milliseconds to posix time
 			struct timeval tv;
 			gettimeofday( &tv, nullptr );
 			struct timespec tm;
 			tm.tv_sec = milliseconds / 1000 + tv.tv_sec;
 			tm.tv_nsec = ( milliseconds % 1000 ) * 1000000 + tv.tv_usec * 1000;
-
-			pthread_mutex_lock( &mutex );
 
 			int ret = 0;
 			do

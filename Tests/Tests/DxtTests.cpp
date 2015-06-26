@@ -71,7 +71,7 @@ bool CompareImagesPSNR(uint8 * img1, uint8 * img2, uint32 bytesCount, double psn
 		{
 			return false;
 		}
-	} 
+	}
 
 	return true;
 }
@@ -344,7 +344,7 @@ SUITE(DxtTests)
 		printf("Scheduler started, %d workers\n", workerCount);
 
 #ifdef MT_INSTRUMENTED_BUILD
-		printf("Profiler: http://127.0.0.1:8080/profiler.html \n");
+		printf("Profiler: http://127.0.0.1:%d/Profiler.html \n", (int)scheduler.GetWebServerPort());
 #endif
 
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &compressTask, 1);
