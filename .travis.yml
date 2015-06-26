@@ -18,6 +18,6 @@ compiler:
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
   - dir
-  - pushd Bin/Tests && dir && popd
+  - pushd Bin/ && Tests && popd
 
 
