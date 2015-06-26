@@ -11,6 +11,7 @@
 
 #else
 
+#include <math.h>
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -117,7 +118,7 @@ SUITE(DxtTests)
 
 					int index = posY * stride + (posX * 3);
 
-					MT_ASSERT(((index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
+					MT_ASSERT(((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
 					uint8 r = srcPixels[index + 0];
 					uint8 g = srcPixels[index + 1];
@@ -238,7 +239,7 @@ SUITE(DxtTests)
 
 					uint32 pixel = pixels[y * 4 + x];
 
-					MT_ASSERT(((index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
+					MT_ASSERT(((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
 					dstPixels[index + 0] = (pixel & 0xFF);
 					dstPixels[index + 1] = (pixel >> 8 & 0xFF);
@@ -341,7 +342,7 @@ SUITE(DxtTests)
 		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
 
 		MT::TaskScheduler scheduler;
-		uint32 workerCount = scheduler.GetWorkerCount();
+		int workerCount = (int)scheduler.GetWorkerCount();
 		printf("Scheduler started, %d workers\n", workerCount);
 
 #ifdef MT_INSTRUMENTED_BUILD
