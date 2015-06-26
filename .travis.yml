@@ -15,5 +15,7 @@ install:
 compiler:
   - gcc
 
-script: g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd && Bin/TaskScheduler
+script:
+  - g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
+  - Bin/TaskScheduler
 
