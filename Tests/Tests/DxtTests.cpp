@@ -48,7 +48,6 @@ int _kbhit(void)
 namespace EmbeddedImage
 {
 	#include "LenaDxt/LenaColor.h"
-	#include "LenaDxt/LenaColorDXT1.h"
 	#include "LenaDxt/HeaderDDS.h"
 }
 
@@ -333,7 +332,6 @@ SUITE(DxtTests)
 	TEST(RunComplexDxtTest)
 	{
 		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
-		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColorDXT1) == 8192, "Image size is invalid");
 
 		int stride = 384;
 
