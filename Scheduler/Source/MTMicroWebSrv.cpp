@@ -334,7 +334,7 @@ void MicroWebServer::Update(MT::TaskScheduler & scheduler)
 				Append("}");
 			} else
 			{
-				if (pDocument[0] == '\0')
+				if (pDocument[0] == '\0' || (pDocument[0] == '/' && pDocument[1] == '\0'))
 				{
 					pDocument = "Profiler.html";
 				}

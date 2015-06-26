@@ -17,7 +17,7 @@
 #include <MTScheduler.h>
 #include "Tests/Tests.h"
 
-int main(int UNUSED(argc), char ** UNUSED(argv))
+int main(int argc, char ** argv)
 {
 
 #ifdef _WIN32
@@ -26,9 +26,17 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
+
+	int passCount = 1;
+	if (argc >= 2)
+	{
+		passCount = atoi(argv[1]);
+	}
+
 	int res = 0;
 
-	//while(true)
+	printf("Tests run %d times\n", passCount);
+	for(int pass = 0; pass < passCount; pass++)
 	{
 		res = Tests::RunAll();
 	}

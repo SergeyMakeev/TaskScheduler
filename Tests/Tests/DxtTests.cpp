@@ -344,7 +344,7 @@ SUITE(DxtTests)
 		printf("Scheduler started, %d workers\n", workerCount);
 
 #ifdef MT_INSTRUMENTED_BUILD
-		printf("Profiler: http://127.0.0.1:%d/Profiler.html \n", (int)scheduler.GetWebServerPort());
+		printf("Profiler: http://127.0.0.1:%d\n", (int)scheduler.GetWebServerPort());
 #endif
 
 		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &compressTask, 1);
