@@ -68,7 +68,7 @@ TEST(ALotOfTasks)
 
 	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], MT_ARRAY_SIZE(tasks));
 
-	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 4;
+	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 200;
 
 	CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
 	CHECK_EQUAL(TASK_COUNT, counter.Get());

@@ -26,9 +26,11 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
-	while(true)
+	int res = 0;
+
+	//while(true)
 	{
-		Tests::RunAll();
+		res = Tests::RunAll();
 	}
 
 
@@ -37,7 +39,7 @@ int main(int UNUSED(argc), char ** UNUSED(argv))
 	 timeEndPeriod(1);
 #endif
 
-	return 0;
+	return res;
 }
 
 
