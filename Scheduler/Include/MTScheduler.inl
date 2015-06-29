@@ -92,7 +92,7 @@ namespace MT
 
 		WrapperArray<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
 
-		size_t bucketCount = Min(threadsCount, taskCount);
+		size_t bucketCount = MT::Min(threadsCount, taskCount);
 		WrapperArray<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);

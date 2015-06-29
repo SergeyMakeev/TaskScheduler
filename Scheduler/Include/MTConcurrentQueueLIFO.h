@@ -96,7 +96,7 @@ namespace MT
 		size_t PopAll(T * dstBuffer, size_t dstBufferSize)
 		{
 			MT::ScopedGuard guard(mutex);
-			size_t elementsCount = Min(queue.size(), dstBufferSize);
+			size_t elementsCount = MT::Min(queue.size(), dstBufferSize);
 			for (size_t i = 0; i < elementsCount; i++)
 			{
 				dstBuffer[i] = std::move(queue[i]);

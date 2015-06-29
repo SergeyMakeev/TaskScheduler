@@ -82,7 +82,7 @@ namespace MT
 			WrapperArray<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
 
 			TaskScheduler & scheduler = *(taskScheduler);
-			size_t bucketCount = Min((size_t)scheduler.GetWorkerCount(), taskCount);
+			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
 			WrapperArray<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.Begin(), buffer, buckets);

@@ -42,11 +42,7 @@ namespace MT
 		} else
 		{
 			//query number of processor
-			threadsCount = Max((uint32)Thread::GetNumberOfHardwareThreads() - 2, (uint32)1);
-			if (threadsCount > MT_MAX_THREAD_COUNT)
-			{
-				threadsCount = MT_MAX_THREAD_COUNT;
-			}
+			threadsCount = (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 2, 1, (int)MT_MAX_THREAD_COUNT);
 		}
 
 

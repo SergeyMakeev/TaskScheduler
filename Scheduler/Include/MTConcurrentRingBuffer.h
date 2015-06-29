@@ -121,7 +121,7 @@ namespace MT
 			MT::ScopedGuard guard(mutex);
 
 			size_t elementsCount = size;
-			elementsCount = Min(elementsCount, dstBufferSize);
+			elementsCount = MT::Min(elementsCount, dstBufferSize);
 
 			for (size_t i = 0; i < elementsCount; i++)
 			{
