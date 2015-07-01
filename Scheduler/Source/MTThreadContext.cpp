@@ -97,7 +97,8 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_DONE;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
+
 			profileEvents.Push(std::move(eventDesc));
 		}
 
@@ -107,7 +108,7 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_RESUME;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
 
@@ -117,7 +118,7 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_YIELD;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - MT::TaskScheduler::GetStartTime();
+			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
 			profileEvents.Push(std::move(eventDesc));
 		}
 

@@ -31,8 +31,8 @@ namespace MT
 #ifdef MT_INSTRUMENTED_BUILD
 		webServerPort = profilerWebServer.Serve(8080, 8090);
 
-		//initialize static start time
-		TaskScheduler::GetStartTime();
+		//initialize start time
+		startTime = MT::GetTimeMicroSeconds();
 #endif
 
 
@@ -474,11 +474,6 @@ namespace MT
 	}
 
 
-	int64 TaskScheduler::GetStartTime()
-	{
-		static int64 startTime = GetTimeMicroSeconds();
-		return startTime;
-	}
 
 #endif
 }

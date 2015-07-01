@@ -94,6 +94,7 @@ namespace MT
 #ifdef MT_INSTRUMENTED_BUILD
 		int32 webServerPort;
 		profile::MicroWebServer profilerWebServer;
+		int64 startTime;
 #endif
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
@@ -131,8 +132,11 @@ namespace MT
 		void UpdateProfiler();
 		int32 GetWebServerPort() const;
 
-		static int64 GetStartTime();
-
+		inline int64 GetStartTime() const
+		{
+			return startTime;
+		}
+		
 #endif
 	};
 }
