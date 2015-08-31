@@ -79,11 +79,11 @@ namespace MT
 			StackArray<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
 			size_t taskCount = groupQueue.PopAll(groupQueueCopy.Begin(), groupQueueCopy.Size());
 
-			WrapperArray<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
+			ArrayView<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
 
 			TaskScheduler & scheduler = *(taskScheduler);
 			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
-			WrapperArray<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+			ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.Begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);

@@ -339,7 +339,7 @@ namespace MT
 		} // main thread loop
 	}
 
-	void TaskScheduler::RunTasksImpl(WrapperArray<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
+	void TaskScheduler::RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
 		// Reset counter to initial value
 		int taskCountInGroup[TaskGroup::COUNT];

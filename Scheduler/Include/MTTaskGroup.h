@@ -26,7 +26,7 @@
 #include <MTPlatform.h>
 #include <MTConcurrentQueueLIFO.h>
 #include <MTStackArray.h>
-#include <MTWrapperArray.h>
+#include <MTArrayView.h>
 
 
 namespace MT

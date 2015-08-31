@@ -55,7 +55,7 @@ namespace MT
 	{
 	private:
 
-		void RunSubtasksAndYieldImpl(WrapperArray<internal::TaskBucket>& buckets);
+		void RunSubtasksAndYieldImpl(ArrayView<internal::TaskBucket>& buckets);
 
 	public:
 

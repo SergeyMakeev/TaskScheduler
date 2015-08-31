@@ -27,22 +27,22 @@ namespace MT
 {
 
 
-	/// \class WrapperArray
+	/// \class ArrayView
 	/// \brief Simple wrapper to work with raw memory as an array. Includes array bounds checking.
 	template<class T>
-	class WrapperArray
+	class ArrayView
 	{
 		T* data;
 		size_t count;
 
 	private:
 
-		WrapperArray(WrapperArray& ) {}
-		void operator=(const WrapperArray&) {}
+		ArrayView(ArrayView& ) {}
+		void operator=(const ArrayView&) {}
 
 	public:
 
-		WrapperArray(void* memoryChunk, size_t instanceCount)
+		ArrayView(void* memoryChunk, size_t instanceCount)
 			: data((T*)memoryChunk)
 			, count(instanceCount)
 		{

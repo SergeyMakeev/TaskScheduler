@@ -58,7 +58,7 @@ namespace MT
 		// Thread3: Task4
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		template<class TTask>
-		inline bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, WrapperArray<internal::GroupedTask>& descriptions, WrapperArray<internal::TaskBucket>& buckets)
+		inline bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, ArrayView<internal::GroupedTask>& descriptions, ArrayView<internal::TaskBucket>& buckets)
 		{
 			size_t index = 0;
 
@@ -90,10 +90,10 @@ namespace MT
 	{
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
-		WrapperArray<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
+		ArrayView<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
 
 		size_t bucketCount = MT::Min(threadsCount, taskCount);
-		WrapperArray<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);
 		RunTasksImpl(buckets, nullptr, false);

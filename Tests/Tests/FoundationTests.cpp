@@ -3,7 +3,7 @@
 #include <MTScheduler.h>
 #include <MTConcurrentQueueLIFO.h>
 #include <MTConcurrentRingBuffer.h>
-#include <MTWrapperArray.h>
+#include <MTArrayView.h>
 #include <MTStackArray.h>
 
 SUITE(FoundationTests)
@@ -124,27 +124,27 @@ TEST(StackArrayTest)
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-TEST(WrapperArrayTest)
+TEST(ArrayViewTest)
 {
 
-	MT::WrapperArray<int> emptyWrapperArray(nullptr, 0);
-	CHECK(emptyWrapperArray.IsEmpty() == true);
+	MT::ArrayView<int> emptyArrayView(nullptr, 0);
+	CHECK(emptyArrayView.IsEmpty() == true);
 
 	const int elementsCount = 128;
 	void * rawMemory = malloc(sizeof(int) * elementsCount);
 
-	MT::WrapperArray<int> wrapperArray(rawMemory, elementsCount);
-	CHECK(wrapperArray.IsEmpty() == false);
+	MT::ArrayView<int> arrayView(rawMemory, elementsCount);
+	CHECK(arrayView.IsEmpty() == false);
 
 	for (int i = 0; i < elementsCount; i++)
 	{
-		wrapperArray[i] = (100 + i);
+		arrayView[i] = (100 + i);
 	}
 	
 	const int* buffer = static_cast<const int*>(rawMemory);
 	for (int i = 0; i < elementsCount; i++)
 	{
-		CHECK_EQUAL(buffer[i], wrapperArray[i]);
+		CHECK_EQUAL(buffer[i], arrayView[i]);
 	}
 
 	free(rawMemory);
