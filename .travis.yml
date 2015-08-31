@@ -18,7 +18,7 @@ compiler:
 
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
-  - lshw
+  - sudo lshw
   - pushd Bin/ && ./Tests && popd
 
 

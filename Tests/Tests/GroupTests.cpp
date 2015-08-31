@@ -16,7 +16,7 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext& )
 		{
-			for (int i = 0; i < MT_ARRAY_SIZE(tempData); i++)
+			for (size_t i = 0; i < MT_ARRAY_SIZE(tempData); i++)
 			{
 				tempData[i] = cos((float)rand() / RAND_MAX);
 			}
@@ -32,7 +32,7 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext& )
 		{
-			for (int i = 0; i < MT_ARRAY_SIZE(tempData); i++)
+			for (size_t i = 0; i < MT_ARRAY_SIZE(tempData); i++)
 			{
 				tempData[i] = sin((float)rand() / RAND_MAX);
 			}

@@ -22,7 +22,11 @@ solution "TaskScheduler"
 	flags {"NoManifest", "ExtraWarnings", "StaticRuntime", "NoMinimalRebuild", "FloatFast", "EnableSSE2" }
 	optimization_flags = { "OptimizeSpeed" }
 	targetdir("Bin")
+
+if isVisualStudio then
 	debugdir ("Bin")
+end
+
 
 	local config_list = {
 		"Release",
