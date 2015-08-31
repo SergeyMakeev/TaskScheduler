@@ -22,6 +22,7 @@ solution "TaskScheduler"
 	flags {"NoManifest", "ExtraWarnings", "StaticRuntime", "NoMinimalRebuild", "FloatFast", "EnableSSE2" }
 	optimization_flags = { "OptimizeSpeed" }
 	targetdir("Bin")
+	debugdir ("Bin")
 
 	local config_list = {
 		"Release",
@@ -80,7 +81,64 @@ for _, config in ipairs(config_list) do
 	end
 end
 
+
+os.copyfile("./Scheduler/Profiler/filesaver.min.js", "./Bin/filesaver.min.js")
+os.copyfile("./Scheduler/Profiler/jquery.min.js", "./Bin/jquery.min.js")
+os.copyfile("./Scheduler/Profiler/jquery.mousewheel.min.js", "./Bin/jquery.mousewheel.min.js")
+os.copyfile("./Scheduler/Profiler/w2ui.min.js", "./Bin/w2ui.min.js")
+
+os.copyfile("./Scheduler/Profiler/Profiler.html", "./Bin/Profiler.html")
+
+os.copyfile("./Scheduler/Profiler/w2ui-dark.min.css", "./Bin/w2ui-dark.min.css")
+
 -- SUBPROJECTS
+
+
+project "UnitTest++"
+	kind "StaticLib"
+	defines { "_CRT_SECURE_NO_WARNINGS" }
+	files {
+		"TestFramework/UnitTest++/**.cpp",
+                "TestFramework/UnitTest++/**.h", 
+	}
+
+if isPosix then
+	excludes { "TestFramework/UnitTest++/Win32/**.*" }
+else
+	excludes { "TestFramework/UnitTest++/Posix/**.*" }
+end
+
+
+project "Squish"
+	kind "StaticLib"
+	defines { "_CRT_SECURE_NO_WARNINGS" }
+	files {
+		"Squish/**.*", 
+	}
+
+	includedirs
+	{
+		"Squish"
+	}
+
+
+project "TaskScheduler"
+        kind "StaticLib"
+ 	flags {"NoPCH"}
+ 	files {
+ 		"Scheduler/**.*", 
+ 	}
+
+	includedirs
+	{
+		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
+	}
+	
+	if isPosix then
+	excludes { "Src/Platform/Windows/**.*" }
+	else
+	excludes { "Src/Platform/Posix/**.*" }
+	end
 
 project "Tests"
  	flags {"NoPCH"}
@@ -111,52 +169,5 @@ project "Tests"
 	if isVisualStudio then
 		links { "Ws2_32" }
 	end
-
-
-project "TaskScheduler"
-        kind "StaticLib"
- 	flags {"NoPCH"}
- 	files {
- 		"Scheduler/**.*", 
- 	}
-
-	includedirs
-	{
-		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
-	}
-	
-	if isPosix then
-	excludes { "Src/Platform/Windows/**.*" }
-	else
-	excludes { "Src/Platform/Posix/**.*" }
-	end
-
-
-project "UnitTest++"
-	kind "StaticLib"
-	defines { "_CRT_SECURE_NO_WARNINGS" }
-	files {
-		"TestFramework/UnitTest++/**.cpp",
-                "TestFramework/UnitTest++/**.h", 
-	}
-
-if isPosix then
-	excludes { "TestFramework/UnitTest++/Win32/**.*" }
-else
-	excludes { "TestFramework/UnitTest++/Posix/**.*" }
-end
-
-
-project "Squish"
-	kind "StaticLib"
-	defines { "_CRT_SECURE_NO_WARNINGS" }
-	files {
-		"Squish/**.*", 
-	}
-
-	includedirs
-	{
-		"Squish"
-	}
 
 
