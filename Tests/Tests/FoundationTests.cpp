@@ -81,15 +81,16 @@ TEST(RingBufferTest)
 	CHECK_EQUAL(tempData[0], -1);
 	CHECK_EQUAL(tempData[1], 1);
 
-	size_t i;
-	for(i = 0; i < 507; i++)
+	int j;
+	for(j = 0; j < 507; j++)
 	{
-		ringBuffer.Push(3 + i);
+		ringBuffer.Push(3 + j);
 	}
 
 	elementsCount = ringBuffer.PopAll(tempData, MT_ARRAY_SIZE(tempData));
 	CHECK_EQUAL(elementsCount, (size_t)32);
 
+	size_t i;
 	for(i = 0; i < elementsCount; i++)
 	{
 		CHECK_EQUAL(tempData[i], (int)((507+3-32) + i));

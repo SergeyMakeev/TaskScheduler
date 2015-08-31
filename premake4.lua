@@ -46,7 +46,7 @@ configuration "Instrumented_Release"
 	flags { "Symbols", optimization_flags }
 
 configuration "Instrumented_Debug"
-	defines { "_DEBUG", "MT_INSTRUMENTED_BUILD" }
+	defines { "_DEBUG", "MT_INSTRUMENTED_BUILD", "_CRTDBG_MAP_ALLOC" }
 	flags { "Symbols" }
 
 configuration "Release"
@@ -54,7 +54,7 @@ configuration "Release"
 	flags { "Symbols", optimization_flags }
 
 configuration "Debug"
-	defines { "_DEBUG" }
+	defines { "_DEBUG", "_CRTDBG_MAP_ALLOC"}
 	flags { "Symbols" }
 
 configuration "x32"

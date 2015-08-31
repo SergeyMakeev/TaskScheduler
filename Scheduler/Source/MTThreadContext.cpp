@@ -63,12 +63,12 @@ namespace MT
 			random.SetSeed( GetPrimeNumber(threadIndex) );
 		}
 
-		void ThreadContext::RestoreAwaitingTasks(TaskGroup::Type taskGroup)
+		void ThreadContext::RestoreAwaitingTasks(TaskGroup* taskGroup)
 		{
 			MT_ASSERT(taskScheduler, "Invalid Task Scheduler");
 			MT_ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 
-			ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskScheduler->waitTaskQueues[taskGroup];
+			ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskGroup->waitTasksQueue;
 
 			if (groupQueue.IsEmpty())
 			{
@@ -85,7 +85,7 @@ namespace MT
 			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
 			ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
-			internal::DistibuteDescriptions(TaskGroup::GROUP_UNDEFINED, groupQueueCopy.Begin(), buffer, buckets);
+			internal::DistibuteDescriptions(nullptr, groupQueueCopy.Begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);
 		}
 

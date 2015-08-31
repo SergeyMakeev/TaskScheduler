@@ -225,7 +225,7 @@ void MicroWebServer::Append(const char * txt)
 	}
 
 	memcpy(answerData + answerSize, txt, stringLen);
-	answerSize += stringLen;
+	answerSize += (uint32)stringLen;
 	answerData[answerSize] = '\0';
 }
 

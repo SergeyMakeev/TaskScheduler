@@ -31,23 +31,44 @@
 
 namespace MT
 {
+	class FiberContext;
+
+	namespace internal
+	{
+		struct ThreadContext;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task group
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Application can wait until whole group was finished.
-	namespace TaskGroup
+	// Application can assign task group to task and later wait until group was finished.
+	class TaskGroup
 	{
-		enum Type
+		friend class FiberContext;
+		friend class TaskScheduler;
+		friend struct internal::ThreadContext;
+
+	protected:
+
+		AtomicInt inProgressTaskCount;
+		Event allDoneEvent;
+
+		//Tasks awaiting group through FiberContext::WaitGroupAndYield call
+		ConcurrentQueueLIFO<FiberContext*> waitTasksQueue;
+
+	public:
+
+		TaskGroup()
 		{
-			GROUP_0 = 0,
-			GROUP_1 = 1,
-			GROUP_2 = 2,
+			inProgressTaskCount.Set(0);
+			allDoneEvent.Create( EventReset::MANUAL, true );
+		}
 
-			COUNT,
-
-			GROUP_UNDEFINED
-		};
-	}
+		int GetTaskCount() const
+		{
+			return inProgressTaskCount.Get();
+		}
+	};
 
 
 

@@ -28,10 +28,11 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext& ctx)
 		{
-			Subtask tasks[2];
-			ctx.RunAsync(MT::TaskGroup::GROUP_2, &tasks[0], MT_ARRAY_SIZE(tasks));
+			MT::TaskGroup defaultGroup;
 
-			ctx.WaitGroupAndYield(MT::TaskGroup::GROUP_2);
+			Subtask tasks[2];
+			ctx.RunAsync(&defaultGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
+			ctx.WaitGroupAndYield(&defaultGroup);
 
 			taskCount.Inc();
 		}
@@ -47,7 +48,7 @@ namespace SimpleWaitFromSubtask
 		MT::TaskScheduler scheduler;
 
 		Task tasks[16];
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], MT_ARRAY_SIZE(tasks));
+		scheduler.RunAsync(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(2000));
 

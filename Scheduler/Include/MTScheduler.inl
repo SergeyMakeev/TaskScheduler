@@ -26,7 +26,7 @@ namespace MT
 	namespace internal
 	{
 		template<class T>
-		inline internal::GroupedTask GetGroupedTask(TaskGroup::Type group, T * src)
+		inline internal::GroupedTask GetGroupedTask(TaskGroup * group, T * src)
 		{
 			internal::TaskDesc desc(T::TaskEntryPoint, (void*)(src));
 #ifdef MT_INSTRUMENTED_BUILD
@@ -38,9 +38,9 @@ namespace MT
 
 		//template specialization for FiberContext*
 		template<>
-		inline internal::GroupedTask GetGroupedTask(TaskGroup::Type group, FiberContext ** src)
+		inline internal::GroupedTask GetGroupedTask(TaskGroup * group, FiberContext ** src)
 		{
-			MT_ASSERT(group == TaskGroup::GROUP_UNDEFINED, "Group must be GROUP_UNDEFINED");
+			MT_ASSERT(group == nullptr, "Group must be nullptr");
 			FiberContext * fiberContext = *src;
 			internal::GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
 			groupedTask.awaitingFiber = fiberContext;
@@ -58,7 +58,7 @@ namespace MT
 		// Thread3: Task4
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		template<class TTask>
-		inline bool DistibuteDescriptions(TaskGroup::Type group, TTask* taskArray, ArrayView<internal::GroupedTask>& descriptions, ArrayView<internal::TaskBucket>& buckets)
+		inline bool DistibuteDescriptions(TaskGroup* group, TTask* taskArray, ArrayView<internal::GroupedTask>& descriptions, ArrayView<internal::TaskBucket>& buckets)
 		{
 			size_t index = 0;
 
@@ -86,7 +86,7 @@ namespace MT
 
 
 	template<class TTask>
-	void TaskScheduler::RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 taskCount)
+	void TaskScheduler::RunAsync(TaskGroup* group, TTask* taskArray, uint32 taskCount)
 	{
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 

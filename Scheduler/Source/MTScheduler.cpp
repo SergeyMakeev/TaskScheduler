@@ -110,7 +110,6 @@ namespace MT
 
 		MT_ASSERT(fiberContext, "Invalid fiber context");
 		MT_ASSERT(fiberContext->currentTask.IsValid(), "Invalid task");
-		MT_ASSERT(fiberContext->currentGroup < TaskGroup::COUNT, "Invalid task group");
 
 		// Set actual thread context to fiber
 		fiberContext->SetThreadContext(&threadContext);
@@ -127,26 +126,30 @@ namespace MT
 		FiberTaskStatus::Type taskStatus = fiberContext->GetStatus();
 		if (taskStatus == FiberTaskStatus::FINISHED)
 		{
-			TaskGroup::Type taskGroup = fiberContext->currentGroup;
-			MT_ASSERT(taskGroup < TaskGroup::COUNT, "Invalid group.");
+			TaskGroup* taskGroup = fiberContext->currentGroup;
+
+			int groupTaskCount = 0;
 
 			// Update group status
-			int groupTaskCount = threadContext.taskScheduler->groupStats[taskGroup].inProgressTaskCount.Dec();
-			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
-			if (groupTaskCount == 0)
+			if (taskGroup != nullptr)
 			{
-				// Restore awaiting tasks
-				threadContext.RestoreAwaitingTasks(taskGroup);
-				threadContext.taskScheduler->groupStats[taskGroup].allDoneEvent.Signal();
+				groupTaskCount = taskGroup->inProgressTaskCount.Dec();
+				MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+				if (groupTaskCount == 0)
+				{
+					// Restore awaiting tasks
+					threadContext.RestoreAwaitingTasks(taskGroup);
+					taskGroup->allDoneEvent.Signal();
+				}
 			}
 
 			// Update total task count
-			groupTaskCount = threadContext.taskScheduler->allGroupStats.inProgressTaskCount.Dec();
+			groupTaskCount = threadContext.taskScheduler->allGroups.inProgressTaskCount.Dec();
 			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 			if (groupTaskCount == 0)
 			{
 				// Notify all tasks in all group finished
-				threadContext.taskScheduler->allGroupStats.allDoneEvent.Signal();
+				threadContext.taskScheduler->allGroups.allDoneEvent.Signal();
 			}
 
 			FiberContext* parentFiberContext = fiberContext->parentFiber;
@@ -208,7 +211,6 @@ namespace MT
 		for(;;)
 		{
 			MT_ASSERT(fiberContext.currentTask.IsValid(), "Invalid task in fiber context");
-			MT_ASSERT(fiberContext.currentGroup < TaskGroup::COUNT, "Invalid task group");
 			MT_ASSERT(fiberContext.GetThreadContext(), "Invalid thread context");
 			MT_ASSERT(fiberContext.GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
@@ -341,13 +343,6 @@ namespace MT
 
 	void TaskScheduler::RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
-		// Reset counter to initial value
-		int taskCountInGroup[TaskGroup::COUNT];
-		for (size_t i = 0; i < TaskGroup::COUNT; ++i)
-		{
-			taskCountInGroup[i] = 0;
-		}
-
 		// Set parent fiber pointer
 		// Calculate the number of tasks per group
 		// Calculate total number of tasks
@@ -359,11 +354,16 @@ namespace MT
 			{
 				internal::GroupedTask & task = bucket.tasks[taskIndex];
 
-				MT_ASSERT(task.group < TaskGroup::COUNT, "Invalid group.");
-
 				task.parentFiber = parentFiber;
-				taskCountInGroup[task.group]++;
+
+				if (task.group != nullptr)
+				{
+					//TODO: reduce the number of reset calls
+					task.group->allDoneEvent.Reset();
+					task.group->inProgressTaskCount.Inc();
+				}
 			}
+
 			count += bucket.count;
 		}
 
@@ -376,19 +376,8 @@ namespace MT
 		if (restoredFromAwaitState == false)
 		{
 			// Increments all task in progress counter
-			allGroupStats.allDoneEvent.Reset();
-			allGroupStats.inProgressTaskCount.Add((uint32)count);
-
-			// Increments task in progress counters (per group)
-			for (size_t i = 0; i < TaskGroup::COUNT; ++i)
-			{
-				int groupTaskCount = taskCountInGroup[i];
-				if (groupTaskCount > 0)
-				{
-					groupStats[i].allDoneEvent.Reset();
-					groupStats[i].inProgressTaskCount.Add((uint32)groupTaskCount);
-				}
-			}
+			allGroups.allDoneEvent.Reset();
+			allGroups.inProgressTaskCount.Add((uint32)count);
 		} else
 		{
 			// If task's restored from await state, counters already in correct state
@@ -407,18 +396,18 @@ namespace MT
 		}
 	}
 
-	bool TaskScheduler::WaitGroup(TaskGroup::Type group, uint32 milliseconds)
+	bool TaskScheduler::WaitGroup(TaskGroup* group, uint32 milliseconds)
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
-		return groupStats[group].allDoneEvent.Wait(milliseconds);
+		return group->allDoneEvent.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
 
-		return allGroupStats.allDoneEvent.Wait(milliseconds);
+		return allGroups.allDoneEvent.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::IsEmpty()

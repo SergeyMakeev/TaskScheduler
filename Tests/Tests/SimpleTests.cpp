@@ -31,7 +31,7 @@ TEST(RunOneSimpleTask)
 	MT::TaskScheduler scheduler;
 
 	SimpleTask task;
-	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &task, 1);
+	scheduler.RunAsync(nullptr, &task, 1);
 
 	CHECK(scheduler.WaitAll(1000));
 	CHECK_EQUAL(task.GetSourceData(), task.resultData);
@@ -55,6 +55,8 @@ struct ALotOfTasks : public MT::TaskBase<ALotOfTasks>
 // Checks one simple task
 TEST(ALotOfTasks)
 {
+	MT::TaskGroup defaultGroup;
+
 	MT::TaskScheduler scheduler;
 
 	MT::AtomicInt counter;
@@ -66,11 +68,11 @@ TEST(ALotOfTasks)
 	for (size_t i = 0; i < MT_ARRAY_SIZE(tasks); ++i)
 		tasks[i].counter = &counter;
 
-	scheduler.RunAsync(MT::TaskGroup::GROUP_0, &tasks[0], MT_ARRAY_SIZE(tasks));
+	scheduler.RunAsync(&defaultGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 2000;
 
-	CHECK(scheduler.WaitGroup(MT::TaskGroup::GROUP_0, timeout));
+	CHECK(scheduler.WaitGroup(&defaultGroup, timeout));
 	CHECK_EQUAL(TASK_COUNT, counter.Get());
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,9 +1,7 @@
 #ifdef _WIN32
 
-#define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
-
 #include <windows.h>
 
 #pragma comment( lib, "winmm.lib" )
@@ -26,7 +24,6 @@ int main(int argc, char ** argv)
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
-
 	int passCount = 1;
 	if (argc >= 2)
 	{
@@ -34,16 +31,13 @@ int main(int argc, char ** argv)
 	}
 
 	int res = 0;
-
 	printf("Tests run %d times\n", passCount);
 	for(int pass = 0; pass < passCount; pass++)
 	{
 		res = Tests::RunAll();
 	}
 
-
 #ifdef _WIN32
-	 _CrtDumpMemoryLeaks();
 	 timeEndPeriod(1);
 #endif
 

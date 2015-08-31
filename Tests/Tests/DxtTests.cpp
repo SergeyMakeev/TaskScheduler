@@ -191,7 +191,7 @@ SUITE(DxtTests)
 				}
 			}
 
-			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks[0], subTasks.Size());
+			context.RunSubtasksAndYield(nullptr, &subTasks[0], subTasks.Size());
 		}
 	};
 
@@ -302,7 +302,7 @@ SUITE(DxtTests)
 				}
 			}
 
-			context.RunSubtasksAndYield(MT::TaskGroup::GROUP_0, &subTasks[0], subTasks.Size());
+			context.RunSubtasksAndYield(nullptr, &subTasks[0], subTasks.Size());
 		}
 
 	};
@@ -347,14 +347,14 @@ SUITE(DxtTests)
 		printf("Profiler: http://127.0.0.1:%d\n", (int)scheduler.GetWebServerPort());
 #endif
 
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &compressTask, 1);
+		scheduler.RunAsync(nullptr, &compressTask, 1);
 
 		Wait(scheduler);
 
 		DecompressDxt decompressTask(compressTask.dxtBlocks, compressTask.blkWidth, compressTask.blkHeight);
 		compressTask.dxtBlocks = nullptr; //transfer ownership to Decompress task
 
-		scheduler.RunAsync(MT::TaskGroup::GROUP_0, &decompressTask, 1);
+		scheduler.RunAsync(nullptr, &decompressTask, 1);
 
 		Wait(scheduler);
 

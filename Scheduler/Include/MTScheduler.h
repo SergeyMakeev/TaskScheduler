@@ -55,17 +55,6 @@ namespace MT
 		friend class FiberContext;
 		friend struct internal::ThreadContext;
 
-		struct GroupStats
-		{
-			AtomicInt inProgressTaskCount;
-			Event allDoneEvent;
-
-			GroupStats()
-			{
-				inProgressTaskCount.Set(0);
-				allDoneEvent.Create( EventReset::MANUAL, true );
-			}
-		};
 
 		// Thread index for new task
 		AtomicInt roundRobinThreadIndex;
@@ -74,16 +63,8 @@ namespace MT
 		uint32 threadsCount;
 		internal::ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
-		// Per group task statistic
-		GroupStats groupStats[TaskGroup::COUNT];
-
 		// All groups task statistic
-		GroupStats allGroupStats;
-
-
-		//Task awaiting group through FiberContext::WaitGroupAndYield call
-		ConcurrentQueueLIFO<FiberContext*> waitTaskQueues[TaskGroup::COUNT];
-
+		TaskGroup allGroups;
 
 		// Fibers pool
 		ConcurrentQueueLIFO<FiberContext*> availableFibers;
@@ -115,9 +96,9 @@ namespace MT
 		~TaskScheduler();
 
 		template<class TTask>
-		void RunAsync(TaskGroup::Type group, TTask* taskArray, uint32 taskCount);
+		void RunAsync(TaskGroup* group, TTask* taskArray, uint32 taskCount);
 
-		bool WaitGroup(TaskGroup::Type group, uint32 milliseconds);
+		bool WaitGroup(TaskGroup* group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
 
 		bool IsEmpty();
