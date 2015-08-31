@@ -17,7 +17,7 @@ compiler:
   - gcc
 
 script:
-  - g++ --version && premake4 gmake && pushd Build/gmake/ && make && popd
+  - g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd
   - sudo lshw
   - pushd Bin/ && ./Tests && popd
 
