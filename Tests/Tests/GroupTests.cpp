@@ -1,6 +1,7 @@
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
+#include <math.h> // for sin/cos
 
 SUITE(GroupTests)
 {
