@@ -104,6 +104,14 @@ SUITE(DxtTests)
 				dstBlockOffset = _dstBlockOffset;
 		}
 
+		~CompressDxtBlock()
+		{
+			srcX = -1;
+			srcY = -1;
+			stride = -1;
+			dstBlockOffset = -1;
+		}
+
 		void Do(MT::FiberContext&)
 		{
 			// 16 pixels of input
@@ -203,7 +211,8 @@ SUITE(DxtTests)
 				}
 			}
 
-			context.RunSubtasksAndYield(nullptr, &subTasks[0], subTasks.Size());
+			MT::TaskGroup groupCompress;
+			context.RunSubtasksAndYield(&groupCompress, &subTasks[0], subTasks.Size());
 		}
 	};
 
@@ -330,7 +339,8 @@ SUITE(DxtTests)
 				}
 			}
 
-			context.RunSubtasksAndYield(nullptr, &subTasks[0], subTasks.Size());
+			MT::TaskGroup groupDecompress;
+			context.RunSubtasksAndYield(&groupDecompress, &subTasks[0], subTasks.Size());
 		}
 
 	};

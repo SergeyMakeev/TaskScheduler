@@ -28,6 +28,8 @@ namespace MT
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(taskCount < threadContext->descBuffer.size(), "Buffer overrun!");
+		MT_ASSERT(taskGroup != nullptr, "You must specify group to wait!");
+		MT_VERIFY(taskGroup != currentGroup, "Can't wait the same group. Deadlock detected!", return);
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 

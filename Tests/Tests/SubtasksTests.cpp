@@ -21,8 +21,10 @@ struct DeepSubtaskQueue : public MT::TaskBase<DeepSubtaskQueue<N>>
 		DeepSubtaskQueue<N - 1> taskNm1;
 		DeepSubtaskQueue<N - 2> taskNm2;
 
-		context.RunSubtasksAndYield(nullptr, &taskNm1, 1);
-		context.RunSubtasksAndYield(nullptr, &taskNm2, 1);
+		MT::TaskGroup childrensGroup;
+
+		context.RunSubtasksAndYield(&childrensGroup, &taskNm1, 1);
+		context.RunSubtasksAndYield(&childrensGroup, &taskNm2, 1);
 
 		result = taskNm2.result + taskNm1.result;
 	}
@@ -102,10 +104,12 @@ struct TaskWithManySubtasks : public MT::TaskBase<TaskWithManySubtasks>
 
 	void Do(MT::FiberContext& context)
 	{
+		MT::TaskGroup defGroup;
+
 		GroupTask task;
 		for (int i = 0; i < 2; ++i)
 		{
-			context.RunSubtasksAndYield(nullptr, &task, 1);
+			context.RunSubtasksAndYield(&defGroup, &task, 1);
 			MT::Thread::SpinSleep(1);
 		}
 	}
@@ -183,11 +187,13 @@ struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 
 	void Do(MT::FiberContext& context)
 	{
+		MT::TaskGroup defGroup;
+
 		tasks[0].data = data;
 		tasks[1].data = data;
 
 		context.RunAsync(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(&defGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 	}
 };
 
@@ -201,11 +207,13 @@ struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 
 	void Do(MT::FiberContext& context)
 	{
+		MT::TaskGroup defGroup;
+
 		tasks[0].data = data;
 		tasks[1].data = data;
 
 		context.RunAsync(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(&defGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 	}
 };
 
