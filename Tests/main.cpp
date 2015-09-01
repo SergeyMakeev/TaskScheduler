@@ -60,6 +60,7 @@ int main(int argc, char ** argv)
 #else
 	// install signal handler
 	signal(SIGSEGV, PosixSignalHandler);
+	signal(SIGTRAP, PosixSignalHandler);
 #endif
 
 	int passCount = 1;
