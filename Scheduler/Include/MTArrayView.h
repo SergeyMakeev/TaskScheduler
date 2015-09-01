@@ -35,18 +35,25 @@ namespace MT
 		T* data;
 		size_t count;
 
-	private:
-
-		ArrayView(ArrayView& ) {}
-		void operator=(const ArrayView&) {}
-
 	public:
+
+		ArrayView()
+		{
+			data = nullptr;
+			count = 0;
+		}
 
 		ArrayView(void* memoryChunk, size_t instanceCount)
 			: data((T*)memoryChunk)
 			, count(instanceCount)
 		{
 			MT_ASSERT(count == 0 || data, "Invalid data array");
+		}
+
+		~ArrayView()
+		{
+			data = nullptr;
+			count = 0;
 		}
 
 		const T &operator[]( size_t i ) const
@@ -69,6 +76,11 @@ namespace MT
 		bool IsEmpty() const
 		{
 			return count == 0;
+		}
+
+		void* GetRawData()
+		{
+			return data;
 		}
 	};
 

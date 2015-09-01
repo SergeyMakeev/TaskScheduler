@@ -89,17 +89,19 @@ SUITE(DxtTests)
 		int srcY;
 
 		int stride;
+		int dstBlockOffset;
 
-		uint8 * srcPixels;
-		uint8 * dstBlock;
+		MT::ArrayView<uint8> srcPixels;
+		MT::ArrayView<uint8> dstBlocks;
 
-		CompressDxtBlock(int _srcX, int _srcY, int _stride, uint8* _srcPixels, uint8* _dstBlock )
+		CompressDxtBlock(int _srcX, int _srcY, int _stride, const MT::ArrayView<uint8> & _srcPixels, const MT::ArrayView<uint8> & _dstBlocks, int _dstBlockOffset)
+			: srcPixels(_srcPixels)
+			, dstBlocks(_dstBlocks)
 		{
 				srcX = _srcX;
 				srcY = _srcY;
 				stride = _stride;
-				srcPixels = _srcPixels;
-				dstBlock = _dstBlock;
+				dstBlockOffset = _dstBlockOffset;
 		}
 
 		void Do(MT::FiberContext&)
@@ -130,7 +132,7 @@ SUITE(DxtTests)
 			}
 
 			// compress the 4x4 block using DXT1 compression
-			squish::Compress( (squish::u8 *)&pixels[0], dstBlock, squish::kDxt1 );
+			squish::Compress( (squish::u8 *)&pixels[0], &dstBlocks[dstBlockOffset], squish::kDxt1 );
 		}
 	};
 
@@ -143,35 +145,33 @@ SUITE(DxtTests)
 		uint32 width;
 		uint32 height;
 		uint32 stride;
-		uint8 * srcPixels;
 
 		uint32 blkWidth;
 		uint32 blkHeight;
 
-		uint8 * dxtBlocks;
+		MT::ArrayView<uint8> srcPixels;
+		MT::ArrayView<uint8> dxtBlocks;
 
-		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, uint8* _srcPixels)
+		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, const MT::ArrayView<uint8> & _srcPixels )
+			: srcPixels(_srcPixels)
 		{
 			width = _width;
 			height = _height;
 			stride = _stride;
 
-			srcPixels = _srcPixels;
-
 			blkWidth = width >> 2;
 			blkHeight = height >> 2;
 
 			int dxtBlocksTotalSizeInBytes = blkWidth * blkHeight * 8; // 8 bytes = 64 bits per block (dxt1)
-			dxtBlocks = (uint8 *)malloc( dxtBlocksTotalSizeInBytes );
-			memset(dxtBlocks, 0x0, dxtBlocksTotalSizeInBytes);
+			dxtBlocks = MT::ArrayView<uint8>( malloc( dxtBlocksTotalSizeInBytes ), dxtBlocksTotalSizeInBytes);
 		}
 
 		~CompressDxt()
 		{
-			if (dxtBlocks)
+			void* pDxtBlocks = dxtBlocks.GetRawData();
+			if (pDxtBlocks)
 			{
-				free(dxtBlocks);
-				dxtBlocks = nullptr;
+				free(pDxtBlocks);
 			}
 		}
 
@@ -187,7 +187,7 @@ SUITE(DxtTests)
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
 
-					subTasks.PushBack( CompressDxtBlock(blkX * 4, blkY * 4, stride, srcPixels, &dxtBlocks[blockIndex * 8]) );
+					subTasks.PushBack( CompressDxtBlock(blkX * 4, blkY * 4, stride, srcPixels, dxtBlocks, blockIndex * 8) );
 				}
 			}
 
@@ -205,18 +205,20 @@ SUITE(DxtTests)
 		int dstX;
 		int dstY;
 
+		int srcBlockOffset;
 		int stride;
 
-		uint8 * srcBlock;
-		uint8 * dstPixels;
+		MT::ArrayView<uint8> srcBlocks;
+		MT::ArrayView<uint8> dstPixels;
 
-		DecompressDxtBlock(int _dstX, int _dstY, int _stride, uint8* _dstPixels, uint8* _srcBlock )
+		DecompressDxtBlock(int _dstX, int _dstY, int _stride, const MT::ArrayView<uint8> & _dstPixels, const MT::ArrayView<uint8> & _srcBlocks, int _srcBlockOffset)
+			: srcBlocks(_srcBlocks)
+			, dstPixels(_dstPixels)
 		{
 			dstX = _dstX;
 			dstY = _dstY;
 			stride = _stride;
-			dstPixels = _dstPixels;
-			srcBlock = _srcBlock;
+			srcBlockOffset = _srcBlockOffset;
 		}
 
 		void Do(MT::FiberContext&)
@@ -229,7 +231,7 @@ SUITE(DxtTests)
 			{
 				for (int x = 0; x < 4; x++)
 				{
-					squish::Decompress((squish::u8 *)&pixels[0], srcBlock, squish::kDxt1);
+					squish::Decompress((squish::u8 *)&pixels[0], &srcBlocks[srcBlockOffset], squish::kDxt1);
 
 					int posX = dstX + x;
 					int posY = dstY + y;
@@ -254,33 +256,36 @@ SUITE(DxtTests)
 	{
 		DECLARE_DEBUG("DecompressDxt", MT_COLOR_YELLOW);
 
-		uint8 * dxtBlocks;
+		MT::ArrayView<uint8> dxtBlocks;
+		MT::ArrayView<uint8> decompressedImage;
+
 		uint32 blkWidth;
 		uint32 blkHeight;
 
-		uint8 * decompressedImage;
 
-		DecompressDxt(uint8 * _dxtBlocks, uint32 dxtBlocksCountWidth, uint32 dxtBlocksCountHeight)
+		DecompressDxt(const MT::ArrayView<uint8> & _dxtBlocks, uint32 dxtBlocksCountWidth, uint32 dxtBlocksCountHeight)
+			: dxtBlocks(_dxtBlocks)
 		{
-			dxtBlocks = _dxtBlocks;
 			blkWidth = dxtBlocksCountWidth;
 			blkHeight = dxtBlocksCountHeight;
 
-			decompressedImage = (uint8*)malloc(dxtBlocksCountWidth*dxtBlocksCountHeight*48); // dxt1 block = 16 rgb pixels = 48 bytes
+			// dxt1 block = 16 rgb pixels = 48 bytes
+			uint32 bytesCount = blkWidth * blkHeight * 48;
+			decompressedImage = MT::ArrayView<uint8>( malloc(bytesCount), bytesCount); 
 		}
 
 		~DecompressDxt()
 		{
-			if (dxtBlocks)
+			void* pDxtBlocks = dxtBlocks.GetRawData();
+			if (pDxtBlocks)
 			{
-				free(dxtBlocks);
-				dxtBlocks = nullptr;
+				free(pDxtBlocks);
 			}
 
-			if (decompressedImage)
+			void* pDecompressedImage = decompressedImage.GetRawData();
+			if (pDecompressedImage)
 			{
-				free(decompressedImage);
-				decompressedImage = nullptr;
+				free(pDecompressedImage);
 			}
 
 		}
@@ -298,7 +303,7 @@ SUITE(DxtTests)
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
 
-					subTasks.PushBack( DecompressDxtBlock(blkX * 4, blkY * 4, stride, decompressedImage, &dxtBlocks[blockIndex * 8]) );
+					subTasks.PushBack( DecompressDxtBlock(blkX * 4, blkY * 4, stride, decompressedImage, dxtBlocks, blockIndex * 8) );
 				}
 			}
 
@@ -335,7 +340,8 @@ SUITE(DxtTests)
 
 		int stride = 384;
 
-		uint8 * srcImage = (uint8 *)&EmbeddedImage::lenaColor[0];
+		MT::ArrayView<uint8> srcImage((void*)&EmbeddedImage::lenaColor[0], MT_ARRAY_SIZE(EmbeddedImage::lenaColor));
+
 		CompressDxt compressTask(128, 128, stride, srcImage);
 		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
 
@@ -347,13 +353,15 @@ SUITE(DxtTests)
 		printf("Profiler: http://127.0.0.1:%d\n", (int)scheduler.GetWebServerPort());
 #endif
 
+		printf("Compress image\n");
 		scheduler.RunAsync(nullptr, &compressTask, 1);
 
 		Wait(scheduler);
 
 		DecompressDxt decompressTask(compressTask.dxtBlocks, compressTask.blkWidth, compressTask.blkHeight);
-		compressTask.dxtBlocks = nullptr; //transfer ownership to Decompress task
+		compressTask.dxtBlocks = MT::ArrayView<uint8>(); //transfer memory ownership to Decompress task
 
+		printf("Decompress image\n");
 		scheduler.RunAsync(nullptr, &decompressTask, 1);
 
 		Wait(scheduler);
@@ -375,7 +383,8 @@ SUITE(DxtTests)
 		}
 */
 
-		bool imagesEqual = CompareImagesPSNR(srcImage, decompressTask.decompressedImage, MT_ARRAY_SIZE(EmbeddedImage::lenaColor), 8.0);
+		printf("Compare images\n");
+		bool imagesEqual = CompareImagesPSNR(&srcImage[0], &decompressTask.decompressedImage[0], MT_ARRAY_SIZE(EmbeddedImage::lenaColor), 8.0);
 		CHECK_EQUAL(true, imagesEqual);
 
 #ifdef MT_INSTRUMENTED_BUILD
