@@ -145,12 +145,27 @@ namespace MT
 			struct timeval tv;
 			gettimeofday( &tv, nullptr );
 			struct timespec tm;
-			tm.tv_sec = milliseconds / 1000 + tv.tv_sec;
-			tm.tv_nsec = ( milliseconds % 1000 ) * 1000000 + tv.tv_usec * 1000;
+			tm.tv_sec = tv.tv_sec + milliseconds / 1000;
+			uint64 nanosec = (uint64)tv.tv_usec * 1000 + (uint64)milliseconds * 1000000;
+			if (nanosec >= 1000000000)
+			{
+				tm.tv_sec += (long)(nanosec / 1000000000);
+				nanosec = nanosec % 1000000000;
+			}
+			tm.tv_nsec = (long)nanosec;
 
-			int ret = pthread_cond_timedwait( &condition, &mutex, &tm );
+			int ret = 0;
+			while(true)
+			{
+				ret = pthread_cond_timedwait( &condition, &mutex, &tm );
 
-			MT_ASSERT(ret == 0 || ret == ETIMEDOUT, "Unexpected return value");
+				MT_ASSERT(ret == 0 || ret == ETIMEDOUT || ret == EINTR, "Unexpected return value");
+
+				if (ret != EINTR)
+				{
+					break;
+				}
+			}
 
 			numOfWaitingThreads--;
 
