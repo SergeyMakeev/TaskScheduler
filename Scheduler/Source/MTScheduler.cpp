@@ -27,6 +27,7 @@ namespace MT
 
 	TaskScheduler::TaskScheduler(uint32 workerThreadsCount)
 		: roundRobinThreadIndex(0)
+		, startedThreadsCount(0)
 	{
 #ifdef MT_INSTRUMENTED_BUILD
 		webServerPort = profilerWebServer.Serve(8080, 8090);
@@ -35,16 +36,14 @@ namespace MT
 		startTime = MT::GetTimeMicroSeconds();
 #endif
 
-
 		if (workerThreadsCount != 0)
 		{
-			threadsCount = workerThreadsCount;
+			threadsCount = MT::Clamp(workerThreadsCount, (uint32)1, (uint32)MT_MAX_THREAD_COUNT);
 		} else
 		{
 			//query number of processor
 			threadsCount = (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 2, 1, (int)MT_MAX_THREAD_COUNT);
 		}
-
 
 		// create fiber pool
 		for (uint32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
@@ -264,6 +263,18 @@ namespace MT
 		context.schedulerFiber.CreateFromThread(context.thread);
 
 		uint32 workersCount = context.taskScheduler->GetWorkerCount();
+
+		context.taskScheduler->startedThreadsCount.Inc();
+
+		//Spinlock until all threads started and initialized
+		while(true)
+		{
+			if (context.taskScheduler->startedThreadsCount.Get() == (int)context.taskScheduler->threadsCount)
+			{
+				break;
+			}
+			Thread::Sleep(1);
+		}
 
 		while(context.state.Get() != internal::ThreadState::EXIT)
 		{
