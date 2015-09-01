@@ -130,6 +130,7 @@ SUITE(DxtTests)
 					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
 					{
 						printf("Invalid index!\n");
+						printf("this = %p\n", this);
 						printf("index = %d\n", index);
 						printf("x = %d\n", x);
 						printf("y = %d\n", y);
@@ -211,6 +212,8 @@ SUITE(DxtTests)
 				}
 			}
 
+			printf("Compress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(CompressDxtBlock));
+
 			MT::TaskGroup groupCompress;
 			context.RunSubtasksAndYield(&groupCompress, &subTasks[0], subTasks.Size());
 		}
@@ -264,6 +267,7 @@ SUITE(DxtTests)
 					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
 					{
 						printf("Invalid index!\n");
+						printf("this = %p\n", this);
 						printf("index = %d\n", index);
 						printf("x = %d\n", x);
 						printf("y = %d\n", y);
@@ -338,6 +342,8 @@ SUITE(DxtTests)
 					subTasks.PushBack( DecompressDxtBlock(blkX * 4, blkY * 4, stride, decompressedImage, dxtBlocks, blockIndex * 8) );
 				}
 			}
+
+			printf("Decompress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(DecompressDxtBlock));
 
 			MT::TaskGroup groupDecompress;
 			context.RunSubtasksAndYield(&groupDecompress, &subTasks[0], subTasks.Size());
