@@ -20,7 +20,7 @@
 #endif
 
 #if defined(unix) || defined(__unix__) || defined(__unix) || defined(linux) || \
-    defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)        
+    defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
     #define UNITTEST_POSIX
 #endif
 
@@ -32,7 +32,7 @@
 // By default, MemoryOutStream is implemented in terms of std::ostringstream.
 // This is useful if you are using the CHECK macros on objects that have something like this defined:
 // std::ostringstream& operator<<(std::ostringstream& s, const YourObject& value)
-// 
+//
 // On the other hand, it can be more expensive.
 // Un-comment this line to use the custom MemoryOutStream (no deps on std::ostringstream).
 
@@ -55,14 +55,14 @@
 
 // By default, asserts that you report via UnitTest::ReportAssert() abort the current test and
 // continue to the next one by throwing an exception, which unwinds the stack naturally, destroying
-// all auto variables on its way back down.  If you don't want to (or can't) use exceptions for your 
+// all auto variables on its way back down.  If you don't want to (or can't) use exceptions for your
 // platform/compiler, uncomment this line.  All exception code will be removed from UnitTest++,
 // assert recovery will be done via setjmp/longjmp, and NO correct stack unwinding will happen!
 
-//#define UNITTEST_NO_EXCEPTIONS
+#define UNITTEST_NO_EXCEPTIONS
 
 
-// std namespace qualification: used for functions like strcpy that 
+// std namespace qualification: used for functions like strcpy that
 // may live in std:: namespace (cstring header).
 #if defined( UNITTEST_COMPILER_IS_MSVC6 )
 	#define UNIITEST_NS_QUAL_STD(x) x

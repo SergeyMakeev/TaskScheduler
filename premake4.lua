@@ -66,6 +66,7 @@ if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
+	linkoptions { "-rdynamic" }
 end
 
 configuration "x64"
@@ -73,6 +74,7 @@ if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
+	linkoptions { "-rdynamic" }
 end
 
 
