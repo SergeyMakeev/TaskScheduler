@@ -36,6 +36,8 @@ namespace MT
 		startTime = MT::GetTimeMicroSeconds();
 #endif
 
+		workerThreadsCount = 50;
+
 		if (workerThreadsCount != 0)
 		{
 			threadsCount = MT::Clamp(workerThreadsCount, (uint32)1, (uint32)MT_MAX_THREAD_COUNT);
@@ -132,23 +134,23 @@ namespace MT
 			// Update group status
 			if (taskGroup != nullptr)
 			{
-				groupTaskCount = taskGroup->inProgressTaskCount.Dec();
+				groupTaskCount = taskGroup->Dec();
 				MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 				if (groupTaskCount == 0)
 				{
 					// Restore awaiting tasks
 					threadContext.RestoreAwaitingTasks(taskGroup);
-					taskGroup->allDoneEvent.Signal();
+					taskGroup->Signal();
 				}
 			}
 
 			// Update total task count
-			groupTaskCount = threadContext.taskScheduler->allGroups.inProgressTaskCount.Dec();
+			groupTaskCount = threadContext.taskScheduler->allGroups.Dec();
 			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 			if (groupTaskCount == 0)
 			{
 				// Notify all tasks in all group finished
-				threadContext.taskScheduler->allGroups.allDoneEvent.Signal();
+				threadContext.taskScheduler->allGroups.Signal();
 			}
 
 			FiberContext* parentFiberContext = fiberContext->parentFiber;
@@ -370,8 +372,8 @@ namespace MT
 				if (task.group != nullptr)
 				{
 					//TODO: reduce the number of reset calls
-					task.group->allDoneEvent.Reset();
-					task.group->inProgressTaskCount.Inc();
+					task.group->Reset();
+					task.group->Inc();
 				}
 			}
 
@@ -387,8 +389,8 @@ namespace MT
 		if (restoredFromAwaitState == false)
 		{
 			// Increments all task in progress counter
-			allGroups.allDoneEvent.Reset();
-			allGroups.inProgressTaskCount.Add((uint32)count);
+			allGroups.Reset();
+			allGroups.Add((uint32)count);
 		} else
 		{
 			// If task's restored from await state, counters already in correct state
@@ -411,14 +413,14 @@ namespace MT
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
-		return group->allDoneEvent.Wait(milliseconds);
+		return group->Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
 
-		return allGroups.allDoneEvent.Wait(milliseconds);
+		return allGroups.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::IsEmpty()

@@ -79,7 +79,7 @@ namespace MT
 		MT_VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
 		MT_VERIFY(group != nullptr, "Invalid group!", return);
 
-		ConcurrentQueueLIFO<FiberContext*> & groupQueue = group->waitTasksQueue;
+		ConcurrentQueueLIFO<FiberContext*> & groupQueue = group->GetWaitQueue();
 
 		// Change status
 		taskStatus = FiberTaskStatus::AWAITING_GROUP;

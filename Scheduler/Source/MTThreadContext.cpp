@@ -68,7 +68,7 @@ namespace MT
 			MT_ASSERT(taskScheduler, "Invalid Task Scheduler");
 			MT_ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 
-			ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskGroup->waitTasksQueue;
+			ConcurrentQueueLIFO<FiberContext*> & groupQueue = taskGroup->GetWaitQueue();
 
 			if (groupQueue.IsEmpty())
 			{

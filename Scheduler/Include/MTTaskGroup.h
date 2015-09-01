@@ -38,36 +38,103 @@ namespace MT
 		struct ThreadContext;
 	}
 
+#define ALIVE_STAMP (0x33445566)
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task group
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Application can assign task group to task and later wait until group was finished.
 	class TaskGroup
 	{
-		friend class FiberContext;
-		friend class TaskScheduler;
-		friend struct internal::ThreadContext;
-
-	protected:
-
 		AtomicInt inProgressTaskCount;
 		Event allDoneEvent;
 
 		//Tasks awaiting group through FiberContext::WaitGroupAndYield call
 		ConcurrentQueueLIFO<FiberContext*> waitTasksQueue;
 
+		uint32 aliveStamp;
+
 	public:
 
 		TaskGroup()
 		{
+			aliveStamp = 0x33445566;
+
 			inProgressTaskCount.Set(0);
 			allDoneEvent.Create( EventReset::MANUAL, true );
 		}
 
+		~TaskGroup()
+		{
+			aliveStamp = 0xFDFDFDFD;
+		}
+
 		int GetTaskCount() const
 		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
 			return inProgressTaskCount.Get();
 		}
+
+		ConcurrentQueueLIFO<FiberContext*> & GetWaitQueue()
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			return waitTasksQueue;
+		}
+
+		int Dec()
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			return inProgressTaskCount.Dec();
+		}
+
+		int Inc()
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			return inProgressTaskCount.Inc();
+		}
+
+		int Add(int sum)
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			return inProgressTaskCount.Add(sum);
+		}
+
+		void Signal()
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			allDoneEvent.Signal();
+		}
+
+		void Reset()
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			allDoneEvent.Reset();
+		}
+
+		bool Wait(uint32 milliseconds)
+		{
+			MT_ASSERT(this != nullptr, "AV exception here");
+			MT_ASSERT(aliveStamp == ALIVE_STAMP, "Group already destroyed");
+
+			return allDoneEvent.Wait(milliseconds);
+		}
+
+
+		
 	};
 
 
