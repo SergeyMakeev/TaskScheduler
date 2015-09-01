@@ -21,6 +21,8 @@
 
 void PosixSignalHandler(int signum)
 {
+	pthread_t currentThread = pthread_self();
+
 	const char* name = "Unknown";
 	switch( signum )
 	{
@@ -41,7 +43,7 @@ void PosixSignalHandler(int signum)
    // print the stack trace.
   for ( size_t i = 0; i < size; i++ )
   {
-      printf("%s\n", symbollist[i]);
+      printf("[%d, %lu] %s\n", i, (unsigned long int)currentThread, symbollist[i]);
 	}
 
   free(symbollist);

@@ -127,7 +127,7 @@ SUITE(DxtTests)
 
 					int index = posY * stride + (posX * 3);
 
-					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
+					if (index < 0 || (index + 2) >= (int)MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
 					{
 						printf("Invalid index!\n");
 						printf("this = %p\n", this);
@@ -264,7 +264,7 @@ SUITE(DxtTests)
 
 					uint32 pixel = pixels[y * 4 + x];
 
-					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
+					if (index < 0 || (index + 2) >= (int)MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
 					{
 						printf("Invalid index!\n");
 						printf("this = %p\n", this);
@@ -307,7 +307,7 @@ SUITE(DxtTests)
 
 			// dxt1 block = 16 rgb pixels = 48 bytes
 			uint32 bytesCount = blkWidth * blkHeight * 48;
-			decompressedImage = MT::ArrayView<uint8>( malloc(bytesCount), bytesCount); 
+			decompressedImage = MT::ArrayView<uint8>( malloc(bytesCount), bytesCount);
 		}
 
 		~DecompressDxt()
