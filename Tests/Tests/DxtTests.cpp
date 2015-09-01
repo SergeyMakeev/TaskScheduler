@@ -119,7 +119,19 @@ SUITE(DxtTests)
 
 					int index = posY * stride + (posX * 3);
 
-					MT_ASSERT(((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
+					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
+					{
+						printf("Invalid index!\n");
+						printf("index = %d\n", index);
+						printf("x = %d\n", x);
+						printf("y = %d\n", y);
+						printf("srcX = %d\n", srcX);
+						printf("srcY = %d\n", srcY);
+						printf("stride = %d\n", stride);
+					}
+
+
+					MT_ASSERT(index >= 0 && ((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
 					uint8 r = srcPixels[index + 0];
 					uint8 g = srcPixels[index + 1];
@@ -240,7 +252,18 @@ SUITE(DxtTests)
 
 					uint32 pixel = pixels[y * 4 + x];
 
-					MT_ASSERT(((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
+					if (index < 0 || (index + 2) >= MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
+					{
+						printf("Invalid index!\n");
+						printf("index = %d\n", index);
+						printf("x = %d\n", x);
+						printf("y = %d\n", y);
+						printf("dstX = %d\n", dstX);
+						printf("dstY = %d\n", dstY);
+						printf("stride = %d\n", stride);
+					}
+
+					MT_ASSERT(index >= 0 && ((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
 					dstPixels[index + 0] = (pixel & 0xFF);
 					dstPixels[index + 1] = (pixel >> 8 & 0xFF);
