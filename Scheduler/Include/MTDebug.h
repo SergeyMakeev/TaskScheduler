@@ -46,7 +46,7 @@ inline void ThrowException()
 
 #ifdef _DEBUG
 
-#define MT_REPORT_ASSERT( condition, description, file, line ) printf("%s. %s, line %d\n", description, file, line); ThrowException();
+#define MT_REPORT_ASSERT( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
 
 #define MT_ASSERT( condition, description ) { if ( !(condition) ) { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) } }
 #define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) }; operation; } }
