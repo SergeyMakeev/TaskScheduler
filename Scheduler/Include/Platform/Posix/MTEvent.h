@@ -37,6 +37,8 @@ namespace MT
 		static const int NOT_SIGNALED = 0;
 		static const int SIGNALED = 1;
 
+		uint32 numOfWaitingThreads;
+
 		pthread_mutex_t	mutex;
 		pthread_cond_t	condition;
 		AtomicInt val;
@@ -60,12 +62,14 @@ namespace MT
 	public:
 
 		Event()
-			: isInitialized(false)
+			: numOfWaitingThreads(0)
+			, isInitialized(false)
 		{
 		}
 
 		Event(EventReset::Type resetType, bool initialState)
-			: isInitialized(false)
+			: numOfWaitingThreads(0)
+			, isInitialized(false)
 		{
 			Create(resetType, initialState);
 		}
@@ -90,6 +94,7 @@ namespace MT
 			val.Set(initialState ? SIGNALED : NOT_SIGNALED);
 
 			isInitialized = true;
+			numOfWaitingThreads = 0;
 		}
 
 		void Signal()
@@ -99,7 +104,17 @@ namespace MT
 			pthread_mutex_lock( &mutex );
 
 			val.Set(SIGNALED);
-			pthread_cond_broadcast( &condition );
+
+			if (numOfWaitingThreads)
+			{
+				if (resetType == EventReset::MANUAL)
+				{
+					pthread_cond_broadcast( &condition );
+				} else
+				{
+					pthread_cond_signal( &condition );
+				}
+			}
 
 			pthread_mutex_unlock( &mutex );
 		}
@@ -107,7 +122,6 @@ namespace MT
 		void Reset()
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
-
 			val.Set(NOT_SIGNALED);
 		}
 
@@ -125,6 +139,8 @@ namespace MT
 				return true;
 			}
 
+			numOfWaitingThreads++;
+
 			//convert milliseconds to posix time
 			struct timeval tv;
 			gettimeofday( &tv, nullptr );
@@ -132,17 +148,17 @@ namespace MT
 			tm.tv_sec = milliseconds / 1000 + tv.tv_sec;
 			tm.tv_nsec = ( milliseconds % 1000 ) * 1000000 + tv.tv_usec * 1000;
 
-			int ret = 0;
-			do
-			{
-				ret = pthread_cond_timedwait( &condition, &mutex, &tm );
-			} while( ret == EINTR );
+			int ret = pthread_cond_timedwait( &condition, &mutex, &tm );
 
-			sched_yield();
+			MT_ASSERT(ret == 0 || ret == ETIMEDOUT, "Unexpected return value");
+
+			numOfWaitingThreads--;
+
+			AutoResetIfNeed();
 
 			pthread_mutex_unlock( &mutex );
 
-			AutoResetIfNeed();
+			//return true if val in SIGNALED state instead of ret == 0 ?
 			return ret == 0;
 		}
 
