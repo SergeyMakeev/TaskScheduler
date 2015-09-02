@@ -39,6 +39,7 @@ namespace MT
 {
 	const uint32 MT_MAX_THREAD_COUNT = 64;
 	const uint32 MT_MAX_FIBERS_COUNT = 128;
+	const uint32 MT_MAX_GROUPS_COUNT = 256;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 131072;
 	const uint32 MT_FIBER_STACK_SIZE = 32768;
 
@@ -56,6 +57,49 @@ namespace MT
 		friend struct internal::ThreadContext;
 
 
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Task group description
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Application can assign task group to task and later wait until group was finished.
+		class TaskGroupDescription
+		{
+			AtomicInt inProgressTaskCount;
+			Event allDoneEvent;
+
+			//Tasks awaiting group through FiberContext::WaitGroupAndYield call
+			ConcurrentQueueLIFO<FiberContext*> waitTasksQueue;
+
+		public:
+
+			bool debugIsFree;
+
+
+		private:
+
+			TaskGroupDescription(TaskGroupDescription& ) {}
+			void operator=(const TaskGroupDescription&) {}
+
+		public:
+
+			TaskGroupDescription()
+			{
+				inProgressTaskCount.Set(0);
+				allDoneEvent.Create( EventReset::MANUAL, true );
+				debugIsFree = true;
+			}
+
+			int GetTaskCount() const { return inProgressTaskCount.Get(); }
+			ConcurrentQueueLIFO<FiberContext*> & GetWaitQueue() { return waitTasksQueue; }
+			int Dec() { return inProgressTaskCount.Dec(); }
+			int Inc() { return inProgressTaskCount.Inc(); }
+			int Add(int sum) { return inProgressTaskCount.Add(sum); }
+			void Signal() { allDoneEvent.Signal(); }
+			void Reset() { allDoneEvent.Reset(); }
+			bool Wait(uint32 milliseconds) { return allDoneEvent.Wait(milliseconds); }
+		};
+
+
 		// Thread index for new task
 		AtomicInt roundRobinThreadIndex;
 
@@ -67,7 +111,13 @@ namespace MT
 		internal::ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// All groups task statistic
-		TaskGroup allGroups;
+		TaskGroupDescription allGroups;
+
+		// Groups pool
+		ConcurrentQueueLIFO<TaskGroup> availableGroups;
+
+		//
+		TaskGroupDescription groupStats[MT_MAX_GROUPS_COUNT];
 
 		// Fibers pool
 		ConcurrentQueueLIFO<FiberContext*> availableFibers;
@@ -84,6 +134,7 @@ namespace MT
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
 		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
 		void RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
+		TaskGroupDescription & GetGroupDesc(TaskGroup group);
 
 		static void ThreadMain( void* userData );
 		static void FiberMain( void* userData );
@@ -99,10 +150,13 @@ namespace MT
 		~TaskScheduler();
 
 		template<class TTask>
-		void RunAsync(TaskGroup* group, TTask* taskArray, uint32 taskCount);
+		void RunAsync(TaskGroup group, TTask* taskArray, uint32 taskCount);
 
-		bool WaitGroup(TaskGroup* group, uint32 milliseconds);
+		bool WaitGroup(TaskGroup group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
+
+		TaskGroup CreateGroup();
+		void ReleaseGroup(TaskGroup group);
 
 		bool IsEmpty();
 

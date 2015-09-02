@@ -62,12 +62,12 @@ namespace MT
 		FiberContext();
 
 		template<class TTask>
-		void RunSubtasksAndYield(TaskGroup* taskGroup, const TTask* taskArray, size_t taskCount);
+		void RunSubtasksAndYield(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount);
 
 		template<class TTask>
-		void RunAsync(TaskGroup* taskGroup, TTask* taskArray, size_t taskCount);
+		void RunAsync(TaskGroup taskGroup, TTask* taskArray, size_t taskCount);
 
-		void WaitGroupAndYield(TaskGroup* group);
+		void WaitGroupAndYield(TaskGroup group);
 
 		void Reset();
 
@@ -91,7 +91,7 @@ namespace MT
 		internal::TaskDesc currentTask;
 
 		// Active task group
-		TaskGroup* currentGroup;
+		TaskGroup currentGroup;
 
 		// Number of children fibers
 		AtomicInt childrenFibersCount;

@@ -36,8 +36,6 @@ namespace MT
 		startTime = MT::GetTimeMicroSeconds();
 #endif
 
-		workerThreadsCount = 50;
-
 		if (workerThreadsCount != 0)
 		{
 			threadsCount = MT::Clamp(workerThreadsCount, (uint32)1, (uint32)MT_MAX_THREAD_COUNT);
@@ -54,6 +52,16 @@ namespace MT
 			context.fiber.Create(MT_FIBER_STACK_SIZE, FiberMain, &context);
 			availableFibers.Push( &context );
 		}
+
+		for (uint32 i = 0; i < MT_MAX_GROUPS_COUNT; i++)
+		{
+			if (i != MT::DEFAULT_GROUP)
+			{
+				availableGroups.Push( (TaskGroup)i );
+			}
+		}
+
+		groupStats[MT::DEFAULT_GROUP].debugIsFree = false;
 
 		// create worker thread pool
 		for (uint32 i = 0; i < threadsCount; i++)
@@ -127,27 +135,31 @@ namespace MT
 		FiberTaskStatus::Type taskStatus = fiberContext->GetStatus();
 		if (taskStatus == FiberTaskStatus::FINISHED)
 		{
-			TaskGroup* taskGroup = fiberContext->currentGroup;
+			TaskGroup taskGroup = fiberContext->currentGroup;
 
-			int groupTaskCount = 0;
+			TaskScheduler::TaskGroupDescription  & groupDesc = threadContext.taskScheduler->GetGroupDesc(taskGroup);
 
 			// Update group status
-			if (taskGroup != nullptr)
+			int groupTaskCount = groupDesc.Dec();
+			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
+			if (groupTaskCount == 0)
 			{
-				groupTaskCount = taskGroup->Dec();
-				MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
-				if (groupTaskCount == 0)
-				{
-					// Restore awaiting tasks
-					threadContext.RestoreAwaitingTasks(taskGroup);
-					taskGroup->Signal();
-				}
+				// Restore awaiting tasks
+				threadContext.RestoreAwaitingTasks(taskGroup);
+
+				// All restored tasks can be already finished on this line.
+				// That's why you can't release groups from worker threads, if worker thread release group, than you can't Signal to released group.
+
+				// Signal pending threads that group work is finished. Group can be destroyed after this call.
+				groupDesc.Signal();
+
+				fiberContext->currentGroup = MT::INVALID_GROUP;
 			}
 
 			// Update total task count
-			groupTaskCount = threadContext.taskScheduler->allGroups.Dec();
-			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
-			if (groupTaskCount == 0)
+			int allGroupTaskCount = threadContext.taskScheduler->allGroups.Dec();
+			MT_ASSERT(allGroupTaskCount >= 0, "Sanity check failed!");
+			if (allGroupTaskCount == 0)
 			{
 				// Notify all tasks in all group finished
 				threadContext.taskScheduler->allGroups.Signal();
@@ -356,6 +368,12 @@ namespace MT
 
 	void TaskScheduler::RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
+		// This storage is necessary to calculate how many tasks we add to different groups
+		int newTaskCountInGroup[MT_MAX_GROUPS_COUNT];
+
+		// Default value is 0
+		memset(&newTaskCountInGroup[0], 0, sizeof(newTaskCountInGroup));
+
 		// Set parent fiber pointer
 		// Calculate the number of tasks per group
 		// Calculate total number of tasks
@@ -368,13 +386,7 @@ namespace MT
 				internal::GroupedTask & task = bucket.tasks[taskIndex];
 
 				task.parentFiber = parentFiber;
-
-				if (task.group != nullptr)
-				{
-					//TODO: reduce the number of reset calls
-					task.group->Reset();
-					task.group->Inc();
-				}
+				newTaskCountInGroup[task.group]++;
 			}
 
 			count += bucket.count;
@@ -388,6 +400,17 @@ namespace MT
 
 		if (restoredFromAwaitState == false)
 		{
+			// Increase the number of active tasks in the group using data from temporary storage
+			for (size_t i = 0; i < MT_MAX_GROUPS_COUNT; i++)
+			{
+				int groupNewTaskCount = newTaskCountInGroup[i];
+				if (groupNewTaskCount > 0)
+				{
+					groupStats[i].Reset();
+					groupStats[i].Add((uint32)groupNewTaskCount);
+				}
+			}
+
 			// Increments all task in progress counter
 			allGroups.Reset();
 			allGroups.Add((uint32)count);
@@ -409,11 +432,12 @@ namespace MT
 		}
 	}
 
-	bool TaskScheduler::WaitGroup(TaskGroup* group, uint32 milliseconds)
+	bool TaskScheduler::WaitGroup(TaskGroup group, uint32 milliseconds)
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
-		return group->Wait(milliseconds);
+		TaskScheduler::TaskGroupDescription  & groupDesc = GetGroupDesc(group);
+		return groupDesc.Wait(milliseconds);
 	}
 
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
@@ -451,6 +475,44 @@ namespace MT
 		}
 		return false;
 	}
+
+	TaskGroup TaskScheduler::CreateGroup()
+	{
+		MT_ASSERT(IsWorkerThread() == false, "Can't use CreateGroup inside Task.");
+
+		TaskGroup group = MT::INVALID_GROUP;
+		if (!availableGroups.TryPop(group))
+		{
+			MT_ASSERT(false, "Group pool is empty");
+		}
+
+		MT_ASSERT(groupStats[group].debugIsFree == true, "Bad logic!");
+		groupStats[group].debugIsFree = false;
+
+		return group;
+	}
+
+	void TaskScheduler::ReleaseGroup(TaskGroup group)
+	{
+		MT_ASSERT(IsWorkerThread() == false, "Can't use ReleaseGroup inside Task.");
+		MT_ASSERT(group != MT::DEFAULT_GROUP && group >= 0 && group < MT_MAX_GROUPS_COUNT, "Invalid group ID");
+
+		MT_ASSERT(groupStats[group].debugIsFree == false, "Group already released");
+		groupStats[group].debugIsFree = true;
+
+		availableGroups.Push(group);
+	}
+
+	TaskScheduler::TaskGroupDescription & TaskScheduler::GetGroupDesc(TaskGroup group)
+	{
+		MT_ASSERT(group >= 0 && group < MT_MAX_GROUPS_COUNT, "Invalid group ID");
+
+		TaskScheduler::TaskGroupDescription & groupDesc = groupStats[group];
+
+		MT_ASSERT(groupDesc.debugIsFree == false, "Invalid group");
+		return groupDesc;
+	}
+
 
 #ifdef MT_INSTRUMENTED_BUILD
 

@@ -10,6 +10,8 @@ namespace SimpleWaitFromSubtask
 	MT::AtomicInt subTaskCount;
 	MT::AtomicInt taskCount;
 
+	MT::TaskGroup testGroup = MT::INVALID_GROUP;
+
 	struct Subtask : public MT::TaskBase<Subtask>
 	{
 		DECLARE_DEBUG("Subtask", MT_COLOR_DEFAULT);
@@ -28,13 +30,12 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext& ctx)
 		{
-			MT::TaskGroup defaultGroup;
-
 			Subtask tasks[2];
-			ctx.RunAsync(&defaultGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
-			ctx.WaitGroupAndYield(&defaultGroup);
+			ctx.RunAsync(testGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
+			ctx.WaitGroupAndYield(testGroup);
 
 			taskCount.Inc();
+
 		}
 	};
 
@@ -47,8 +48,10 @@ namespace SimpleWaitFromSubtask
 
 		MT::TaskScheduler scheduler;
 
+		testGroup = scheduler.CreateGroup();
+
 		Task tasks[16];
-		scheduler.RunAsync(nullptr, &tasks[0], MT_ARRAY_SIZE(tasks));
+		scheduler.RunAsync(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(2000));
 

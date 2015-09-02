@@ -113,7 +113,7 @@ namespace MT
 			ThreadContext();
 			~ThreadContext();
 
-			void RestoreAwaitingTasks(TaskGroup* taskGroup);
+			void RestoreAwaitingTasks(TaskGroup taskGroup);
 
 			void SetThreadIndex(uint32 threadIndex);
 

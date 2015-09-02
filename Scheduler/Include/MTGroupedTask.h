@@ -39,16 +39,16 @@ namespace MT
 		{
 			FiberContext* awaitingFiber;
 			FiberContext* parentFiber;
-			TaskGroup* group;
+			TaskGroup group;
 			TaskDesc desc;
 
 			GroupedTask()
 				: awaitingFiber(nullptr)
 				, parentFiber(nullptr)
-				, group(nullptr)
+				, group(MT::INVALID_GROUP)
 			{}
 
-			GroupedTask(TaskDesc& _desc, TaskGroup* _group)
+			GroupedTask(TaskDesc& _desc, TaskGroup _group)
 				: awaitingFiber(nullptr)
 				, parentFiber(nullptr)
 				, group(_group)

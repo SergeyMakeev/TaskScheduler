@@ -27,7 +27,7 @@ namespace MT
 	FiberContext::FiberContext()
 		: threadContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
-		, currentGroup(nullptr)
+		, currentGroup(MT::INVALID_GROUP)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
 	{
@@ -63,23 +63,23 @@ namespace MT
 	void FiberContext::Reset()
 	{
 		MT_ASSERT(childrenFibersCount.Get() == 0, "Can't release fiber with active children fibers");
-
-		currentGroup = nullptr;
 		currentTask = internal::TaskDesc();
 		parentFiber = nullptr;
 		threadContext = nullptr;
 	}
 
-	void FiberContext::WaitGroupAndYield(TaskGroup* group)
+	void FiberContext::WaitGroupAndYield(TaskGroup group)
 	{
 		MT_ASSERT(threadContext, "Sanity check failed!");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use WaitGroupAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");
 		MT_ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		MT_VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
-		MT_VERIFY(group != nullptr, "Invalid group!", return);
+		MT_VERIFY(group != MT::INVALID_GROUP && group >= 0 && group < MT_MAX_GROUPS_COUNT, "Invalid group!", return);
 
-		ConcurrentQueueLIFO<FiberContext*> & groupQueue = group->GetWaitQueue();
+		TaskScheduler::TaskGroupDescription  & groupDesc = threadContext->taskScheduler->GetGroupDesc(group);
+
+		ConcurrentQueueLIFO<FiberContext*> & groupQueue = groupDesc.GetWaitQueue();
 
 		// Change status
 		taskStatus = FiberTaskStatus::AWAITING_GROUP;

@@ -75,6 +75,8 @@ int main(int argc, char ** argv)
 	printf("Tests will run %d times\n", passCount);
 	for(int pass = 0; pass < passCount; pass++)
 	{
+		printf("---- [ attempt #%d] ----\n", pass + 1);
+
 		res = Tests::RunAll();
 	}
 
