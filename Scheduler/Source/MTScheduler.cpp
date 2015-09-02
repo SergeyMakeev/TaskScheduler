@@ -21,6 +21,7 @@
 // 	THE SOFTWARE.
 
 #include <MTScheduler.h>
+#include <string.h> // for memset
 
 namespace MT
 {
@@ -495,7 +496,7 @@ namespace MT
 	void TaskScheduler::ReleaseGroup(TaskGroup group)
 	{
 		MT_ASSERT(IsWorkerThread() == false, "Can't use ReleaseGroup inside Task.");
-		MT_ASSERT(group != MT::DEFAULT_GROUP && group >= 0 && group < MT_MAX_GROUPS_COUNT, "Invalid group ID");
+		MT_ASSERT(group != MT::DEFAULT_GROUP && group >= (int)0 && group < (int)MT_MAX_GROUPS_COUNT, "Invalid group ID");
 
 		MT_ASSERT(groupStats[group].debugIsFree == false, "Group already released");
 		groupStats[group].debugIsFree = true;
@@ -505,7 +506,7 @@ namespace MT
 
 	TaskScheduler::TaskGroupDescription & TaskScheduler::GetGroupDesc(TaskGroup group)
 	{
-		MT_ASSERT(group >= 0 && group < MT_MAX_GROUPS_COUNT, "Invalid group ID");
+		MT_ASSERT(group >= (int)0 && group < (int)MT_MAX_GROUPS_COUNT, "Invalid group ID");
 
 		TaskScheduler::TaskGroupDescription & groupDesc = groupStats[group];
 
