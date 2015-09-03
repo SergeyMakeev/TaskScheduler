@@ -12,6 +12,8 @@ install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
   - sudo apt-get -y install gcc-4.8-multilib g++-4.8-multilib
   - sudo apt-get install lshw
+  - sudo apt-get install valgrind
+
 
 compiler:
   - gcc
@@ -19,6 +21,8 @@ compiler:
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd
   - sudo lshw
-  - pushd Bin/ && ./Tests 5 && popd
+  - pushd Bin/ && valgrind --leak-check=yes --track-origins=yes ./Tests && popd
+
+
 
 
