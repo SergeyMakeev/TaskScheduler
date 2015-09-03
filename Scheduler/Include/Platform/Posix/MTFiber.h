@@ -24,6 +24,7 @@
 
 #include <ucontext.h>
 #include <stdlib.h>
+#include <string.h>
 
 namespace MT
 {
@@ -41,7 +42,19 @@ namespace MT
 
 		static void FiberFuncInternal(void *pFiber)
 		{
+			MT_ASSERT(pFiber != nullptr, "Invalid fiber");
 			Fiber* self = (Fiber*)pFiber;
+
+/*
+			static char temp[128];
+			sprintf(temp, "Using non initialized fiber %p", pFiber);
+			MT_ASSERT(self->isInitialized == true, temp);
+*/
+
+			MT_ASSERT(self->isInitialized == true, "Using non initialized fiber");
+
+
+			MT_ASSERT(self->func != nullptr, "Invalid fiber func");
 			self->func(self->funcData);
 		}
 
@@ -53,8 +66,11 @@ namespace MT
 	public:
 
 		Fiber()
-			: isInitialized(false)
+			: funcData(nullptr)
+			, func(nullptr)
+			, isInitialized(false)
 		{
+			memset(&fiberContext, 0, sizeof(ucontext_t));
 		}
 
 		~Fiber()
@@ -75,8 +91,8 @@ namespace MT
 			MT_ASSERT(!isInitialized, "Already initialized");
 			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
 
-			ucontext_t m;
-			fiberContext.uc_link = &m;
+//			ucontext_t m;
+			//fiberContext.uc_link = &m;
 
 			int res = getcontext(&fiberContext);
 			MT_ASSERT(res == 0, "getcontext - failed");
@@ -107,7 +123,8 @@ namespace MT
 			fiberContext.uc_stack.ss_sp = malloc(stackSize);
 			fiberContext.uc_stack.ss_size = stackSize;
 			fiberContext.uc_stack.ss_flags = 0;
-			makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, this);
+
+			makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, (void *)this);
 
 			isInitialized = true;
 		}
@@ -118,6 +135,7 @@ namespace MT
 
 			MT_ASSERT(from.isInitialized, "Invalid from fiber");
 			MT_ASSERT(to.isInitialized, "Invalid to fiber");
+
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);
 			MT_ASSERT(res == 0, "setcontext - failed");
 		}
