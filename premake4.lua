@@ -87,7 +87,7 @@ for _, config in ipairs(config_list) do
 	end
 end
 
-
+os.mkdir("./Bin")
 os.copyfile("./Scheduler/Profiler/filesaver.min.js", "./Bin/filesaver.min.js")
 os.copyfile("./Scheduler/Profiler/jquery.min.js", "./Bin/jquery.min.js")
 os.copyfile("./Scheduler/Profiler/jquery.mousewheel.min.js", "./Bin/jquery.mousewheel.min.js")
