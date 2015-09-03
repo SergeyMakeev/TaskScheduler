@@ -86,7 +86,7 @@ namespace MT
 			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
 			ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
-			internal::DistibuteDescriptions(MT::INVALID_GROUP, groupQueueCopy.Begin(), buffer, buckets);
+			internal::DistibuteDescriptions( TaskGroup(TaskGroup::ASSIGN_FROM_CONTEXT), groupQueueCopy.Begin(), buffer, buckets);
 			scheduler.RunTasksImpl(buckets, nullptr, true);
 		}
 

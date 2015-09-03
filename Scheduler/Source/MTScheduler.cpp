@@ -54,15 +54,15 @@ namespace MT
 			availableFibers.Push( &context );
 		}
 
-		for (uint32 i = 0; i < MT_MAX_GROUPS_COUNT; i++)
+		for (uint32 i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
 		{
-			if (i != MT::DEFAULT_GROUP)
+			if (i != TaskGroup::DEFAULT)
 			{
-				availableGroups.Push( (TaskGroup)i );
+				availableGroups.Push( TaskGroup(i) );
 			}
 		}
 
-		groupStats[MT::DEFAULT_GROUP].debugIsFree = false;
+		groupStats[TaskGroup::DEFAULT].debugIsFree = false;
 
 		// create worker thread pool
 		for (uint32 i = 0; i < threadsCount; i++)
@@ -154,7 +154,7 @@ namespace MT
 				// Signal pending threads that group work is finished. Group can be destroyed after this call.
 				groupDesc.Signal();
 
-				fiberContext->currentGroup = MT::INVALID_GROUP;
+				fiberContext->currentGroup = TaskGroup::INVALID;
 			}
 
 			// Update total task count
@@ -370,7 +370,7 @@ namespace MT
 	void TaskScheduler::RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
 	{
 		// This storage is necessary to calculate how many tasks we add to different groups
-		int newTaskCountInGroup[MT_MAX_GROUPS_COUNT];
+		int newTaskCountInGroup[TaskGroup::MT_MAX_GROUPS_COUNT];
 
 		// Default value is 0
 		memset(&newTaskCountInGroup[0], 0, sizeof(newTaskCountInGroup));
@@ -387,7 +387,10 @@ namespace MT
 				internal::GroupedTask & task = bucket.tasks[taskIndex];
 
 				task.parentFiber = parentFiber;
-				newTaskCountInGroup[task.group]++;
+
+				int idx = task.group.GetValidIndex();
+				MT_ASSERT(idx >= 0 && idx < TaskGroup::MT_MAX_GROUPS_COUNT, "Invalid index");
+				newTaskCountInGroup[idx]++;
 			}
 
 			count += bucket.count;
@@ -402,7 +405,7 @@ namespace MT
 		if (restoredFromAwaitState == false)
 		{
 			// Increase the number of active tasks in the group using data from temporary storage
-			for (size_t i = 0; i < MT_MAX_GROUPS_COUNT; i++)
+			for (size_t i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
 			{
 				int groupNewTaskCount = newTaskCountInGroup[i];
 				if (groupNewTaskCount > 0)
@@ -481,14 +484,16 @@ namespace MT
 	{
 		MT_ASSERT(IsWorkerThread() == false, "Can't use CreateGroup inside Task.");
 
-		TaskGroup group = MT::INVALID_GROUP;
+		TaskGroup group;
 		if (!availableGroups.TryPop(group))
 		{
 			MT_ASSERT(false, "Group pool is empty");
 		}
 
-		MT_ASSERT(groupStats[group].debugIsFree == true, "Bad logic!");
-		groupStats[group].debugIsFree = false;
+		int idx = group.GetValidIndex();
+
+		MT_ASSERT(groupStats[idx].debugIsFree == true, "Bad logic!");
+		groupStats[idx].debugIsFree = false;
 
 		return group;
 	}
@@ -496,19 +501,22 @@ namespace MT
 	void TaskScheduler::ReleaseGroup(TaskGroup group)
 	{
 		MT_ASSERT(IsWorkerThread() == false, "Can't use ReleaseGroup inside Task.");
-		MT_ASSERT(group != MT::DEFAULT_GROUP && group >= (int)0 && group < (int)MT_MAX_GROUPS_COUNT, "Invalid group ID");
+		MT_ASSERT(group.IsValid(), "Invalid group ID");
 
-		MT_ASSERT(groupStats[group].debugIsFree == false, "Group already released");
-		groupStats[group].debugIsFree = true;
+		int idx = group.GetValidIndex();
+
+		MT_ASSERT(groupStats[idx].debugIsFree == false, "Group already released");
+		groupStats[idx].debugIsFree = true;
 
 		availableGroups.Push(group);
 	}
 
 	TaskScheduler::TaskGroupDescription & TaskScheduler::GetGroupDesc(TaskGroup group)
 	{
-		MT_ASSERT(group >= (int)0 && group < (int)MT_MAX_GROUPS_COUNT, "Invalid group ID");
+		MT_ASSERT(group.IsValid(), "Invalid group ID");
 
-		TaskScheduler::TaskGroupDescription & groupDesc = groupStats[group];
+		int idx = group.GetValidIndex();
+		TaskScheduler::TaskGroupDescription & groupDesc = groupStats[idx];
 
 		MT_ASSERT(groupDesc.debugIsFree == false, "Invalid group");
 		return groupDesc;

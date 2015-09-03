@@ -45,7 +45,6 @@ namespace MT
 			GroupedTask()
 				: awaitingFiber(nullptr)
 				, parentFiber(nullptr)
-				, group(MT::INVALID_GROUP)
 			{}
 
 			GroupedTask(TaskDesc& _desc, TaskGroup _group)

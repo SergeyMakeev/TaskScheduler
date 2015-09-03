@@ -214,7 +214,7 @@ SUITE(DxtTests)
 
 			printf("Compress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(CompressDxtBlock));
 
-			context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &subTasks[0], subTasks.Size());
+			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 		}
 	};
 
@@ -344,7 +344,7 @@ SUITE(DxtTests)
 
 			printf("Decompress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(DecompressDxtBlock));
 
-			context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &subTasks[0], subTasks.Size());
+			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 		}
 
 	};
@@ -391,7 +391,7 @@ SUITE(DxtTests)
 #endif
 
 		printf("Compress image\n");
-		scheduler.RunAsync(MT::DEFAULT_GROUP, &compressTask, 1);
+		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask, 1);
 
 		Wait(scheduler);
 
@@ -399,7 +399,7 @@ SUITE(DxtTests)
 		compressTask.dxtBlocks = MT::ArrayView<uint8>(); //transfer memory ownership to Decompress task
 
 		printf("Decompress image\n");
-		scheduler.RunAsync(MT::DEFAULT_GROUP, &decompressTask, 1);
+		scheduler.RunAsync(MT::TaskGroup::Default(), &decompressTask, 1);
 
 		Wait(scheduler);
 

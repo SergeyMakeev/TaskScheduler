@@ -22,7 +22,7 @@
 
 #pragma once
 
-//#define MT_FIBER_DEBUG (1)
+#define MT_FIBER_DEBUG (1)
 
 namespace MT
 {

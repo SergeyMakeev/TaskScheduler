@@ -27,7 +27,6 @@ namespace MT
 	FiberContext::FiberContext()
 		: threadContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
-		, currentGroup(MT::INVALID_GROUP)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
 	{
@@ -75,7 +74,7 @@ namespace MT
 		MT_ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
 		MT_VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
-		MT_VERIFY(group != MT::INVALID_GROUP && group >= (int)0 && group < (int)MT_MAX_GROUPS_COUNT, "Invalid group!", return);
+		MT_VERIFY(group.IsValid(), "Invalid group!", return);
 
 		TaskScheduler::TaskGroupDescription  & groupDesc = threadContext->taskScheduler->GetGroupDesc(group);
 

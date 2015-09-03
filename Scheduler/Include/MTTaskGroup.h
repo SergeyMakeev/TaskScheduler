@@ -26,9 +26,85 @@
 namespace MT
 {
 	//Task group ID
-	typedef int TaskGroup;
+	class TaskGroup
+	{
+		int id;
 
-	//default group ID
-	const TaskGroup DEFAULT_GROUP = 0;
-	const TaskGroup INVALID_GROUP = -1;
+	public:
+
+		static const int MT_MAX_GROUPS_COUNT = 256;
+
+		enum PredefinedValues
+		{
+			DEFAULT = 0,
+			INVALID = -1,
+			ASSIGN_FROM_CONTEXT = -2
+		};
+
+
+		TaskGroup()
+		{
+			id = INVALID;
+		}
+
+		explicit TaskGroup(PredefinedValues v)
+		{
+			id = v;
+		}
+
+		explicit TaskGroup(int _id)
+		{
+			id = _id;
+		}
+
+		static TaskGroup Default()
+		{
+			return TaskGroup(DEFAULT);
+		}
+
+		TaskGroup & operator= (const PredefinedValues & v)
+		{
+			id = v;
+			return *this;
+		}
+
+		bool operator== (const PredefinedValues & v) const
+		{
+			return (id == v);
+		}
+
+		bool operator== (const TaskGroup & other) const
+		{
+			return (id == other.id);
+		}
+
+		bool operator!= (const TaskGroup & other) const
+		{
+			return (id != other.id);
+		}
+
+		int GetValidIndex() const
+		{
+			MT_ASSERT(IsValid(), "Try to get invalid index");
+
+			return id;
+		}
+
+		bool IsValid() const
+		{
+			if (id == INVALID)
+				return false;
+
+			if (id == ASSIGN_FROM_CONTEXT)
+				return false;
+
+			return (id >= 0 && id < MT_MAX_GROUPS_COUNT);
+		}
+
+
+
+	};
+
+
+
 }

@@ -24,7 +24,7 @@ TEST(NotFinishedTaskDestroy)
 
 	NotFinishedTaskDestroy task;
 
-	scheduler.RunAsync(MT::DEFAULT_GROUP, &task, 1);
+	scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
 
 	CHECK(!scheduler.WaitAll(NotFinishedTaskDestroy::timeLimitMS));
 }

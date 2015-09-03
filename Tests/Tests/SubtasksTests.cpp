@@ -21,8 +21,8 @@ struct DeepSubtaskQueue : public MT::TaskBase<DeepSubtaskQueue<N>>
 		DeepSubtaskQueue<N - 1> taskNm1;
 		DeepSubtaskQueue<N - 2> taskNm2;
 
-		context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &taskNm1, 1);
-		context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &taskNm2, 1);
+		context.RunSubtasksAndYield(MT::TaskGroup::Default(), &taskNm1, 1);
+		context.RunSubtasksAndYield(MT::TaskGroup::Default(), &taskNm2, 1);
 
 		result = taskNm2.result + taskNm1.result;
 	}
@@ -62,7 +62,7 @@ TEST(DeepSubtaskQueue)
 	//while(true)
 	{
 		DeepSubtaskQueue<12> task;
-		scheduler.RunAsync(MT::DEFAULT_GROUP, &task, 1);
+		scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
 
 		CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
@@ -72,8 +72,8 @@ TEST(DeepSubtaskQueue)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static MT::TaskGroup sourceGroup = MT::INVALID_GROUP;
-static MT::TaskGroup resultGroup = MT::INVALID_GROUP;
+static MT::TaskGroup sourceGroup;
+static MT::TaskGroup resultGroup;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct GroupSubtask : public MT::TaskBase<GroupSubtask>
 {
@@ -105,7 +105,7 @@ struct TaskWithManySubtasks : public MT::TaskBase<TaskWithManySubtasks>
 		GroupTask task;
 		for (int i = 0; i < 2; ++i)
 		{
-			context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &task, 1);
+			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &task, 1);
 			MT::Thread::SpinSleep(1);
 		}
 	}
@@ -124,7 +124,7 @@ TEST(SubtaskGroup)
 
 	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
-	CHECK_EQUAL(sourceGroup, resultGroup);
+	CHECK_EQUAL(sourceGroup.GetValidIndex(), resultGroup.GetValidIndex());
 }
 
 // Checks task with multiple subtasks
@@ -135,7 +135,7 @@ TEST(OneTaskManySubtasks)
 	sourceGroup = scheduler.CreateGroup();
 
 	TaskWithManySubtasks task;
-	scheduler.RunAsync(MT::DEFAULT_GROUP, &task, 1);
+	scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
 	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 }
 
@@ -193,8 +193,8 @@ struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 		tasks[0].data = data;
 		tasks[1].data = data;
 
-		context.RunAsync(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
 	}
 };
 
@@ -211,8 +211,8 @@ struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 		tasks[0].data = data;
 		tasks[1].data = data;
 
-		context.RunAsync(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
-		context.RunSubtasksAndYield(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
+		context.RunSubtasksAndYield(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
 	}
 };
 
@@ -229,7 +229,7 @@ TEST(TaskSubtaskCombo)
 	for (int i = 0; i < 16; ++i)
 	{
 		task[i].data = &sum;
-		scheduler.RunAsync(MT::DEFAULT_GROUP, &task[i], 1);
+		scheduler.RunAsync(MT::TaskGroup::Default(), &task[i], 1);
 	}
 
 	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));

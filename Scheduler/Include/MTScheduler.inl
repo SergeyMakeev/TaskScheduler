@@ -40,7 +40,7 @@ namespace MT
 		template<>
 		inline internal::GroupedTask GetGroupedTask(TaskGroup group, FiberContext ** src)
 		{
-			MT_ASSERT(group == MT::INVALID_GROUP, "Group must not be set");
+			MT_ASSERT(group == TaskGroup::ASSIGN_FROM_CONTEXT, "Group must be assigned from context");
 			FiberContext * fiberContext = *src;
 			internal::GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
 			groupedTask.awaitingFiber = fiberContext;

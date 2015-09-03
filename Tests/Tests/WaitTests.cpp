@@ -10,7 +10,7 @@ namespace SimpleWaitFromSubtask
 	MT::AtomicInt subTaskCount;
 	MT::AtomicInt taskCount;
 
-	MT::TaskGroup testGroup = MT::INVALID_GROUP;
+	MT::TaskGroup testGroup;
 
 	struct Subtask : public MT::TaskBase<Subtask>
 	{
@@ -51,7 +51,7 @@ namespace SimpleWaitFromSubtask
 		testGroup = scheduler.CreateGroup();
 
 		Task tasks[16];
-		scheduler.RunAsync(MT::DEFAULT_GROUP, &tasks[0], MT_ARRAY_SIZE(tasks));
+		scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		CHECK(scheduler.WaitAll(2000));
 
