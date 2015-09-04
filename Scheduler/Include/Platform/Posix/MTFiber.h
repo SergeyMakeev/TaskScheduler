@@ -25,6 +25,7 @@
 #include <ucontext.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 
 namespace MT
 {
@@ -36,6 +37,9 @@ namespace MT
 	{
 		void * funcData;
 		TThreadEntryPoint func;
+
+		char* stackMemory;
+		size_t stackMemorySize;
 
 		ucontext_t fiberContext;
 		bool isInitialized;
@@ -68,6 +72,8 @@ namespace MT
 		Fiber()
 			: funcData(nullptr)
 			, func(nullptr)
+			, stackMemory(nullptr)
+			, stackMemorySize(0)
 			, isInitialized(false)
 		{
 			memset(&fiberContext, 0, sizeof(ucontext_t));
@@ -77,10 +83,13 @@ namespace MT
 		{
 			if (isInitialized)
 			{
+				// if func != null than we have memory ownership
 				if (func != nullptr)
 				{
-					free(fiberContext.uc_stack.ss_sp);
+					int res = munmap(stackMemory, stackMemorySize);
+					MT_ASSERT(res == 0, "Can't free memory");
 				}
+
 				isInitialized = false;
 			}
 		}
@@ -90,9 +99,6 @@ namespace MT
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
 			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
-
-//			ucontext_t m;
-			//fiberContext.uc_link = &m;
 
 			int res = getcontext(&fiberContext);
 			MT_ASSERT(res == 0, "getcontext - failed");
@@ -119,8 +125,33 @@ namespace MT
 			int res = getcontext(&fiberContext);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
+
+			int pageSize = sysconf(_SC_PAGE_SIZE);
+			int pagesCount = stackSize / pageSize;
+
+			//need additional page for stack tail
+			if ((stackSize % pageSize) > 0)
+			{
+				pagesCount++;
+			}
+
+			//protected guard page
+			pagesCount++;
+
+			stackMemorySize = pagesCount * pageSize;
+
+			stackMemory = (char*)mmap(NULL, stackMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+
+			MT_ASSERT((void *)stackMemory != (void *)-1, "Can't allocate memory");
+
+			char* stackBase = stackMemory + stackMemorySize - pageSize - stackSize;
+			char* stackTop = stackMemory + stackMemorySize - pageSize;
+
+			res = mprotect(stackTop, pageSize, PROT_NONE);
+			MT_ASSERT(res == 0, "Can't protect memory");
+
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = malloc(stackSize);
+			fiberContext.uc_stack.ss_sp = stackBase;
 			fiberContext.uc_stack.ss_size = stackSize;
 			fiberContext.uc_stack.ss_flags = 0;
 
