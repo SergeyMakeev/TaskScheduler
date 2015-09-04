@@ -21,7 +21,7 @@ compiler:
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd
   - sudo lshw
-  - pushd Bin/ && ./Tests 10 && popd
+  - pushd Bin/ && ./Tests 6 && valgrind --leak-check=yes --track-origins=yes ./Tests && popd
 
 
 
