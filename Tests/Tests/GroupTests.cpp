@@ -17,7 +17,7 @@ namespace SimpleWaitFromSubtask
 	{
 		DECLARE_DEBUG("DummySubtask", MT_COLOR_DEFAULT);
 
-		float tempData[2048];
+		float tempData[64];
 
 		void Do(MT::FiberContext& )
 		{
@@ -35,7 +35,7 @@ namespace SimpleWaitFromSubtask
 	{
 		DECLARE_DEBUG("DummyAnim", MT_COLOR_DEFAULT);
 
-		float tempData[2048];
+		float tempData[128];
 
 		void Do(MT::FiberContext& ctx)
 		{
@@ -57,7 +57,7 @@ namespace SimpleWaitFromSubtask
 	{
 		DECLARE_DEBUG("DummyPhysic", MT_COLOR_DEFAULT);
 
-		float tempData[2048];
+		float tempData[128];
 
 		void Do(MT::FiberContext& ctx)
 		{
@@ -97,7 +97,7 @@ namespace SimpleWaitFromSubtask
 
 		CHECK_EQUAL(4, animTaskCount.Get());
 		CHECK(subtaskCount.Get() >= 4 * 16);
-		
+
 
 		CHECK(scheduler.WaitGroup(groupPhysic, waitTime));
 
