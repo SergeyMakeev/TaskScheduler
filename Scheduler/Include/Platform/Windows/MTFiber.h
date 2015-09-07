@@ -22,29 +22,61 @@
 
 #pragma once
 
-#define MT_FIBER_DEBUG (1)
+
+#if defined(_X86_)
+
+#define ReadTeb(offset) __readfsdword(offset);
+#define WriteTeb(offset, v) __writefsdword(offset, v)
+
+#else
+
+#define ReadTeb(offset) __readgsqword(offset);
+#define WriteTeb(offset, v) __writegsqword(offset, v)
+
+#endif
+
+
 
 namespace MT
 {
 
 	//
-	// 
+	// Windows fiber implementation through GetThreadContext / SetThreadContext
+	// I don't use standard Windows Fibers since they are wasteful use of Virtual Memory space for the stack. ( 1Mb for each Fiber )
 	//
 	class Fiber
 	{
 		void * funcData;
 		TThreadEntryPoint func;
 
-		void* fiber;
+		char* stackRawMemory;
+		char* stackBottom;
+		char* stackTop;
+		size_t stackRawMemorySize;
 
-#if MT_FIBER_DEBUG
-		AtomicInt counter;
-		AtomicInt ownerThread;
+		CONTEXT fiberContext;
+		bool isInitialized;
+
+#if defined(_X86_)
+	// https://en.wikipedia.org/wiki/X86_calling_conventions#stdcall
+	// The stdcall calling convention is a variation on the Pascal calling convention in which the callee is responsible for cleaning up the stack,
+	// but the parameters are pushed onto the stack in right-to-left order, as in the _cdecl calling convention.
+	static void __stdcall FiberFuncInternal(void *pFiber)
+#else
+	// https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
+	// The Microsoft x64 calling convention is followed on Microsoft Windows.
+  // It uses registers RCX, RDX, R8, R9 for the first four integer or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 are used for floating point arguments.
+	
+	// Additional arguments are pushed onto the stack (right to left). 
+	static void __stdcall FiberFuncInternal(long /*ecx*/, long /*edx*/, long /*r8*/, long /*r9*/, void *pFiber)
 #endif
-
-		static void __stdcall FiberFuncInternal(void *pFiber)
 		{
+			MT_ASSERT(pFiber != nullptr, "Invalid fiber");
 			Fiber* self = (Fiber*)pFiber;
+
+			MT_ASSERT(self->isInitialized == true, "Using non initialized fiber");
+
+			MT_ASSERT(self->func != nullptr, "Invalid fiber func");
 			self->func(self->funcData);
 		}
 
@@ -56,94 +88,153 @@ namespace MT
 	public:
 
 		Fiber()
-			: fiber(nullptr)
+			: funcData(nullptr)
+			, func(nullptr)
+			, stackRawMemory(nullptr)
+			, stackBottom(nullptr)
+			, stackTop(nullptr)
+			, stackRawMemorySize(0)
+			, isInitialized(false)
 		{
+			memset(&fiberContext, 0, sizeof(CONTEXT));
 		}
 
 		~Fiber()
 		{
-			if (fiber)
+			if (isInitialized)
 			{
-				//we don't need to delete context on fibers created from thread.
+				// if func != null than we have memory ownership
 				if (func != nullptr)
 				{
-					DeleteFiber(fiber);
+					int res = VirtualFree(stackRawMemory, stackRawMemorySize, MEM_RELEASE);
+					MT_ASSERT(res == 0, "Can't free memory");
 				}
 
-				fiber = nullptr;
+				isInitialized = false;
 			}
 		}
 
-
 		void CreateFromThread(Thread & thread)
 		{
-			MT_ASSERT(fiber == nullptr, "Fiber already created");
-			MT_ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
+			MT_ASSERT(!isInitialized, "Already initialized");
+			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
+
+			fiberContext.ContextFlags = CONTEXT_FULL;
+			BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );
+			MT_ASSERT(res != 0, "GetThreadContext - failed");
 
 			func = nullptr;
 			funcData = nullptr;
 
-			fiber = ::ConvertThreadToFiberEx(nullptr, FIBER_FLAG_FLOAT_SWITCH);
-			MT_ASSERT(fiber != nullptr, "Can't create fiber");
+			//Get thread stack information from thread environment block.
+			stackTop = (char*)ReadTeb(FIELD_OFFSET(NT_TIB, StackBase));
+			stackBottom = (char*)ReadTeb(FIELD_OFFSET(NT_TIB, StackLimit));
 
-#if MT_FIBER_DEBUG
-			ownerThread.Set(0xFFFFFFFF);
-			counter.Set(1);
-#endif
+			isInitialized = true;
 		}
-
 
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
-			MT_ASSERT(fiber == nullptr, "Fiber already created");
+			MT_ASSERT(!isInitialized, "Already initialized");
 
 			func = entryPoint;
 			funcData = userData;
-			fiber = ::CreateFiber( stackSize, FiberFuncInternal, this );
-			MT_ASSERT(fiber != nullptr, "Can't create fiber");
 
-#if MT_FIBER_DEBUG
-			ownerThread.Set(0xFFFFFFFF);
-			counter.Set(0);
+			fiberContext.ContextFlags = CONTEXT_FULL;
+			BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );
+			MT_ASSERT(res != 0, "GetThreadContext - failed");
+
+			SYSTEM_INFO systemInfo;
+			GetSystemInfo(&systemInfo);
+
+			int pageSize = (int)systemInfo.dwPageSize;
+			int pagesCount = (int)stackSize / pageSize;
+
+			//need additional page for stack tail
+			if ((stackSize % pageSize) > 0)
+			{
+				pagesCount++;
+			}
+
+			//protected guard page
+			pagesCount++;
+
+			stackRawMemorySize = pagesCount * pageSize;
+
+			MT_ASSERT(stackRawMemory == nullptr, "Stack memory already initialized?");
+			stackRawMemory = (char*)VirtualAlloc(NULL, stackRawMemorySize, MEM_COMMIT, PAGE_READWRITE);
+			MT_ASSERT(stackRawMemory != NULL, "Can't allocate memory");
+
+			stackBottom = stackRawMemory + pageSize;
+			stackTop = stackRawMemory + stackRawMemorySize;
+
+			DWORD oldProtect = 0;
+			res = VirtualProtect(stackRawMemory, pageSize, PAGE_NOACCESS, &oldProtect);
+			MT_ASSERT(res != 0, "Can't protect memory");
+
+			void (*func)() = (void(*)())&FiberFuncInternal;
+
+			char* sp  = stackTop;
+			char * paramOnStack = nullptr;
+
+			// setup function address and stack pointer
+#if defined(_X86_)
+
+			sp -= sizeof(void*); // reserve stack space for one pointer argument
+			paramOnStack  = sp;
+			sp -= sizeof(void*);
+			fiberContext.Esp = (unsigned long long)sp;
+			fiberContext.Eip = (unsigned long long) func;
+
+#else
+
+			// http://blogs.msdn.com/b/oldnewthing/archive/2004/01/14/58579.aspx
+			// Furthermore, space for the register parameters is reserved on the stack, in case the called function wants to spill them
+
+			sp -= 16; // pointer size and stack alignment
+			paramOnStack  = sp;
+			sp -= 40; // reserve for register params
+			fiberContext.Rsp = (unsigned long long)sp;
+			MT_ASSERT(((unsigned long long)paramOnStack & 0xF) == 0, "Params on X64 stack must be alligned to 16 bytes");
+			fiberContext.Rip = (unsigned long long) func;
 #endif
-		}
 
-#if MT_FIBER_DEBUG
-		int GetUsageCounter() const
-		{
-			return counter.Get();
-		}
+			//copy param to stack here
+			*(void**)paramOnStack = (void *)this;
 
-		int GetOwnerThread() const
-		{
-			return ownerThread.Get();
-		}
+			fiberContext.ContextFlags = CONTEXT_FULL;
 
-#endif
+			isInitialized = true;
+		}
 
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
 			MemoryBarrier();
 
-			MT_ASSERT(from.fiber != nullptr, "Invalid from fiber");
-			MT_ASSERT(to.fiber != nullptr, "Invalid to fiber");
+			MT_ASSERT(from.isInitialized, "Invalid from fiber");
+			MT_ASSERT(to.isInitialized, "Invalid to fiber");
 
-#if MT_FIBER_DEBUG
+			HANDLE thread = GetCurrentThread();
 
-			to.ownerThread.Set(::GetCurrentThreadId());
+			from.fiberContext.ContextFlags = CONTEXT_FULL;
+			BOOL res = GetThreadContext(thread, &from.fiberContext );
+			MT_ASSERT(res != 0, "GetThreadContext - failed");
 
-			MT_ASSERT(from.counter.Get() == 1, "Invalid fiber state");
-			MT_ASSERT(to.counter.Get() == 0, "Invalid fiber state");
+			// Modify current stack information in TEB
+			//
+			// __chkstk function use TEB info and probe sampling to commit new stack pages
+			// https://support.microsoft.com/en-us/kb/100775
+			//
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)to.stackTop);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)to.stackBottom);
 
-			int counterNow = from.counter.Dec();
-			MT_ASSERT(counterNow == 0, "Invalid fiber state");
+			res = SetThreadContext(thread, &to.fiberContext );
+			MT_ASSERT(res != 0, "SetThreadContext - failed");
 
-			counterNow = to.counter.Inc();
-			MT_ASSERT(counterNow == 1, "Invalid fiber state");
-#endif
-
-			::SwitchToFiber( (LPVOID)to.fiber );
+			//Restore stack information
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)from.stackTop);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)from.stackBottom);
 		}
 
 
@@ -152,4 +243,6 @@ namespace MT
 
 }
 
+#undef ReadTeb
+#undef WriteTeb
 

@@ -49,14 +49,7 @@ namespace MT
 			MT_ASSERT(pFiber != nullptr, "Invalid fiber");
 			Fiber* self = (Fiber*)pFiber;
 
-/*
-			static char temp[128];
-			sprintf(temp, "Using non initialized fiber %p", pFiber);
-			MT_ASSERT(self->isInitialized == true, temp);
-*/
-
 			MT_ASSERT(self->isInitialized == true, "Using non initialized fiber");
-
 
 			MT_ASSERT(self->func != nullptr, "Invalid fiber func");
 			self->func(self->funcData);

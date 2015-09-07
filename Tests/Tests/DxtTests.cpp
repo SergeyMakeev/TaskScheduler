@@ -127,19 +127,6 @@ SUITE(DxtTests)
 
 					int index = posY * stride + (posX * 3);
 
-					if (index < 0 || (index + 2) >= (int)MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
-					{
-						printf("Invalid index!\n");
-						printf("this = %p\n", this);
-						printf("index = %d\n", index);
-						printf("x = %d\n", x);
-						printf("y = %d\n", y);
-						printf("srcX = %d\n", srcX);
-						printf("srcY = %d\n", srcY);
-						printf("stride = %d\n", stride);
-					}
-
-
 					MT_ASSERT(index >= 0 && ((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
 					uint8 r = srcPixels[index + 0];
@@ -212,8 +199,6 @@ SUITE(DxtTests)
 				}
 			}
 
-			printf("Compress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(CompressDxtBlock));
-
 			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 		}
 	};
@@ -262,18 +247,6 @@ SUITE(DxtTests)
 					int index = posY * stride + (posX * 3);
 
 					uint32 pixel = pixels[y * 4 + x];
-
-					if (index < 0 || (index + 2) >= (int)MT_ARRAY_SIZE(EmbeddedImage::lenaColor))
-					{
-						printf("Invalid index!\n");
-						printf("this = %p\n", this);
-						printf("index = %d\n", index);
-						printf("x = %d\n", x);
-						printf("y = %d\n", y);
-						printf("dstX = %d\n", dstX);
-						printf("dstY = %d\n", dstY);
-						printf("stride = %d\n", stride);
-					}
 
 					MT_ASSERT(index >= 0 && ((size_t)(index + 2) < MT_ARRAY_SIZE(EmbeddedImage::lenaColor)), "Invalid index");
 
@@ -341,8 +314,6 @@ SUITE(DxtTests)
 					subTasks.PushBack( DecompressDxtBlock(blkX * 4, blkY * 4, stride, decompressedImage, dxtBlocks, blockIndex * 8) );
 				}
 			}
-
-			printf("Decompress blocks: %p to %p, sizeof(%d)\n", &subTasks[0], &subTasks[(uint32)subTasks.Size() - 1], sizeof(DecompressDxtBlock));
 
 			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 		}

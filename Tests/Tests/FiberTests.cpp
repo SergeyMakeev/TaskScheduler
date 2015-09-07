@@ -55,8 +55,6 @@ SUITE(FiberTests)
 	}
 
 
-
-
 TEST(FiberSimpleTest)
 {
 	MT::Thread thread;

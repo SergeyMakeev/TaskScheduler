@@ -175,20 +175,6 @@ namespace MT
 				if (childrenFibersCount == 0)
 				{
 					// This is a last subtask. Restore parent task
-#if MT_FIBER_DEBUG
-
-					int ownerThread = parentFiberContext->fiber.GetOwnerThread();
-					FiberTaskStatus::Type parentTaskStatus = parentFiberContext->GetStatus();
-					internal::ThreadContext * parentThreadContext = parentFiberContext->GetThreadContext();
-					int fiberUsageCounter = parentFiberContext->fiber.GetUsageCounter();
-					MT_ASSERT(fiberUsageCounter == 0, "Parent fiber in invalid state");
-
-					ownerThread;
-					parentTaskStatus;
-					parentThreadContext;
-					fiberUsageCounter;
-#endif
-
 					MT_ASSERT(threadContext.thread.IsCurrentThread(), "Thread context sanity check failed");
 					MT_ASSERT(parentFiberContext->GetThreadContext() == nullptr, "Inactive parent should not have a valid thread context");
 
