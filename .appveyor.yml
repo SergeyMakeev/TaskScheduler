@@ -1,7 +1,0 @@
-version: 1.0.{build}
- 
-build_script:
-  - cmd: premake4 vs2010
-  - cmd: cd build
-  - cmd: cd vs2010
-  - cmd: msbuild TaskScheduler.sln
