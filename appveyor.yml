@@ -6,5 +6,5 @@ build_script:
 - MsBuild TaskScheduler.sln /t:Rebuild /p:Configuration=Release
 
 test_script:
-- cd Bin
+- cd ..\..\Bin
 - Tests.exe
