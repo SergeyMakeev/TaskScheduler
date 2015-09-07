@@ -38,8 +38,8 @@ namespace MT
 		void * funcData;
 		TThreadEntryPoint func;
 
-		char* stackMemory;
-		size_t stackMemorySize;
+		char* stackRawMemory;
+		size_t stackRawMemorySize;
 
 		ucontext_t fiberContext;
 		bool isInitialized;
@@ -65,8 +65,8 @@ namespace MT
 		Fiber()
 			: funcData(nullptr)
 			, func(nullptr)
-			, stackMemory(nullptr)
-			, stackMemorySize(0)
+			, stackRawMemory(nullptr)
+			, stackRawMemorySize(0)
 			, isInitialized(false)
 		{
 			memset(&fiberContext, 0, sizeof(ucontext_t));
@@ -79,7 +79,7 @@ namespace MT
 				// if func != null than we have memory ownership
 				if (func != nullptr)
 				{
-					int res = munmap(stackMemory, stackMemorySize);
+					int res = munmap(stackRawMemory, stackRawMemorySize);
 					MT_ASSERT(res == 0, "Can't free memory");
 				}
 
@@ -131,21 +131,21 @@ namespace MT
 			//protected guard page
 			pagesCount++;
 
-			stackMemorySize = pagesCount * pageSize;
+			stackRawMemorySize = pagesCount * pageSize;
 
-			stackMemory = (char*)mmap(NULL, stackMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+			stackRawMemory = (char*)mmap(NULL, stackRawMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 
-			MT_ASSERT((void *)stackMemory != (void *)-1, "Can't allocate memory");
+			MT_ASSERT((void *)stackRawMemory != (void *)-1, "Can't allocate memory");
 
-			char* stackBase = stackMemory + stackMemorySize - pageSize - stackSize;
-			char* stackTop = stackMemory + stackMemorySize - pageSize;
+			char* stackBottom = stackRawMemory + pageSize;
+			//char* stackTop = stackRawMemory + stackMemorySize;
 
-			res = mprotect(stackTop, pageSize, PROT_NONE);
+			res = mprotect(stackRawMemory, pageSize, PROT_NONE);
 			MT_ASSERT(res == 0, "Can't protect memory");
 
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = stackBase;
-			fiberContext.uc_stack.ss_size = stackSize;
+			fiberContext.uc_stack.ss_sp = stackBottom;
+			fiberContext.uc_stack.ss_size = stackRawMemorySize - pageSize;
 			fiberContext.uc_stack.ss_flags = 0;
 
 			makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, (void *)this);
