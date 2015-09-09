@@ -2,8 +2,9 @@ if not _ACTION then
 	_ACTION="vs2010"
 end
 
-isPOSIX = false
+isPosix = false
 isVisualStudio = false
+isOSX = false
 
 if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION == "vs2008" or _ACTION == "vs2010" then
 	isVisualStudio = true
@@ -13,6 +14,13 @@ if _ACTION == "codeblocks" or _ACTION == "gmake"
 then
 	isPosix = true
 end
+
+if _ACTION == "xcode3"
+then
+	isOSX = true
+end
+
+
 	
 solution "TaskScheduler"
 
@@ -22,6 +30,10 @@ solution "TaskScheduler"
 	flags {"NoManifest", "ExtraWarnings", "StaticRuntime", "NoMinimalRebuild", "FloatFast", "EnableSSE2" }
 	optimization_flags = { "OptimizeSpeed" }
 	targetdir("Bin")
+
+if isOSX then
+	defines { "_XOPEN_SOURCE=600" }
+end
 
 if isVisualStudio then
 	debugdir ("Bin")
@@ -108,7 +120,7 @@ project "UnitTest++"
                 "TestFramework/UnitTest++/**.h", 
 	}
 
-if isPosix then
+if isPosix or isOSX then
 	excludes { "TestFramework/UnitTest++/Win32/**.*" }
 else
 	excludes { "TestFramework/UnitTest++/Posix/**.*" }
@@ -140,7 +152,7 @@ project "TaskScheduler"
 		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
 	}
 	
-	if isPosix then
+	if isPosix or isOSX then
 	excludes { "Src/Platform/Windows/**.*" }
 	else
 	excludes { "Src/Platform/Posix/**.*" }
@@ -158,7 +170,7 @@ project "Tests"
 		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
 	}
 	
-	if isPosix then
+	if isPosix or isOSX then
 	excludes { "Src/Platform/Windows/**.*" }
 	else
 	excludes { "Src/Platform/Posix/**.*" }
@@ -168,7 +180,8 @@ project "Tests"
 		"UnitTest++", "Squish", "TaskScheduler"
 	}
 
-	if isPosix then
+	
+	if isPosix or isOSX then
 		links { "pthread" }
 	end
 

@@ -31,6 +31,7 @@ void PosixSignalHandler(int signum)
 		case SIGBUS:  name = "SIGBUS";   break;
 		case SIGILL:  name = "SIGILL";   break;
 		case SIGFPE:  name = "SIGFPE";   break;
+        case SIGTRAP: name = "SIGTRAP";  break;
 	}
 
 	void *callStack[32];
@@ -43,7 +44,7 @@ void PosixSignalHandler(int signum)
    // print the stack trace.
   for ( size_t i = 0; i < size; i++ )
   {
-      printf("[%d, %lu] %s\n", i, (unsigned long int)currentThread, symbollist[i]);
+      printf("[%zu, %lu] %s\n", i, (unsigned long int)currentThread, symbollist[i]);
 	}
 
   free(symbollist);

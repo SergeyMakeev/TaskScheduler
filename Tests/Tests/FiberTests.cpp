@@ -7,7 +7,7 @@
 
 SUITE(FiberTests)
 {
-	int counter = 0;
+    MT::AtomicInt counter = 0;
 
 
 	MT::Fiber* fiberMain = nullptr;
@@ -15,14 +15,14 @@ SUITE(FiberTests)
 
 	void FiberFunc( void* userData )
 	{
-		CHECK_EQUAL(counter, 0);
-		counter++;
+		CHECK_EQUAL(0, counter.Get());
+		counter.Inc();
 
 		MT::Fiber* currentFiber = (MT::Fiber*)userData;
 		MT::Fiber::SwitchTo(*currentFiber, *fiberMain);
 
-		CHECK_EQUAL(counter, 2);
-		counter++;
+		CHECK_EQUAL(2, counter.Get());
+		counter.Inc();
 
 		MT::Fiber::SwitchTo(*currentFiber, *fiberMain);
 	}
@@ -32,23 +32,24 @@ SUITE(FiberTests)
 	{
 		fiberMain = new MT::Fiber();
 
-		counter = 0;
+		counter.Set(0);
 
 		MT::Thread* thread = (MT::Thread*)userData;
 
 		fiberMain->CreateFromThread(*thread);
 
 		MT::Fiber fiber1;
-		fiber1.Create(16384, FiberFunc, &fiber1);
+        
+		fiber1.Create(32768, FiberFunc, &fiber1);
 
 		MT::Fiber::SwitchTo(*fiberMain, fiber1);
 
-		CHECK_EQUAL(counter, 1);
-		counter++;
+		CHECK_EQUAL(1, counter.Get());
+		counter.Inc();
 
 		MT::Fiber::SwitchTo(*fiberMain, fiber1);
 
-		CHECK_EQUAL(counter, 3);
+		CHECK_EQUAL(3, counter.Get());
 
 		delete fiberMain;
 		fiberMain = nullptr;

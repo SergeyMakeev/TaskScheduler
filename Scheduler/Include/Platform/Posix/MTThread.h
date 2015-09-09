@@ -28,6 +28,21 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#ifdef __APPLE_CC__
+#include <thread>
+#endif
+
+#define _DARWIN_C_SOURCE
+#include <sys/mman.h>
+
+#ifndef MAP_ANONYMOUS
+    #define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#ifndef MAP_STACK
+    #define MAP_STACK (0)
+#endif
+
 #include <Platform/Common/MTThread.h>
 
 namespace MT
@@ -39,8 +54,10 @@ namespace MT
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
-		void * stackBase;
-		size_t stackSize;
+        char* stackRawMemory;
+        char* stackBottom;
+        size_t stackRawMemorySize;
+        size_t stackSize;
 
 		bool isStarted;
 
@@ -56,15 +73,16 @@ namespace MT
 	public:
 
 		Thread()
-			: stackBase(nullptr)
-			, stackSize(0)
+			: stackRawMemory(nullptr)
+            , stackBottom(nullptr)
+			, stackRawMemorySize(0)
 			, isStarted(false)
 		{
 		}
 
-		void* GetStackBase()
+		void* GetStackBottom()
 		{
-			return stackBase;
+			return stackBottom;
 		}
 
 		size_t GetStackSize()
@@ -81,17 +99,41 @@ namespace MT
 
 			func = entryPoint;
 			funcData = userData;
-
-			stackSize = _stackSize;
+            
+            
+            int pageSize = sysconf(_SC_PAGE_SIZE);
+            int pagesCount = _stackSize / pageSize;
+            
+            //need additional page for stack tail
+            if ((_stackSize % pageSize) > 0)
+            {
+                pagesCount++;
+            }
+            
+            //protected guard page
+            pagesCount++;
+            
+            stackRawMemorySize = pagesCount * pageSize;
+            
+            stackRawMemory = (char*)mmap(NULL, stackRawMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+            
+            MT_ASSERT((void *)stackRawMemory != (void *)-1, "Can't allocate memory");
+            
+            stackBottom = stackRawMemory + pageSize;
+            //char* stackTop = stackRawMemory + stackMemorySize;
+            
+            int res = mprotect(stackRawMemory, pageSize, PROT_NONE);
+            MT_ASSERT(res == 0, "Can't protect memory");
+            
+            stackSize = stackRawMemorySize - pageSize;
 
 			MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
 
-			stackBase = (void *)malloc(stackSize);
 
 			int err = pthread_attr_init(&threadAttr);
 			MT_ASSERT(err == 0, "pthread_attr_init - error");
 
-			err = pthread_attr_setstack(&threadAttr, stackBase, stackSize);
+			err = pthread_attr_setstack(&threadAttr, stackBottom, stackSize);
 			MT_ASSERT(err == 0, "pthread_attr_setstack - error");
 
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
@@ -122,10 +164,11 @@ namespace MT
 			func = nullptr;
 			funcData = nullptr;
 
-			if (stackBase)
+			if (stackRawMemory)
 			{
-				free(stackBase);
-				stackBase = nullptr;
+                int res = munmap(stackRawMemory, stackRawMemorySize);
+                MT_ASSERT(res == 0, "Can't free memory");
+				stackRawMemory = nullptr;
 			}
 			stackSize = 0;
 
@@ -149,8 +192,12 @@ namespace MT
 
 		static int GetNumberOfHardwareThreads()
 		{
+#ifdef __APPLE_CC__
+            return std::thread::hardware_concurrency();
+#else
 			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );
 			return (int)numberOfProcessors;
+#endif
 		}
 
 		static void Sleep(uint32 milliseconds)

@@ -25,7 +25,17 @@
 #include <ucontext.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define _DARWIN_C_SOURCE
 #include <sys/mman.h>
+
+#ifndef MAP_ANONYMOUS
+    #define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#ifndef MAP_STACK
+    #define MAP_STACK (0)
+#endif
 
 namespace MT
 {
@@ -97,7 +107,7 @@ namespace MT
 			MT_ASSERT(res == 0, "getcontext - failed");
 
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = thread.GetStackBase();
+			fiberContext.uc_stack.ss_sp = thread.GetStackBottom();
 			fiberContext.uc_stack.ss_size = thread.GetStackSize();
 			fiberContext.uc_stack.ss_flags = 0;
 
@@ -111,6 +121,7 @@ namespace MT
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
+            MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Stack to small");
 
 			func = entryPoint;
 			funcData = userData;
@@ -162,6 +173,7 @@ namespace MT
 
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);
 			MT_ASSERT(res == 0, "setcontext - failed");
+
 		}
 
 
