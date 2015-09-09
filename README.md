@@ -11,10 +11,10 @@ Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010, XCODE 6.4**
 ## Build status
 
 Linux + OS X
-![alt tag](https://api.travis-ci.org/SergeyMakeev/TaskScheduler.svg?branch=master)
+![Travis build status](https://api.travis-ci.org/SergeyMakeev/TaskScheduler.svg?branch=master)
 
 Windows
-![alt tag](https://ci.appveyor.com/api/projects/status/7o760ylay8mdplo6)
+![Appveyor build status](https://ci.appveyor.com/api/projects/status/7o760ylay8mdplo6)
 
 
 
