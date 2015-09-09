@@ -1,26 +1,29 @@
+os:
+  - linux
+  - osx
+
 language:
   - cpp
-
-before_install:
-  - sudo bash -c "echo 'deb http://lgp203.free.fr/ubuntu quantal universe' >> /etc/apt/sources.list.d/lgp203.free.fr.source.list"
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update
-
-install:
-  - sudo apt-get install --force-yes make premake4
-  - sudo apt-get install -qq gcc-4.8 g++-4.8 
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
-  - sudo apt-get -y install gcc-4.8-multilib g++-4.8-multilib
-  - sudo apt-get install lshw
-  - sudo apt-get install valgrind
-
 
 compiler:
   - gcc
 
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo bash -c "echo 'deb http://lgp203.free.fr/ubuntu quantal universe' >> /etc/apt/sources.list.d/lgp203.free.fr.source.list"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update; fi
+
+install:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install --force-yes make premake4; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -qq gcc-4.8 g++-4.8; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install gcc-4.8-multilib g++-4.8-multilib; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install lshw; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install valgrind; fi
+
 script:
   - g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd
-  - sudo lshw
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo lshw; fi
   - pushd Bin/ && ./Tests 6 && popd
 
 
