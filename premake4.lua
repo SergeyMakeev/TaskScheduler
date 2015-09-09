@@ -15,7 +15,7 @@ then
 	isPosix = true
 end
 
-if _ACTION == "xcode3"
+if _ACTION == "xcode3" or os.is("macosx")
 then
 	isOSX = true
 end
@@ -78,7 +78,9 @@ if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
-	linkoptions { "-rdynamic" }
+  if isPosix then
+  	linkoptions { "-rdynamic" }
+  end
 end
 
 configuration "x64"
@@ -86,7 +88,9 @@ if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
-	linkoptions { "-rdynamic" }
+  if isPosix then
+  	linkoptions { "-rdynamic" }
+  end
 end
 
 
