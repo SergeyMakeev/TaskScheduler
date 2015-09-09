@@ -31,7 +31,7 @@ solution "TaskScheduler"
 	optimization_flags = { "OptimizeSpeed" }
 	targetdir("Bin")
 
-if isOSX then
+if isPosix or isOSX then
 	defines { "_XOPEN_SOURCE=600" }
 end
 
