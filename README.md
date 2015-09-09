@@ -5,12 +5,12 @@
 
 **Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
 
-Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010**
+Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010, XCODE 6.4**
 
 
 ## Build status
 
-Linux
+Linux + OS X
 ![alt tag](https://api.travis-ci.org/SergeyMakeev/TaskScheduler.svg?branch=master)
 
 Windows
