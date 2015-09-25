@@ -62,6 +62,17 @@ namespace MT
 		template<typename T>
 		struct TaskBase
 		{
+		private:
+
+			// no copyable
+			TaskBase(const TaskBase&) {}
+			void operator=(const TaskBase&) {}
+
+		public:
+
+			TaskBase() {}
+			TaskBase(TaskBase&&) {}
+
 			static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData)
 			{
 				T* task = static_cast<T*>(userData);

@@ -104,6 +104,20 @@ SUITE(DxtTests)
 				dstBlockOffset = _dstBlockOffset;
 		}
 
+		CompressDxtBlock(CompressDxtBlock&& other)
+			: srcPixels(other.srcPixels)
+			, dstBlocks(other.dstBlocks)
+			, srcX(other.srcX)
+			, srcY(other.srcY)
+			, stride(other.stride)
+			, dstBlockOffset(other.dstBlockOffset)
+		{
+			other.srcX = -1;
+			other.srcY = -1;
+			other.stride = -1;
+			other.dstBlockOffset = -1;
+		}
+
 		~CompressDxtBlock()
 		{
 			srcX = -1;
@@ -228,6 +242,29 @@ SUITE(DxtTests)
 			stride = _stride;
 			srcBlockOffset = _srcBlockOffset;
 		}
+
+		DecompressDxtBlock(DecompressDxtBlock&& other)
+			: srcBlocks(other.srcBlocks)
+			, dstPixels(other.dstPixels)
+			, dstX(other.dstX)
+			, dstY(other.dstY)
+			, stride(other.stride)
+			, srcBlockOffset(other.srcBlockOffset)
+		{
+			other.dstX = -1;
+			other.dstY = -1;
+			other.stride = -1;
+			other.srcBlockOffset = -1;
+		}
+
+		~DecompressDxtBlock()
+		{
+			dstX = -1;
+			dstY = -1;
+			stride = -1;
+			srcBlockOffset = -1;
+		}
+
 
 		void Do(MT::FiberContext&)
 		{
