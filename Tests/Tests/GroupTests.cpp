@@ -15,7 +15,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummySubTask : public MT::TaskBase<DummySubTask>
 	{
-		DECLARE_DEBUG("DummySubtask", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("DummySubtask", MT_COLOR_DEFAULT);
 
 		float tempData[64];
 
@@ -33,7 +33,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummyAnimTask : public MT::TaskBase<DummyAnimTask>
 	{
-		DECLARE_DEBUG("DummyAnim", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("DummyAnim", MT_COLOR_DEFAULT);
 
 		float tempData[128];
 
@@ -55,7 +55,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummyPhysicTask : public MT::TaskBase<DummyPhysicTask>
 	{
-		DECLARE_DEBUG("DummyPhysic", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("DummyPhysic", MT_COLOR_DEFAULT);
 
 		float tempData[128];
 

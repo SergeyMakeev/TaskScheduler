@@ -8,7 +8,7 @@ SUITE(CleanupTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct NotFinishedTaskDestroy : public MT::TaskBase<NotFinishedTaskDestroy>
 {
-	DECLARE_DEBUG("NotFinishedTaskDestroy", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("NotFinishedTaskDestroy", MT_COLOR_DEFAULT);
 
 	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)

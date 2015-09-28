@@ -14,7 +14,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Subtask : public MT::TaskBase<Subtask>
 	{
-		DECLARE_DEBUG("Subtask", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("Subtask", MT_COLOR_DEFAULT);
 
 		void Do(MT::FiberContext&)
 		{
@@ -26,7 +26,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Task : public MT::TaskBase<Task>
 	{
-		DECLARE_DEBUG("Task", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("Task", MT_COLOR_DEFAULT);
 
 		void Do(MT::FiberContext& ctx)
 		{

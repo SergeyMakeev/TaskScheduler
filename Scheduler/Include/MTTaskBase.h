@@ -36,7 +36,7 @@
 
 #ifdef MT_INSTRUMENTED_BUILD
 
-#define DECLARE_DEBUG(name, colorID) \
+#define MT_DECLARE_DEBUG_INFO(name, colorID) \
 	static const char * GetDebugID() \
 	{ \
 		return name; \
@@ -48,7 +48,7 @@
 
 #else
 
-#define DECLARE_DEBUG(name, colorID)
+#define MT_DECLARE_DEBUG_INFO(name, colorID)
 
 #endif
 

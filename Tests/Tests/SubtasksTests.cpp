@@ -10,7 +10,7 @@ SUITE(SubtasksTests)
 template<size_t N>
 struct DeepSubtaskQueue : public MT::TaskBase<DeepSubtaskQueue<N>>
 {
-	DECLARE_DEBUG("DeepSubtaskQueue", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("DeepSubtaskQueue", MT_COLOR_DEFAULT);
 
 	int result;
 
@@ -31,7 +31,7 @@ struct DeepSubtaskQueue : public MT::TaskBase<DeepSubtaskQueue<N>>
 template<>
 struct DeepSubtaskQueue<0> : public MT::TaskBase<DeepSubtaskQueue<0>>
 {
-	DECLARE_DEBUG("DeepSubtaskQueue", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("DeepSubtaskQueue", MT_COLOR_DEFAULT);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -44,7 +44,7 @@ struct DeepSubtaskQueue<0> : public MT::TaskBase<DeepSubtaskQueue<0>>
 template<>
 struct DeepSubtaskQueue<1> : public MT::TaskBase<DeepSubtaskQueue<1>>
 {
-	DECLARE_DEBUG("DeepSubtaskQueue", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("DeepSubtaskQueue", MT_COLOR_DEFAULT);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -77,7 +77,7 @@ static MT::TaskGroup resultGroup;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct GroupSubtask : public MT::TaskBase<GroupSubtask>
 {
-	DECLARE_DEBUG("GroupSubtask", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("GroupSubtask", MT_COLOR_DEFAULT);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -87,7 +87,7 @@ struct GroupSubtask : public MT::TaskBase<GroupSubtask>
 
 struct GroupTask : public MT::TaskBase<GroupTask>
 {
-	DECLARE_DEBUG("GroupTask", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("GroupTask", MT_COLOR_DEFAULT);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -98,7 +98,7 @@ struct GroupTask : public MT::TaskBase<GroupTask>
 
 struct TaskWithManySubtasks : public MT::TaskBase<TaskWithManySubtasks>
 {
-	DECLARE_DEBUG("TaskWithManySubtasks", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("TaskWithManySubtasks", MT_COLOR_DEFAULT);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -170,7 +170,7 @@ TEST(ManyTasksOneSubtask)
 
 struct TaskSubtaskCombo_Sum1 : public MT::TaskBase<TaskSubtaskCombo_Sum1>
 {
-	DECLARE_DEBUG("TaskSubtaskCombo_Sum1", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum1", MT_COLOR_DEFAULT);
 
 	MT::AtomicInt* data;
 
@@ -182,7 +182,7 @@ struct TaskSubtaskCombo_Sum1 : public MT::TaskBase<TaskSubtaskCombo_Sum1>
 
 struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 {
-	DECLARE_DEBUG("TaskSubtaskCombo_Sum4", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum4", MT_COLOR_DEFAULT);
 
 	MT::AtomicInt* data;
 
@@ -200,7 +200,7 @@ struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 
 struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 {
-	DECLARE_DEBUG("TaskSubtaskCombo_Sum16", MT_COLOR_DEFAULT);
+	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum16", MT_COLOR_DEFAULT);
 
 	MT::AtomicInt* data;
 

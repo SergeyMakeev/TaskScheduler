@@ -83,7 +83,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxtBlock : public MT::TaskBase<CompressDxtBlock>
 	{
-		DECLARE_DEBUG("CompressDxtBlock", MT_COLOR_BLUE);
+		MT_DECLARE_DEBUG_INFO("CompressDxtBlock", MT_COLOR_BLUE);
 
 		int srcX;
 		int srcY;
@@ -162,7 +162,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxt : public MT::TaskBase<CompressDxt>
 	{
-		DECLARE_DEBUG("CompressDxt", MT_COLOR_DEFAULT);
+		MT_DECLARE_DEBUG_INFO("CompressDxt", MT_COLOR_DEFAULT);
 
 		uint32 width;
 		uint32 height;
@@ -222,7 +222,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxtBlock : public MT::TaskBase<DecompressDxtBlock>
 	{
-		DECLARE_DEBUG("DecompressDxtBlock", MT_COLOR_RED);
+		MT_DECLARE_DEBUG_INFO("DecompressDxtBlock", MT_COLOR_RED);
 
 		int dstX;
 		int dstY;
@@ -299,7 +299,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxt : public MT::TaskBase<DecompressDxt>
 	{
-		DECLARE_DEBUG("DecompressDxt", MT_COLOR_YELLOW);
+		MT_DECLARE_DEBUG_INFO("DecompressDxt", MT_COLOR_YELLOW);
 
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::ArrayView<uint8> decompressedImage;
