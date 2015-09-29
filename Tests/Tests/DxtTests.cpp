@@ -85,14 +85,14 @@ SUITE(DxtTests)
 	{
 		MT_DECLARE_DEBUG_INFO("CompressDxtBlock", MT_COLOR_BLUE);
 
+		MT::ArrayView<uint8> srcPixels;
+		MT::ArrayView<uint8> dstBlocks;
+
 		int srcX;
 		int srcY;
 
 		int stride;
 		int dstBlockOffset;
-
-		MT::ArrayView<uint8> srcPixels;
-		MT::ArrayView<uint8> dstBlocks;
 
 		CompressDxtBlock(int _srcX, int _srcY, int _stride, const MT::ArrayView<uint8> & _srcPixels, const MT::ArrayView<uint8> & _dstBlocks, int _dstBlockOffset)
 			: srcPixels(_srcPixels)
@@ -208,7 +208,6 @@ SUITE(DxtTests)
 				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
-
 					subTasks.PushBack( CompressDxtBlock(blkX * 4, blkY * 4, stride, srcPixels, dxtBlocks, blockIndex * 8) );
 				}
 			}
@@ -224,14 +223,14 @@ SUITE(DxtTests)
 	{
 		MT_DECLARE_DEBUG_INFO("DecompressDxtBlock", MT_COLOR_RED);
 
+		MT::ArrayView<uint8> srcBlocks;
+		MT::ArrayView<uint8> dstPixels;
+
 		int dstX;
 		int dstY;
 
-		int srcBlockOffset;
 		int stride;
-
-		MT::ArrayView<uint8> srcBlocks;
-		MT::ArrayView<uint8> dstPixels;
+		int srcBlockOffset;
 
 		DecompressDxtBlock(int _dstX, int _dstY, int _stride, const MT::ArrayView<uint8> & _dstPixels, const MT::ArrayView<uint8> & _srcBlocks, int _srcBlockOffset)
 			: srcBlocks(_srcBlocks)
@@ -347,7 +346,6 @@ SUITE(DxtTests)
 				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
 				{
 					uint32 blockIndex = blkY * blkWidth + blkX;
-
 					subTasks.PushBack( DecompressDxtBlock(blkX * 4, blkY * 4, stride, decompressedImage, dxtBlocks, blockIndex * 8) );
 				}
 			}

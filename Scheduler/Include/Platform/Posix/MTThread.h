@@ -44,6 +44,7 @@
 #endif
 
 #include <Platform/Common/MTThread.h>
+#include <MTAllocator.h>
 
 namespace MT
 {
@@ -54,9 +55,8 @@ namespace MT
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
-    char* stackRawMemory;
-    char* stackBottom;
-    size_t stackRawMemorySize;
+		Memory::StackDesc stackDesc;
+
     size_t stackSize;
 
 		bool isStarted;
@@ -73,16 +73,14 @@ namespace MT
 	public:
 
 		Thread()
-			: stackRawMemory(nullptr)
-            , stackBottom(nullptr)
-			, stackRawMemorySize(0)
+			: stackSize(0)
 			, isStarted(false)
 		{
 		}
 
 		void* GetStackBottom()
 		{
-			return stackBottom;
+			return stackDesc.stackBottom;
 		}
 
 		size_t GetStackSize()
@@ -99,41 +97,16 @@ namespace MT
 
 			func = entryPoint;
 			funcData = userData;
-            
-            
-            int pageSize = sysconf(_SC_PAGE_SIZE);
-            int pagesCount = _stackSize / pageSize;
-            
-            //need additional page for stack tail
-            if ((_stackSize % pageSize) > 0)
-            {
-                pagesCount++;
-            }
-            
-            //protected guard page
-            pagesCount++;
-            
-            stackRawMemorySize = pagesCount * pageSize;
-            
-            stackRawMemory = (char*)mmap(NULL, stackRawMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
-            
-            MT_ASSERT((void *)stackRawMemory != (void *)-1, "Can't allocate memory");
-            
-            stackBottom = stackRawMemory + pageSize;
-            //char* stackTop = stackRawMemory + stackMemorySize;
-            
-            int res = mprotect(stackRawMemory, pageSize, PROT_NONE);
-            MT_ASSERT(res == 0, "Can't protect memory");
-            
-            stackSize = stackRawMemorySize - pageSize;
+
+			stackDesc = Memory::AllocStack(_stackSize);
+			stackSize = stackDesc.GetStackSize();
 
 			MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
-
 
 			int err = pthread_attr_init(&threadAttr);
 			MT_ASSERT(err == 0, "pthread_attr_init - error");
 
-			err = pthread_attr_setstack(&threadAttr, stackBottom, stackSize);
+			err = pthread_attr_setstack(&threadAttr, stackDesc.stackBottom, stackSize);
 			MT_ASSERT(err == 0, "pthread_attr_setstack - error");
 
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
@@ -164,14 +137,12 @@ namespace MT
 			func = nullptr;
 			funcData = nullptr;
 
-			if (stackRawMemory)
+			if (stackDesc.stackMemory != nullptr)
 			{
-                int res = munmap(stackRawMemory, stackRawMemorySize);
-                MT_ASSERT(res == 0, "Can't free memory");
-				stackRawMemory = nullptr;
+				Memory::FreeStack(stackDesc);
 			}
-			stackSize = 0;
 
+			stackSize = 0;
 			isStarted = false;
 		}
 

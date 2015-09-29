@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
-// 
+//
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
 // 	in the Software without restriction, including without limitation the rights
 // 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // 	copies of the Software, and to permit persons to whom the Software is
 // 	furnished to do so, subject to the following conditions:
-// 
+//
 //  The above copyright notice and this permission notice shall be included in
 // 	all copies or substantial portions of the Software.
-// 
+//
 // 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,7 +22,12 @@
 
 #pragma once
 
+#ifdef _WIN32
 #include <crtdefs.h>
+#else
+#include <sys/types.h>
+#include <stddef.h>
+#endif
 
 #define MT_DEFAULT_ALIGN (16)
 
@@ -47,6 +52,11 @@ namespace MT
 				, stackMemoryBytesCount(0)
 			{
 			}
+
+			size_t GetStackSize()
+			{
+				return (char*)stackTop - (char*)stackBottom;
+			}
 		};
 
 
@@ -60,7 +70,7 @@ namespace MT
 
 	/// \class Allocator
 	/// \brief Redirecting allocator from std to Custom memory allocator
-	///        Based on 'Mallocator' source code http://blogs.msdn.com/b/vcblog/archive/2008/08/28/the-mallocator.aspx 
+	///        Based on 'Mallocator' source code http://blogs.msdn.com/b/vcblog/archive/2008/08/28/the-mallocator.aspx
 	//////////////////////////////////////////////////////////////////////////
 	template <typename T>
 	class StdAllocator
@@ -73,7 +83,7 @@ namespace MT
 		typedef T& reference;
 		typedef const T& const_reference;
 		typedef T value_type;
-		typedef std::size_t size_type;
+		typedef size_t size_type;
 		typedef ptrdiff_t difference_type;
 
 		T * address(T& r) const
@@ -86,11 +96,11 @@ namespace MT
 			return &s;
 		}
 
-		std::size_t max_size() const
+		size_t max_size() const
 		{
 			// The following has been carefully written to be independent of
 			// the definition of size_t and to avoid signed/unsigned warnings.
-			return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(T);
+			return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T);
 		}
 
 		// The following must be the same for all allocators.
@@ -113,7 +123,6 @@ namespace MT
 
 		void destroy(T * const p) const
 		{
-			p;
 			p->~T();
 		}
 
@@ -131,7 +140,7 @@ namespace MT
 		~StdAllocator() {}
 
 		// The following will be different for each allocator.
-		T * allocate(const std::size_t n) const
+		T * allocate(const size_t n) const
 		{
 			// The return value of allocate(0) is unspecified.
 			// Mallocator returns NULL in order to avoid depending
@@ -139,31 +148,40 @@ namespace MT
 			// (the implementation can define malloc(0) to return NULL,
 			// in which case the bad_alloc check below would fire).
 			// All allocators can return NULL in this case.
-			if (n == 0) 
-				return nullptr;	
+			if (n == 0)
+				return nullptr;
 
 			// All allocators should contain an integer overflow check.
 			// The Standardization Committee recommends that std::length_error
 			// be thrown in the case of integer overflow.
-			MT_VERIFY(n <= max_size(), "StdAllocator<T>::allocate() - Integer overflow.", return nullptr);
+			if (n >= max_size())
+			{
+				//MT_ASSERT(false, "StdAllocator<T>::allocate() - Integer overflow.");
+				return nullptr;
+			}
+
 
 			// Memory allocate
 			void * const pv = Memory::Alloc(n * sizeof(T));
 
 			// Allocators should return NULL in the case of memory allocation failure.
-			MT_VERIFY( pv != nullptr, "Bad Alloc", return nullptr );
+			if (pv == nullptr)
+			{
+				//MT_ASSERT(false, "Bad alloc!");
+				return nullptr;
+			}
 
 			return static_cast<T *>(pv);
 		}
 
-		void deallocate(T * const p, const std::size_t) const
+		void deallocate(T * const p, const size_t) const
 		{
 			Memory::Free(p);
 		}
 
 		// The following will be the same for all allocators that ignore hints.
 		template <typename U>
-		T * allocate(const std::size_t n, const U * /* const hint */) const
+		T * allocate(const size_t n, const U * /* const hint */) const
 		{
 			return allocate(n);
 		}

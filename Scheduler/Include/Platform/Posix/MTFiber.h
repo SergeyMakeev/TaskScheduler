@@ -37,6 +37,8 @@
     #define MAP_STACK (0)
 #endif
 
+#include <MTAllocator.h>
+
 namespace MT
 {
 
@@ -48,8 +50,7 @@ namespace MT
 		void * funcData;
 		TThreadEntryPoint func;
 
-		char* stackRawMemory;
-		size_t stackRawMemorySize;
+		Memory::StackDesc stackDesc;
 
 		ucontext_t fiberContext;
 		bool isInitialized;
@@ -75,8 +76,6 @@ namespace MT
 		Fiber()
 			: funcData(nullptr)
 			, func(nullptr)
-			, stackRawMemory(nullptr)
-			, stackRawMemorySize(0)
 			, isInitialized(false)
 		{
 			memset(&fiberContext, 0, sizeof(ucontext_t));
@@ -86,11 +85,10 @@ namespace MT
 		{
 			if (isInitialized)
 			{
-				// if func != null than we have memory ownership
+				// if func != null than we have stack memory ownership
 				if (func != nullptr)
 				{
-					int res = munmap(stackRawMemory, stackRawMemorySize);
-					MT_ASSERT(res == 0, "Can't free memory");
+					Memory::FreeStack(stackDesc);
 				}
 
 				isInitialized = false;
@@ -121,7 +119,7 @@ namespace MT
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
-            MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Stack to small");
+			MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Stack to small");
 
 			func = entryPoint;
 			funcData = userData;
@@ -129,34 +127,11 @@ namespace MT
 			int res = getcontext(&fiberContext);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
-
-			int pageSize = sysconf(_SC_PAGE_SIZE);
-			int pagesCount = stackSize / pageSize;
-
-			//need additional page for stack tail
-			if ((stackSize % pageSize) > 0)
-			{
-				pagesCount++;
-			}
-
-			//protected guard page
-			pagesCount++;
-
-			stackRawMemorySize = pagesCount * pageSize;
-
-			stackRawMemory = (char*)mmap(NULL, stackRawMemorySize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
-
-			MT_ASSERT((void *)stackRawMemory != (void *)-1, "Can't allocate memory");
-
-			char* stackBottom = stackRawMemory + pageSize;
-			//char* stackTop = stackRawMemory + stackMemorySize;
-
-			res = mprotect(stackRawMemory, pageSize, PROT_NONE);
-			MT_ASSERT(res == 0, "Can't protect memory");
+			stackDesc = Memory::AllocStack(stackSize);
 
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = stackBottom;
-			fiberContext.uc_stack.ss_size = stackRawMemorySize - pageSize;
+			fiberContext.uc_stack.ss_sp = stackDesc.stackBottom;
+			fiberContext.uc_stack.ss_size = stackDesc.GetStackSize();
 			fiberContext.uc_stack.ss_flags = 0;
 
 			makecontext(&fiberContext, (void(*)())&FiberFuncInternal, 1, (void *)this);
