@@ -123,6 +123,9 @@ namespace MT
 
 		void destroy(T * const p) const
 		{
+#if defined(_MSC_VER)
+			p;
+#endif
 			p->~T();
 		}
 
