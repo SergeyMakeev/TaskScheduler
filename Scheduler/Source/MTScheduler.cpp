@@ -30,9 +30,9 @@ namespace MT
 		: roundRobinThreadIndex(0)
 		, startedThreadsCount(0)
 	{
+
 #ifdef MT_INSTRUMENTED_BUILD
 		webServerPort = profilerWebServer.Serve(8080, 8090);
-
 		//initialize start time
 		startTime = MT::GetTimeMicroSeconds();
 #endif

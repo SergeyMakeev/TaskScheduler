@@ -54,10 +54,10 @@ namespace MT
 		pthread_t thread;
 		pthread_attr_t threadAttr;
 
-        char* stackRawMemory;
-        char* stackBottom;
-        size_t stackRawMemorySize;
-        size_t stackSize;
+    char* stackRawMemory;
+    char* stackBottom;
+    size_t stackRawMemorySize;
+    size_t stackSize;
 
 		bool isStarted;
 

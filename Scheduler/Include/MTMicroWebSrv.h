@@ -28,6 +28,7 @@
 #include <MTPlatform.h>
 #include <MTTypes.h>
 #include <MTDebug.h>
+#include <MTAllocator.h>
 
 #ifdef _WIN32
 

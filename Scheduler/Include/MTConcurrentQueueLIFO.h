@@ -26,6 +26,7 @@
 
 #include <MTPlatform.h>
 #include <MTTools.h>
+#include <MTAllocator.h>
 
 
 namespace MT
@@ -36,7 +37,7 @@ namespace MT
 	class ConcurrentQueueLIFO
 	{
 		MT::Mutex mutex;
-		std::vector<T> queue;
+		std::vector<T, StdAllocator<T>> queue;
 
 
 	private:

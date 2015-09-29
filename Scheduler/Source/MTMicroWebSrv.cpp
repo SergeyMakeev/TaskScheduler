@@ -73,9 +73,9 @@ MicroWebServer::MicroWebServer()
 	MT_ASSERT(res == 0, "Can't WSAStartup");
 #endif
 
-	requestData = (char*)malloc(MAX_REQUEST_SIZE);
-	answerData = (char*)malloc(MAX_ANSWER_SIZE);
-	stringFormatBuffer = (char*)malloc(MAX_STRINGFORMAT_BUFFER_SIZE);
+	requestData = (char*)Memory::Alloc(MAX_REQUEST_SIZE);
+	answerData = (char*)Memory::Alloc(MAX_ANSWER_SIZE);
+	stringFormatBuffer = (char*)Memory::Alloc(MAX_STRINGFORMAT_BUFFER_SIZE);
 }
 
 MicroWebServer::~MicroWebServer()
@@ -86,14 +86,16 @@ MicroWebServer::~MicroWebServer()
 	WSACleanup();
 #endif
 
-	free(requestData);
-	free(answerData);
-	free(stringFormatBuffer);
-
+	Memory::Free(requestData);
 	requestData = nullptr;
+
+	Memory::Free(answerData);
 	answerData = nullptr;
+
+	Memory::Free(stringFormatBuffer);
 	stringFormatBuffer = nullptr;
 }
+
 
 bool MicroWebServer::IsValidSocket(TcpSocket socket)
 {

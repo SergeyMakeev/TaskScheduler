@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <MTAllocator.h>
 
 #if defined(_X86_)
 
@@ -49,10 +50,7 @@ namespace MT
 		void * funcData;
 		TThreadEntryPoint func;
 
-		char* stackRawMemory;
-		char* stackBottom;
-		char* stackTop;
-		size_t stackRawMemorySize;
+		Memory::StackDesc stackDesc;
 
 		CONTEXT fiberContext;
 		bool isInitialized;
@@ -90,10 +88,6 @@ namespace MT
 		Fiber()
 			: funcData(nullptr)
 			, func(nullptr)
-			, stackRawMemory(nullptr)
-			, stackBottom(nullptr)
-			, stackTop(nullptr)
-			, stackRawMemorySize(0)
 			, isInitialized(false)
 		{
 			memset(&fiberContext, 0, sizeof(CONTEXT));
@@ -103,11 +97,10 @@ namespace MT
 		{
 			if (isInitialized)
 			{
-				// if func != null than we have memory ownership
+				// if func != null than we have stack memory ownership
 				if (func != nullptr)
 				{
-					int res = VirtualFree(stackRawMemory, stackRawMemorySize, MEM_RELEASE);
-					MT_ASSERT(res == 0, "Can't free memory");
+					Memory::FreeStack(stackDesc);
 				}
 
 				isInitialized = false;
@@ -127,8 +120,8 @@ namespace MT
 			funcData = nullptr;
 
 			//Get thread stack information from thread environment block.
-			stackTop = (char*)ReadTeb(FIELD_OFFSET(NT_TIB, StackBase));
-			stackBottom = (char*)ReadTeb(FIELD_OFFSET(NT_TIB, StackLimit));
+			stackDesc.stackTop = (void*)ReadTeb(FIELD_OFFSET(NT_TIB, StackBase));
+			stackDesc.stackBottom = (void*)ReadTeb(FIELD_OFFSET(NT_TIB, StackLimit));
 
 			isInitialized = true;
 		}
@@ -144,37 +137,11 @@ namespace MT
 			BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );
 			MT_ASSERT(res != 0, "GetThreadContext - failed");
 
-			SYSTEM_INFO systemInfo;
-			GetSystemInfo(&systemInfo);
-
-			int pageSize = (int)systemInfo.dwPageSize;
-			int pagesCount = (int)stackSize / pageSize;
-
-			//need additional page for stack tail
-			if ((stackSize % pageSize) > 0)
-			{
-				pagesCount++;
-			}
-
-			//protected guard page
-			pagesCount++;
-
-			stackRawMemorySize = pagesCount * pageSize;
-
-			MT_ASSERT(stackRawMemory == nullptr, "Stack memory already initialized?");
-			stackRawMemory = (char*)VirtualAlloc(NULL, stackRawMemorySize, MEM_COMMIT, PAGE_READWRITE);
-			MT_ASSERT(stackRawMemory != NULL, "Can't allocate memory");
-
-			stackBottom = stackRawMemory + pageSize;
-			stackTop = stackRawMemory + stackRawMemorySize;
-
-			DWORD oldProtect = 0;
-			res = VirtualProtect(stackRawMemory, pageSize, PAGE_NOACCESS, &oldProtect);
-			MT_ASSERT(res != 0, "Can't protect memory");
+			stackDesc = Memory::AllocStack(stackSize);
 
 			void (*func)() = (void(*)())&FiberFuncInternal;
 
-			char* sp  = stackTop;
+			char* sp  = (char *)stackDesc.stackTop;
 			char * paramOnStack = nullptr;
 
 			// setup function address and stack pointer
@@ -226,15 +193,15 @@ namespace MT
 			// __chkstk function use TEB info and probe sampling to commit new stack pages
 			// https://support.microsoft.com/en-us/kb/100775
 			//
-			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)to.stackTop);
-			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)to.stackBottom);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)to.stackDesc.stackTop);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)to.stackDesc.stackBottom);
 
 			res = SetThreadContext(thread, &to.fiberContext );
 			MT_ASSERT(res != 0, "SetThreadContext - failed");
 
 			//Restore stack information
-			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)from.stackTop);
-			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)from.stackBottom);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackBase), (DWORD64)from.stackDesc.stackTop);
+			WriteTeb(FIELD_OFFSET(NT_TIB, StackLimit), (DWORD64)from.stackDesc.stackBottom);
 		}
 
 

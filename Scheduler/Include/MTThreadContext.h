@@ -92,7 +92,7 @@ namespace MT
 			AtomicInt state;
 
 			// Temporary buffer, fixed size = TASK_BUFFER_CAPACITY
-			std::vector<internal::GroupedTask> descBuffer;
+			std::vector<internal::GroupedTask, StdAllocator<internal::GroupedTask>> descBuffer;
 
 			// Thread index
 			uint32 workerIndex;

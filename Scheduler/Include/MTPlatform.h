@@ -42,7 +42,6 @@ namespace MT
 }
 
 
-
 #ifdef _WIN32
 	#include <Platform/Windows/MTCommon.h>
 #else

@@ -24,6 +24,7 @@
 
 #include <MTPlatform.h>
 #include <MTTools.h>
+#include <MTAllocator.h>
 
 namespace MT
 {
@@ -87,14 +88,14 @@ namespace MT
 			, readIndex(0)
 			, size(0)
 		{
-			data = malloc(sizeof(T) * numElements);
+			data = Memory::Alloc(sizeof(T) * numElements);
 
 			static_assert(is_power_of_two<numElements>::value == true, "NumElements used in MT::ConcurrentRingBuffer must be power of two");
 		}
 
 		~ConcurrentRingBuffer()
 		{
-			free(data);
+			Memory::Free(data);
 			data = nullptr;
 		}
 
