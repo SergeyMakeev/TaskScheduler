@@ -42,8 +42,6 @@ namespace MT
 		_mm_free(p);
 	}
 
-
-
 	Memory::StackDesc Memory::AllocStack(size_t size)
 	{
 		StackDesc desc;

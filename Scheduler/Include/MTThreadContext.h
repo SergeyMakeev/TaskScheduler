@@ -60,6 +60,9 @@ namespace MT
 
 	namespace internal
 	{
+		static const size_t TASK_BUFFER_CAPACITY = 4096;
+
+
 		namespace ThreadState
 		{
 			const uint32 ALIVE = 0;
@@ -92,7 +95,7 @@ namespace MT
 			AtomicInt state;
 
 			// Temporary buffer, fixed size = TASK_BUFFER_CAPACITY
-			std::vector<internal::GroupedTask, StdAllocator<internal::GroupedTask>> descBuffer;
+			void* descBuffer;
 
 			// Thread index
 			uint32 workerIndex;

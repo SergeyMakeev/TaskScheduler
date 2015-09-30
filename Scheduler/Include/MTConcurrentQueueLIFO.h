@@ -32,12 +32,77 @@
 namespace MT
 {
 	/// \class ConcurrentQueueLIFO
-	/// \brief Very naive implementation of thread safe  last in, first out (LIFO) queue
+	/// \brief Naive locking implementation of thread safe last in, first out (LIFO) queue
+	///
+	/// for lock-free implementation read Molecule Engine blog by Stefan Reinalter
+	/// http://blog.molecular-matters.com/2015/09/25/job-system-2-0-lock-free-work-stealing-part-3-going-lock-free/
+	///
 	template<typename T>
 	class ConcurrentQueueLIFO
 	{
+		static const unsigned int MAX_JOBS_COUNT = 4096u;
+		static const unsigned int MASK = MAX_JOBS_COUNT - 1u;
+
 		MT::Mutex mutex;
-		std::vector<T, StdAllocator<T>> queue;
+		
+		void* data;
+
+		size_t begin;
+		size_t end;
+		
+		inline T* Buffer()
+		{
+			return (T*)(data);
+		}
+
+		inline void CopyCtor(T* element, const T & val)
+		{
+			new(element) T(val);
+		}
+
+		inline void MoveCtor(T* element, T && val)
+		{
+			new(element) T(std::move(val));
+		}
+
+		inline void Dtor(T* element)
+		{
+#if _MSC_VER
+			// warning C4100: 'element' : unreferenced formal parameter
+			// if type T has not destructor
+			element;
+#endif
+			element->~T();
+		}
+
+		inline bool _IsEmpty() const
+		{
+			return (begin == end);
+		}
+
+		inline size_t Size() const
+		{
+			if (_IsEmpty())
+			{
+				return 0;
+			}
+
+			size_t count = (end & MASK) - (begin & MASK);
+			return count;
+		}
+
+		inline void Clear()
+		{
+			size_t queueSize = Size();
+			for (size_t i = 0; i < queueSize; i++)
+			{
+				T* pElement = Buffer() + ((begin + i) & MASK);
+				Dtor(pElement);
+			}
+
+			begin = 0;
+			end = 0;
+		}
 
 
 	private:
@@ -50,8 +115,21 @@ namespace MT
 		/// \name Initializes a new instance of the ConcurrentQueueLIFO class.
 		/// \brief  
 		ConcurrentQueueLIFO()
+			: begin(0)
+			, end(0)
 		{
-			queue.reserve(256);
+
+			size_t bytesCount = sizeof(T) * MAX_JOBS_COUNT;
+			data = Memory::Alloc(bytesCount);
+		}
+
+		~ConcurrentQueueLIFO()
+		{
+			if (data != nullptr)
+			{
+				Memory::Free(data);
+				data = nullptr;
+			}
 		}
 
 		/// \brief Push an item onto the top of queue.
@@ -60,7 +138,16 @@ namespace MT
 		{
 			MT::ScopedGuard guard(mutex);
 
-			queue.push_back(item);
+			if ((Size() + 1) >= MAX_JOBS_COUNT)
+			{
+				MT_ASSERT(false, "Queue overflow");
+				return;
+			}
+
+
+			T* pElement = Buffer() + (end & MASK);
+			CopyCtor(pElement, item );
+			end++;
 		}
 
 		/// \brief Push an multiple items onto the top of queue.
@@ -70,23 +157,55 @@ namespace MT
 		{
 			MT::ScopedGuard guard(mutex);
 
+			if ((Size() + count) >= MAX_JOBS_COUNT)
+			{
+				MT_ASSERT(false, "Queue overflow");
+				return;
+			}
+
 			for (size_t i = 0; i < count; ++i)
-				queue.push_back(itemArray[i]);
+			{
+				T* pElement = Buffer() + (end & MASK);
+				CopyCtor( pElement, itemArray[i] );
+				end++;
+			}
+		}
+
+		/// \brief Try pop item from the bottom of queue.
+		/// \param item Resultant item
+		/// \return true on success or false if the queue is empty.
+		bool TryPopFront(T & item)
+		{
+			MT::ScopedGuard guard(mutex);
+
+			if (_IsEmpty())
+			{
+				return false;
+			}
+
+			T* pElement = Buffer() + (begin & MASK);
+			begin++;
+			item = *pElement;
+			Dtor(pElement);
+			return true;
 		}
 
 		/// \brief Try pop item from the top of queue.
 		/// \param item Resultant item
 		/// \return true on success or false if the queue is empty.
-		bool TryPop(T & item)
+		bool TryPopBack(T & item)
 		{
 			MT::ScopedGuard guard(mutex);
 
-			if (queue.empty())
+			if (_IsEmpty())
 			{
 				return false;
 			}
-			item = queue.back();
-			queue.pop_back();
+
+			end--;
+			T* pElement = Buffer() + (end & MASK);
+			item = *pElement;
+			Dtor(pElement);
 			return true;
 		}
 
@@ -97,12 +216,15 @@ namespace MT
 		size_t PopAll(T * dstBuffer, size_t dstBufferSize)
 		{
 			MT::ScopedGuard guard(mutex);
-			size_t elementsCount = MT::Min(queue.size(), dstBufferSize);
+
+			size_t elementsCount = MT::Min(Size(), dstBufferSize);
 			for (size_t i = 0; i < elementsCount; i++)
 			{
-				dstBuffer[i] = std::move(queue[i]);
+				T* pElement = Buffer() + ((begin + i) & MASK);
+				dstBuffer[i] = std::move(*pElement);
 			}
-			queue.clear();
+
+			Clear();
 			return elementsCount;
 		}
 
@@ -111,7 +233,8 @@ namespace MT
 		bool IsEmpty()
 		{
 			MT::ScopedGuard guard(mutex);
-			return queue.empty();
+
+			return _IsEmpty();
 		}
 
 	};

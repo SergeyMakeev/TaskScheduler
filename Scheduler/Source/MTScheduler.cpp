@@ -96,7 +96,7 @@ namespace MT
 			return fiberContext;
 		}
 
-		if (!availableFibers.TryPop(fiberContext))
+		if (!availableFibers.TryPopBack(fiberContext))
 		{
 			MT_ASSERT(false, "Fibers pool is empty");
 		}
@@ -247,7 +247,7 @@ namespace MT
 			}
 
 			internal::ThreadContext& victimContext = threadContext.taskScheduler->threadContext[index];
-			if (victimContext.queue.TryPop(task))
+			if (victimContext.queue.TryPopFront(task))
 			{
 				return true;
 			}
@@ -280,7 +280,7 @@ namespace MT
 		while(context.state.Get() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
-			if (context.queue.TryPop(task) || TryStealTask(context, task, workersCount) )
+			if (context.queue.TryPopBack(task) || TryStealTask(context, task, workersCount) )
 			{
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
@@ -471,7 +471,7 @@ namespace MT
 		MT_ASSERT(IsWorkerThread() == false, "Can't use CreateGroup inside Task.");
 
 		TaskGroup group;
-		if (!availableGroups.TryPop(group))
+		if (!availableGroups.TryPopBack(group))
 		{
 			MT_ASSERT(false, "Group pool is empty");
 		}

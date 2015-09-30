@@ -27,11 +27,11 @@ namespace MT
 	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount)
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
-		MT_ASSERT(taskCount < threadContext->descBuffer.size(), "Buffer overrun!");
+		MT_ASSERT(taskCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 
-		ArrayView<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
+		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskCount);
 
 		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
 		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
@@ -48,7 +48,7 @@ namespace MT
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 
-		ArrayView<internal::GroupedTask> buffer(&threadContext->descBuffer.front(), taskCount);
+		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskCount);
 
 		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
 		ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);

@@ -21,29 +21,29 @@ TEST(QueueTest)
 
 	int res = 0;
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 13);
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 10);
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 7);
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 3);
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 1);
 
-	CHECK(lifoQueue.TryPop(res) == false);
+	CHECK(lifoQueue.TryPopBack(res) == false);
 
 	lifoQueue.Push(4);
 
-	CHECK(lifoQueue.TryPop(res) == true);
+	CHECK(lifoQueue.TryPopBack(res) == true);
 	CHECK_EQUAL(res, 4);
 
-	CHECK(lifoQueue.TryPop(res) == false);
+	CHECK(lifoQueue.TryPopBack(res) == false);
 
 	CHECK(lifoQueue.IsEmpty() == true);
 
@@ -55,15 +55,21 @@ TEST(QueueTest)
 
 	CHECK(lifoQueue.IsEmpty() == false);
 
+
+	CHECK(lifoQueue.TryPopFront(res) == true);
+	CHECK_EQUAL(res, 101);
+
+	CHECK(lifoQueue.TryPopFront(res) == true);
+	CHECK_EQUAL(res, 103);
+
+
 	int tempData[16];
 	size_t elementsCount = lifoQueue.PopAll(tempData, MT_ARRAY_SIZE(tempData));
-	CHECK_EQUAL(elementsCount, (size_t)5);
+	CHECK_EQUAL(elementsCount, (size_t)3);
 
-	CHECK_EQUAL(tempData[0], 101);
-	CHECK_EQUAL(tempData[1], 103);
-	CHECK_EQUAL(tempData[2], 107);
-	CHECK_EQUAL(tempData[3], 1010);
-	CHECK_EQUAL(tempData[4], 1013);
+	CHECK_EQUAL(tempData[0], 107);
+	CHECK_EQUAL(tempData[1], 1010);
+	CHECK_EQUAL(tempData[2], 1013);
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -27,8 +27,6 @@ namespace MT
 {
 	namespace internal
 	{
-		static const size_t TASK_BUFFER_CAPACITY = 4096;
-
 		// Prime numbers for linear congruential generator seed
 		static const uint32 primeNumbers[] = {
 			128473, 135349, 159499, 173839, 209213, 241603, 292709, 314723,
@@ -48,13 +46,15 @@ namespace MT
 			, taskScheduler(nullptr)
 			, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 			, state(ThreadState::ALIVE)
-			, descBuffer(TASK_BUFFER_CAPACITY)
 			, workerIndex(0)
 		{
+			 descBuffer = Memory::Alloc( sizeof(internal::GroupedTask) * TASK_BUFFER_CAPACITY );
 		}
 
 		ThreadContext::~ThreadContext()
 		{
+			Memory::Free(descBuffer);
+			descBuffer = nullptr;
 		}
 
 		void ThreadContext::SetThreadIndex(uint32 threadIndex)
@@ -80,7 +80,7 @@ namespace MT
 			StackArray<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
 			size_t taskCount = groupQueue.PopAll(groupQueueCopy.Begin(), groupQueueCopy.Size());
 
-			ArrayView<internal::GroupedTask> buffer(&descBuffer.front(), taskCount);
+			ArrayView<internal::GroupedTask> buffer(descBuffer, taskCount);
 
 			TaskScheduler & scheduler = *(taskScheduler);
 			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
