@@ -129,6 +129,9 @@ namespace MT
 
 		MT_ASSERT(fiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
+		void * poolUserData = fiberContext->currentTask.userData;
+		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
+
 		// Run current task code
 		Fiber::SwitchTo(threadContext.schedulerFiber, fiberContext->fiber);
 
@@ -136,6 +139,13 @@ namespace MT
 		FiberTaskStatus::Type taskStatus = fiberContext->GetStatus();
 		if (taskStatus == FiberTaskStatus::FINISHED)
 		{
+			//destroy task (call dtor) for "fire and forget" type of task from TaskPool
+			if (poolDestroyFunc != nullptr)
+			{
+				poolDestroyFunc(poolUserData);
+			}
+
+
 			TaskGroup taskGroup = fiberContext->currentGroup;
 
 			TaskScheduler::TaskGroupDescription  & groupDesc = threadContext.taskScheduler->GetGroupDesc(taskGroup);
@@ -306,12 +316,6 @@ namespace MT
 					// Can drop fiber context - task is finished
 					if (taskStatus == FiberTaskStatus::FINISHED)
 					{
-						//destroy task (call dtor) for "fire and forget" type of task from TaskPool
-						if (fiberContext->currentTask.poolDestroyFunc && fiberContext->currentTask.userData)
-						{
-							fiberContext->currentTask.poolDestroyFunc(fiberContext->currentTask.userData);
-						}
-
 						MT_ASSERT( childrenFibersCount == 0, "Sanity check failed");
 						context.taskScheduler->ReleaseFiberContext(fiberContext);
 

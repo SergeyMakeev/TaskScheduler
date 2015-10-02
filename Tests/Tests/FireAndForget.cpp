@@ -165,7 +165,7 @@ TEST(MultiThreadPoolTest)
 }
 
 
-// 
+//
 TEST(FireAndForgetSimple)
 {
 	MT::AtomicInt doCounter(0);
@@ -191,10 +191,10 @@ TEST(FireAndForgetSimple)
 		scheduler.RunAsync(MT::TaskGroup::Default(), &taskHandles[0], MT_ARRAY_SIZE(taskHandles));
 
 		int timeout = 20000;
-		CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), timeout));
+		CHECK(scheduler.WaitAll(timeout));
 
-		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, doCounter.Get());
-		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, dtorCounter.Get());
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)doCounter.Get());
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)dtorCounter.Get());
 	}
 
 }
