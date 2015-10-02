@@ -40,7 +40,7 @@
 namespace MT
 {
 	const uint32 MT_MAX_THREAD_COUNT = 64;
-	const uint32 MT_MAX_FIBERS_COUNT = 128;
+	const uint32 MT_MAX_FIBERS_COUNT = 256;
 	const uint32 MT_SCHEDULER_STACK_SIZE = 1048576;
 	const uint32 MT_FIBER_STACK_SIZE = 65536;
 

@@ -98,7 +98,7 @@ namespace MT
 
 		if (!availableFibers.TryPopBack(fiberContext))
 		{
-			MT_ASSERT(false, "Fibers pool is empty");
+			MT_ASSERT(false, "Fibers pool is empty. Too many fibers running simultaneously.");
 		}
 
 		fiberContext->currentTask = task.desc;
