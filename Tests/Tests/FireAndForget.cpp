@@ -176,6 +176,8 @@ TEST(FireAndForgetSimple)
 
 	for(int pass = 0; pass < 4; pass++)
 	{
+		printf("--- step %d ---\n", pass);
+
 		doCounter.Set(0);
 		dtorCounter.Set(0);
 
