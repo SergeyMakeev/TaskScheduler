@@ -48,6 +48,7 @@ namespace MT
 	}
 
 
+	//////////////////////////////////////////////////////////////////////////
 	class Timer
 	{
 		uint64 startMicroSeconds;
@@ -66,5 +67,40 @@ namespace MT
 			return (uint32)((MT::GetTimeMicroSeconds() - startMicroSeconds) / 1000);
 		}
 	};
+
+
+
+	//Compile time pow2 check
+	//////////////////////////////////////////////////////////////////////////
+	template< size_t N, size_t C = 1 >
+	struct IsPow2Recurse
+	{
+		enum
+		{
+			result = IsPow2Recurse< N / 2, C * 2 >::result
+		};
+	};
+
+	template< size_t C >
+	struct IsPow2Recurse< 0, C >
+	{
+		enum
+		{
+			result = C
+		};
+	};
+
+
+	template< size_t N >
+	struct StaticIsPow2
+	{
+		enum
+		{
+			result = IsPow2Recurse< N - 1 >::result == N ? 1 : 0
+		};
+	};
+	
+
+
 }
 

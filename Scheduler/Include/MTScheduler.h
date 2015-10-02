@@ -31,6 +31,7 @@
 #include <MTFiberContext.h>
 #include <MTTaskBase.h>
 #include <MTAllocator.h>
+#include <MTTaskPool.h>
 
 #ifdef MT_INSTRUMENTED_BUILD
 #include <MTMicroWebSrv.h>
