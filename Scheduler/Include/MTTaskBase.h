@@ -27,6 +27,7 @@
 #include <MTConcurrentQueueLIFO.h>
 #include <MTStackArray.h>
 #include <MTArrayView.h>
+#include <MTTaskPool.h>
 
 
 #define MT_COLOR_DEFAULT (0)
