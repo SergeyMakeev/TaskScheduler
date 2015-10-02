@@ -34,6 +34,9 @@ namespace MT
 	class FiberContext;
 	typedef void (*TTaskEntryPoint)(FiberContext & context, void* userData);
 
+	typedef void (*TPoolTaskDestroy)(void* userData);
+
+
 	namespace internal
 	{
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,7 +47,10 @@ namespace MT
 			//Task entry point
 			TTaskEntryPoint taskFunc;
 
-			//Task user data (task context)
+			//Task destroy func from pool (dtor call)
+			TPoolTaskDestroy poolDestroyFunc;
+
+			//Task user data (task data context)
 			void* userData;
 
 #ifdef MT_INSTRUMENTED_BUILD
@@ -54,6 +60,7 @@ namespace MT
 
 			TaskDesc()
 				: taskFunc(nullptr)
+				, poolDestroyFunc(nullptr)
 				, userData(nullptr)
 			{
 #ifdef MT_INSTRUMENTED_BUILD
@@ -64,6 +71,18 @@ namespace MT
 
 			TaskDesc(TTaskEntryPoint _taskFunc, void* _userData)
 				: taskFunc(_taskFunc)
+				, poolDestroyFunc(nullptr)
+				, userData(_userData)
+			{
+#ifdef MT_INSTRUMENTED_BUILD
+				debugID = nullptr;
+				colorIndex = 0;
+#endif
+			}
+
+			TaskDesc(TTaskEntryPoint _taskFunc, TPoolTaskDestroy _poolDestroyFunc, void* _userData)
+				: taskFunc(_taskFunc)
+				, poolDestroyFunc(_poolDestroyFunc)
 				, userData(_userData)
 			{
 #ifdef MT_INSTRUMENTED_BUILD

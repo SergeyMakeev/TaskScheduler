@@ -38,19 +38,15 @@ namespace MT
 	class TaskHandle;
 
 
-	/// \class TaskPoolBase
+	/// \class PoolElementHeader
 	/// \brief 
 	//////////////////////////////////////////////////////////////////////////
 	struct PoolElementHeader
 	{
+		//Task id (timestamp)
 		AtomicInt id;
 
-	protected:
-
-		virtual void Destroy()
-		{
-			id.Set(TaskID::UNUSED);
-		}
+		internal::TaskDesc desc;
 
 	public:
 
@@ -69,23 +65,25 @@ namespace MT
 	template<typename T>
 	class PoolElement : public PoolElementHeader
 	{
-	protected:
-
-		virtual void Destroy()
-		{
-			PoolElementHeader::Destroy();
-			//call dtor
-			task.~T();
-		}
-
 	public:
 
+		// Storage for task
 		T task;
 
 		PoolElement(int _id, T && _task)
 			: PoolElementHeader(_id)
 			, task( std::move(_task) )
 		{
+			MT_ASSERT( offsetof(PoolElement<T>, task) == sizeof(PoolElementHeader), "Invalid offset for task in PoolElement");
+			
+			desc.poolDestroyFunc = T::PoolTaskDestroy;
+			desc.taskFunc = T::TaskEntryPoint;
+			desc.userData = &task;
+
+#ifdef MT_INSTRUMENTED_BUILD
+			desc.debugID = T::GetDebugID();
+			desc.colorIndex = T::GetDebugColorIndex();
+#endif
 		}
 
 	};
@@ -102,6 +100,7 @@ namespace MT
 	protected:
 
 		friend struct PoolElementHeader;
+
 		PoolElementHeader * task;
 
 	public:
@@ -156,6 +155,13 @@ namespace MT
 			return true;
 		}
 
+		const internal::TaskDesc & GetDesc()
+		{
+			MT_ASSERT(IsValid(), "Task handle is invalid");
+			return task->desc;
+		}
+
+
 	};
 
 
@@ -169,7 +175,18 @@ namespace MT
 			return false;
 		}
 
-		handle.task->Destroy();
+		if (handle.task->desc.poolDestroyFunc == nullptr)
+		{
+			return false;
+		}
+
+		if (handle.task->desc.userData == nullptr)
+		{
+			return false;
+		}
+
+		//call destroy func
+		handle.task->desc.poolDestroyFunc(handle.task->desc.userData);
 		return true;
 	}
 

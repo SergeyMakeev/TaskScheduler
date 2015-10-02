@@ -47,6 +47,15 @@ namespace MT
 			return groupedTask;
 		}
 
+		//template specialization for TaskHandle*
+		template<>
+		inline internal::GroupedTask GetGroupedTask(TaskGroup group, MT::TaskHandle * src)
+		{
+			const internal::TaskDesc & desc = src->GetDesc();
+			return internal::GroupedTask(desc, group);
+		}
+
+
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Distributes task to threads:

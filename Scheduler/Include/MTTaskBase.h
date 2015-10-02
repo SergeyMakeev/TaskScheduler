@@ -78,5 +78,25 @@ namespace MT
 				T* task = static_cast<T*>(userData);
 				task->Do(fiberContext);
 			}
+
+			static void PoolTaskDestroy(void* userData)
+			{
+				T* task = static_cast<T*>(userData);
+#if _MSC_VER
+				// warning C4100: unreferenced formal parameter
+				// if type T has not destructor
+				task;
+#endif
+
+				//call dtor
+				task->~T();
+
+				//Find task pool header
+				PoolElementHeader * poolHeader = (PoolElementHeader *)((char*)userData - sizeof(PoolElementHeader));
+
+				//Fixup pool header, mark task as unused
+				poolHeader->id.Set(TaskID::UNUSED);
+			}
+
 		};
 }

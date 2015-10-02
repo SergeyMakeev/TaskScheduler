@@ -7,28 +7,69 @@
 SUITE(FireAndForget)
 {
 
+struct SimpleTask;
+
+typedef MT::TaskPool<SimpleTask, 512> TestPoolType;
 
 struct SimpleTask : public MT::TaskBase<SimpleTask>
 {
 	MT_DECLARE_DEBUG_INFO("SimpleTask", MT_COLOR_DEFAULT);
 
+	MT::AtomicInt* doCounter;
+	MT::AtomicInt* dtorCounter;
+	TestPoolType * taskPool;
 
 	SimpleTask()
+		: doCounter(nullptr)
+		, dtorCounter(nullptr)
+		, taskPool(nullptr)
 	{
 	}
 
-	SimpleTask(SimpleTask&&)
+	SimpleTask(MT::AtomicInt* _doCounter, MT::AtomicInt* _dtorCounter, TestPoolType * _taskPool)
+		: doCounter(_doCounter)
+		, dtorCounter(_dtorCounter)
+		, taskPool(_taskPool)
 	{
 	}
 
-	void Do(MT::FiberContext&)
+	SimpleTask(SimpleTask&& other)
+		: doCounter(other.doCounter)
+		, dtorCounter(other.dtorCounter)
+		, taskPool(other.taskPool)
 	{
+		other.doCounter = nullptr;
+		other.dtorCounter = nullptr;
+		other.taskPool = nullptr;
+	}
+
+	~SimpleTask()
+	{
+		if (dtorCounter)
+		{
+			dtorCounter->Inc();
+		}
+	}
+
+	void Do(MT::FiberContext& context)
+	{
+		if (doCounter)
+		{
+			doCounter->Inc();
+		}
+
+		if (taskPool)
+		{
+			MT::TaskHandle handle = taskPool->Alloc(SimpleTask(doCounter, dtorCounter, nullptr));
+
+			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &handle, 1);
+		}
 	}
 };
 
 
 
-TEST(PoolTest)
+TEST(SingleThreadPoolTest)
 {
 	MT::TaskPool<SimpleTask, 4> taskPool;
 
@@ -82,11 +123,79 @@ TEST(PoolTest)
 }
 
 
-/*
+struct ThreadTest : public MT::TaskBase<ThreadTest>
+{
+	MT_DECLARE_DEBUG_INFO("ThreadTestTask", MT_COLOR_DEFAULT);
+
+	TestPoolType * taskPool;
+
+	void Do(MT::FiberContext&)
+	{
+		for (int i = 0; i < 20000; i++)
+		{
+			MT::TaskHandle handle = taskPool->Alloc(SimpleTask());
+			if (handle.IsValid())
+			{
+				CHECK_EQUAL(true, MT::PoolElementHeader::DestoryByHandle(handle));
+			} else
+			{
+				CHECK_EQUAL(false, MT::PoolElementHeader::DestoryByHandle(handle));
+			}
+		}
+	}
+};
+
+
+TEST(MultiThreadPoolTest)
+{
+	TestPoolType taskPool;
+
+	MT::TaskScheduler scheduler;
+
+	ThreadTest tasks[8];
+	for (size_t i = 0; i < MT_ARRAY_SIZE(tasks); ++i)
+	{
+		tasks[i].taskPool = &taskPool;
+	}
+
+	scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
+
+	int timeout = 20000;
+	CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), timeout));
+}
+
+
 // 
 TEST(FireAndForgetSimple)
 {
+	MT::AtomicInt doCounter(0);
+	MT::AtomicInt dtorCounter(0);
+
+	MT::TaskScheduler scheduler;
+	TestPoolType taskPool;
+
+	for(int pass = 0; pass < 4; pass++)
+	{
+		doCounter.Set(0);
+		dtorCounter.Set(0);
+
+		MT::TaskHandle taskHandles[250];
+		for (size_t i = 0; i < MT_ARRAY_SIZE(taskHandles); ++i)
+		{
+			taskHandles[i] = taskPool.Alloc(SimpleTask(&doCounter, &dtorCounter, &taskPool));
+			CHECK_EQUAL(true, taskHandles[i].IsValid());
+		}
+
+		scheduler.RunAsync(MT::TaskGroup::Default(), &taskHandles[0], MT_ARRAY_SIZE(taskHandles));
+
+		int timeout = 20000;
+		CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), timeout));
+
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, doCounter.Get());
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, dtorCounter.Get());
+	}
+
 }
-*/
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

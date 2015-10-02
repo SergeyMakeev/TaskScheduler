@@ -128,4 +128,39 @@ namespace MT
 	}
 
 
+	void FiberContext::RunAsync(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	{
+		MT_ASSERT(threadContext, "ThreadContext is nullptr");
+		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
+
+		TaskScheduler& scheduler = *(threadContext->taskScheduler);
+
+		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskHandleCount);
+
+		size_t bucketCount = MT::Min(scheduler.GetWorkerCount(), taskHandleCount);
+		ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+
+		internal::DistibuteDescriptions(taskGroup, taskHandleArray, buffer, buckets);
+		scheduler.RunTasksImpl(buckets, nullptr, false);
+	}
+
+
+	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	{
+		MT_ASSERT(threadContext, "ThreadContext is nullptr");
+		MT_ASSERT(taskHandleCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");
+
+		TaskScheduler& scheduler = *(threadContext->taskScheduler);
+
+		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskHandleCount);
+
+		size_t bucketCount = MT::Min(scheduler.GetWorkerCount(), taskHandleCount);
+		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+
+		internal::DistibuteDescriptions(taskGroup, taskHandleArray, buffer, buckets);
+		RunSubtasksAndYieldImpl(buckets);
+	}
+
+
+
 }

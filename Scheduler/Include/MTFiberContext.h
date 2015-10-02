@@ -30,6 +30,8 @@
 
 namespace MT
 {
+	class TaskHandle;
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Fiber task status
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,6 +68,10 @@ namespace MT
 
 		template<class TTask>
 		void RunAsync(TaskGroup taskGroup, TTask* taskArray, size_t taskCount);
+
+		//
+		void RunAsync(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount);
+		void RunSubtasksAndYield(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount);
 
 		void WaitGroupAndYield(TaskGroup group);
 

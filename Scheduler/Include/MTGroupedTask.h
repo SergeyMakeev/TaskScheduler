@@ -47,7 +47,7 @@ namespace MT
 				, parentFiber(nullptr)
 			{}
 
-			GroupedTask(TaskDesc& _desc, TaskGroup _group)
+			GroupedTask(const TaskDesc& _desc, TaskGroup _group)
 				: awaitingFiber(nullptr)
 				, parentFiber(nullptr)
 				, group(_group)

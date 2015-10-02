@@ -306,6 +306,12 @@ namespace MT
 					// Can drop fiber context - task is finished
 					if (taskStatus == FiberTaskStatus::FINISHED)
 					{
+						//destroy task (call dtor) for "fire and forget" type of task from TaskPool
+						if (fiberContext->currentTask.poolDestroyFunc && fiberContext->currentTask.userData)
+						{
+							fiberContext->currentTask.poolDestroyFunc(fiberContext->currentTask.userData);
+						}
+
 						MT_ASSERT( childrenFibersCount == 0, "Sanity check failed");
 						context.taskScheduler->ReleaseFiberContext(fiberContext);
 
@@ -420,6 +426,19 @@ namespace MT
 			context.queue.PushRange(bucket.tasks, bucket.count);
 			context.hasNewTasksEvent.Signal();
 		}
+	}
+
+	void TaskScheduler::RunAsync(TaskGroup group, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	{
+		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
+
+		ArrayView<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskHandleCount), taskHandleCount);
+
+		size_t bucketCount = MT::Min(threadsCount, taskHandleCount);
+		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+
+		internal::DistibuteDescriptions(group, taskHandleArray, buffer, buckets);
+		RunTasksImpl(buckets, nullptr, false);
 	}
 
 	bool TaskScheduler::WaitGroup(TaskGroup group, uint32 milliseconds)

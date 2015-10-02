@@ -153,6 +153,9 @@ namespace MT
 		template<class TTask>
 		void RunAsync(TaskGroup group, TTask* taskArray, uint32 taskCount);
 
+		void RunAsync(TaskGroup group, TaskHandle* taskHandleArray, uint32 taskHandleCount);
+
+
 		bool WaitGroup(TaskGroup group, uint32 milliseconds);
 		bool WaitAll(uint32 milliseconds);
 
