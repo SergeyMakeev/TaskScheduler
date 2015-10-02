@@ -155,6 +155,30 @@ namespace MT
 			return true;
 		}
 
+
+		// assignment operator
+		TaskHandle & operator= (const TaskHandle & other)
+		{
+			check_id = other.check_id;
+			task = other.task;
+
+			return *this;
+		}
+
+		// move assignment operator
+		TaskHandle & operator= (TaskHandle && other)
+		{
+			check_id = other.check_id;
+			task = other.task;
+
+			other.check_id = TaskID::UNUSED;
+			other.task = nullptr;
+
+			return *this;
+		}
+
+
+
 		const internal::TaskDesc & GetDesc()
 		{
 			MT_ASSERT(IsValid(), "Task handle is invalid");
