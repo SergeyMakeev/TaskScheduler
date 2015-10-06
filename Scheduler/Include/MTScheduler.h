@@ -35,6 +35,7 @@
 
 #ifdef MT_INSTRUMENTED_BUILD
 #include <MTMicroWebSrv.h>
+#include <MTProfilerEventListener.h>
 #endif
 
 namespace MT
@@ -127,9 +128,10 @@ namespace MT
 		FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
 
 #ifdef MT_INSTRUMENTED_BUILD
-		int32 webServerPort;
-		profile::MicroWebServer profilerWebServer;
+		IProfilerEventListener * profilerEventListener;
 		int64 startTime;
+		profile::MicroWebServer profilerWebServer;
+		int32 webServerPort;
 #endif
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
@@ -147,7 +149,13 @@ namespace MT
 
 		/// \brief Initializes a new instance of the TaskScheduler class.
 		/// \param workerThreadsCount Worker threads count. Automatically determines the required number of threads if workerThreadsCount set to 0
+#ifdef MT_INSTRUMENTED_BUILD
+		TaskScheduler(uint32 workerThreadsCount = 0, IProfilerEventListener* listener = nullptr);
+#else
 		TaskScheduler(uint32 workerThreadsCount = 0);
+#endif
+
+
 		~TaskScheduler();
 
 		template<class TTask>
@@ -178,6 +186,16 @@ namespace MT
 		{
 			return startTime;
 		}
+
+		inline uint64 GetTimeStamp() const
+		{
+			return MT::GetTimeMicroSeconds() - startTime;
+		}
+
+		inline IProfilerEventListener* GetProfilerEventListener()
+		{
+			return profilerEventListener;
+		}		
 
 #endif
 	};

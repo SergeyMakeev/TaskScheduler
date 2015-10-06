@@ -98,7 +98,12 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_DONE;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
+			eventDesc.timeStampMicroSeconds = taskScheduler->GetTimeStamp();
+
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnTaskFinished(eventDesc.timeStampMicroSeconds, desc.debugID);
+			}
 
 			profileEvents.Push(std::move(eventDesc));
 		}
@@ -109,7 +114,13 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_RESUME;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
+			eventDesc.timeStampMicroSeconds = taskScheduler->GetTimeStamp();
+
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnTaskResumed(eventDesc.timeStampMicroSeconds, desc.debugID);
+			}
+
 			profileEvents.Push(std::move(eventDesc));
 		}
 
@@ -119,31 +130,46 @@ namespace MT
 			eventDesc.id = desc.debugID;
 			eventDesc.colorIndex = desc.colorIndex;
 			eventDesc.type = ProfileEventType::TASK_YIELD;
-			eventDesc.timeStampMicroSeconds = MT::GetTimeMicroSeconds() - taskScheduler->GetStartTime();
+			eventDesc.timeStampMicroSeconds = taskScheduler->GetTimeStamp();
+
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnTaskYielded(eventDesc.timeStampMicroSeconds, desc.debugID);
+			}
+
 			profileEvents.Push(std::move(eventDesc));
 		}
 
-		void ThreadContext::NotifyWorkerAwait(int64 waitFrom, int64 waitTo)
+		void ThreadContext::NotifyThreadCreate(uint32 threadIndex)
 		{
-			waitFrom;
-			waitTo;
-/*
-			if ((waitTo - waitFrom) > 100)
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				ProfileEventDesc eventDesc;
-				eventDesc.id = "#";
-				eventDesc.colorIndex = MT_COLOR_YELLOW;
-				eventDesc.type = ProfileEventType::TASK_RESUME;
-				eventDesc.timeStampMicroSeconds = waitFrom - MT::TaskScheduler::GetStartTime();
-				profileEvents.Push(std::move(eventDesc));
-
-				eventDesc.id = "#";
-				eventDesc.colorIndex = MT_COLOR_YELLOW;
-				eventDesc.type = ProfileEventType::TASK_DONE;
-				eventDesc.timeStampMicroSeconds = waitTo - MT::TaskScheduler::GetStartTime();
-				profileEvents.Push(std::move(eventDesc));
+				eventListener->OnThreadCreated(taskScheduler->GetTimeStamp(), threadIndex);
 			}
-*/
+		}
+
+		void ThreadContext::NotifyThreadStart(uint32 threadIndex)
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadStarted(taskScheduler->GetTimeStamp(), threadIndex);
+			}
+		}
+
+		void ThreadContext::NotifyThreadStop(uint32 threadIndex)
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadStoped(taskScheduler->GetTimeStamp(), threadIndex);
+			}
+		}
+
+		void ThreadContext::NotifyThreadAwait(uint64 timeStampMicroSecondsFrom, uint64 timeStampMicroSecondsTo, uint32 threadIndex)
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadIdle(timeStampMicroSecondsFrom, timeStampMicroSecondsTo, threadIndex);
+			}
 
 		}
 

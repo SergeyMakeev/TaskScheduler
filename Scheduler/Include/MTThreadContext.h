@@ -122,11 +122,15 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			
+			void NotifyThreadCreate(uint32 threadIndex);
+			void NotifyThreadStart(uint32 threadIndex);
+			void NotifyThreadStop(uint32 threadIndex);
+
 			void NotifyTaskFinished(const internal::TaskDesc & desc);
 			void NotifyTaskResumed(const internal::TaskDesc & desc);
 			void NotifyTaskYielded(const internal::TaskDesc & desc);
 
-			void NotifyWorkerAwait(int64 waitFrom, int64 waitTo);
+			void NotifyThreadAwait(uint64 timeStampMicroSecondsFrom, uint64 timeStampMicroSecondsTo, uint32 threadIndex);
 
 #endif
 		};

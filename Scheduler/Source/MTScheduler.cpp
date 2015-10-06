@@ -26,12 +26,17 @@
 namespace MT
 {
 
+#ifdef MT_INSTRUMENTED_BUILD
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, IProfilerEventListener* listener)
+#else
 	TaskScheduler::TaskScheduler(uint32 workerThreadsCount)
+#endif
 		: roundRobinThreadIndex(0)
 		, startedThreadsCount(0)
 	{
 
 #ifdef MT_INSTRUMENTED_BUILD
+		profilerEventListener = listener;
 		webServerPort = profilerWebServer.Serve(8080, 8090);
 		//initialize start time
 		startTime = MT::GetTimeMicroSeconds();
@@ -271,6 +276,11 @@ namespace MT
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
+
+#ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyThreadCreate(context.workerIndex);
+#endif
+
 		context.schedulerFiber.CreateFromThread(context.thread);
 
 		uint32 workersCount = context.taskScheduler->GetWorkerCount();
@@ -286,6 +296,11 @@ namespace MT
 			}
 			Thread::Sleep(1);
 		}
+
+
+#ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyThreadStart(context.workerIndex);
+#endif
 
 		while(context.state.Get() != internal::ThreadState::EXIT)
 		{
@@ -346,7 +361,7 @@ namespace MT
 			} else
 			{
 #ifdef MT_INSTRUMENTED_BUILD
-				int64 waitFrom = MT::GetTimeMicroSeconds();
+				uint64 waitFrom = context.taskScheduler->GetTimeStamp();
 #endif
 
 				// Queue is empty and stealing attempt failed
@@ -354,13 +369,18 @@ namespace MT
 				context.hasNewTasksEvent.Wait(2000);
 
 #ifdef MT_INSTRUMENTED_BUILD
-				int64 waitTo = MT::GetTimeMicroSeconds();
-				context.NotifyWorkerAwait(waitFrom, waitTo);
+				uint64 waitTo = context.taskScheduler->GetTimeStamp();
+				context.NotifyThreadAwait(waitFrom, waitTo, context.workerIndex);
 #endif
 
 			}
 
 		} // main thread loop
+
+#ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyThreadStop(context.workerIndex);
+#endif
+
 	}
 
 	void TaskScheduler::RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState)
