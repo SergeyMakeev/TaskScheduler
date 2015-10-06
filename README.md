@@ -75,15 +75,21 @@ https://github.com/CppCon/CppCon2015/tree/master/Presentations/Work%20Stealing
 
 Enki Task Scheduler by Doug Binks
 http://www.enkisoftware.com/devlogpost-20150822-1-Implementing_a_lightweight_task_scheduler.html
+
 http://www.enkisoftware.com/devlogpost-20150905-1-Internals_of_a_lightweight_task_scheduler.html
 
 Molecule Engine blog - Job System 2.0 by Stefan Reinalter
 http://blog.molecular-matters.com/2015/08/24/job-system-2-0-lock-free-work-stealing-part-1-basics/
+
 http://blog.molecular-matters.com/2015/09/08/job-system-2-0-lock-free-work-stealing-part-2-a-specialized-allocator/
+
 http://blog.molecular-matters.com/2015/09/25/job-system-2-0-lock-free-work-stealing-part-3-going-lock-free/
 
 Molecule Engine blog - Building a load-balanced task scheduler by Stefan Reinalter
 http://blog.molecular-matters.com/2012/04/05/building-a-load-balanced-task-scheduler-part-1-basics/
+
 http://blog.molecular-matters.com/2012/04/12/building-a-load-balanced-task-scheduler-part-2-task-model-relationships/
+
 http://blog.molecular-matters.com/2012/04/25/building-a-load-balanced-task-scheduler-part-3-parent-child-relationships/
+
 http://blog.molecular-matters.com/2012/07/09/building-a-load-balanced-task-scheduler-part-4-false-sharing/
