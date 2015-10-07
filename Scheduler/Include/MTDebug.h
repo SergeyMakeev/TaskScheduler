@@ -39,9 +39,9 @@ inline void ThrowException()
 {
 	raise(SIGTRAP);
 
-    // force access violation error
-    char* pBadAddr = (char*)0x0;
-    *pBadAddr = 0;
+	// force access violation error
+	char* pBadAddr = (char*)0x0;
+	*pBadAddr = 0;
 }
 
 #endif

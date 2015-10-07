@@ -51,6 +51,8 @@ namespace MT
 		template<>
 		inline internal::GroupedTask GetGroupedTask(TaskGroup group, MT::TaskHandle * src)
 		{
+			MT_ASSERT(src->IsValid(), "Invalid task handle!");
+
 			const internal::TaskDesc & desc = src->GetDesc();
 			return internal::GroupedTask(desc, group);
 		}

@@ -297,11 +297,9 @@ namespace MT
 			PoolItem* pElement = Buffer() + clampedIdx;
 
 			bool isUnused = ((pElement->id.Get() & 1 ) != 0);
-			if (isUnused == false)
-			{
-				//Can't allocate more, next element in circular buffer is already used
-				return TaskHandle();
-			}
+
+			//Can't allocate more, next element in circular buffer is already used
+			MT_VERIFY(isUnused, "Pool allocation failed", return TaskHandle());
 
 			//generate next even number for id
 			int id = idGenerator.Add(2);
