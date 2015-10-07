@@ -90,9 +90,11 @@ TEST(SingleThreadPoolTest)
 	CHECK_EQUAL(true, taskHandle2.IsValid());
 	CHECK_EQUAL(true, taskHandle3.IsValid());
 
+
 	// check for allocation fail
-	MT::TaskHandle taskHandle4 = taskPool.Alloc(SimpleTask());
+	MT::TaskHandle taskHandle4 = taskPool.TryAlloc(SimpleTask());
 	CHECK_EQUAL(false, taskHandle4.IsValid());
+
 
 	// check state
 	CHECK_EQUAL(true, taskHandle0.IsValid());
@@ -133,7 +135,7 @@ struct ThreadTest : public MT::TaskBase<ThreadTest>
 	{
 		for (int i = 0; i < 20000; i++)
 		{
-			MT::TaskHandle handle = taskPool->Alloc(SimpleTask());
+			MT::TaskHandle handle = taskPool->TryAlloc(SimpleTask());
 			if (handle.IsValid())
 			{
 				CHECK_EQUAL(true, MT::PoolElementHeader::DestoryByHandle(handle));

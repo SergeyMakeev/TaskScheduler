@@ -48,7 +48,8 @@ inline void ThrowException()
 
 
 
-#ifdef _DEBUG
+
+#if defined(_DEBUG) || defined(MT_INSTRUMENTED_BUILD)
 
 #define MT_REPORT_ASSERT( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
 

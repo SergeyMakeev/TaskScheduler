@@ -287,8 +287,7 @@ namespace MT
 			}
 		}
 
-
-		TaskHandle Alloc(T && task)
+		TaskHandle TryAlloc(T && task)
 		{
 			int idx = index.Inc() - 1;
 
@@ -298,13 +297,24 @@ namespace MT
 
 			bool isUnused = ((pElement->id.Get() & 1 ) != 0);
 
-			//Can't allocate more, next element in circular buffer is already used
-			MT_VERIFY(isUnused, "Pool allocation failed", return TaskHandle());
+			if (isUnused == false)
+			{
+				//Can't allocate more, next element in circular buffer is already used
+				return TaskHandle();
+			}
 
 			//generate next even number for id
 			int id = idGenerator.Add(2);
 			MoveCtor( pElement, id, std::move(task) );
 			return TaskHandle(id, pElement);
+		}
+
+
+		TaskHandle Alloc(T && task)
+		{
+			TaskHandle res = TryAlloc(std::move(task));
+			MT_ASSERT(res.IsValid(), "Pool allocation failed");
+			return res;
 		}
 
 	};
