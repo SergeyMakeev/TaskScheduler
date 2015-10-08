@@ -112,4 +112,6 @@ http://blog.molecular-matters.com/2012/04/25/building-a-load-balanced-task-sched
 http://blog.molecular-matters.com/2012/07/09/building-a-load-balanced-task-scheduler-part-4-false-sharing/
 
 Do-it-yourself Game Task Scheduling by Jerome Muffat-Meridol
+
 https://software.intel.com/en-us/articles/do-it-yourself-game-task-scheduling
+
