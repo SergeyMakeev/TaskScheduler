@@ -65,6 +65,13 @@ namespace MT
 		{
 			return __sync_lock_test_and_set(&value, val);
 		}
+
+		// The function returns the initial value.
+		int CompareAndSwap(int compareValue, int newValue)
+		{
+			return __sync_val_compare_and_swap(&value, compareValue, newValue);
+		}
+
 	};
 
 }

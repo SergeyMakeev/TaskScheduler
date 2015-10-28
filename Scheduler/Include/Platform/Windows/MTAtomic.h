@@ -69,6 +69,12 @@ namespace MT
 		{
 			return InterlockedExchange(&value, val); 
 		}
+
+		// The function returns the initial value.
+		int CompareAndSwap(int compareValue, int newValue)
+		{
+			return InterlockedCompareExchange(&value, newValue, compareValue);
+		}
 	};
 
 }
