@@ -32,13 +32,16 @@ namespace MT
 		volatile long value;
 	public:
 
-		AtomicInt() : value(0)
+		AtomicInt()
+			: value(0)
 		{
+			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		AtomicInt(int v)
+		explicit AtomicInt(int v)
 			: value(v)
 		{
+			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
 		int Add(int sum)
@@ -73,5 +76,49 @@ namespace MT
 		}
 
 	};
+
+
+	//
+	// Atomic pointer
+	//
+	template<typename T>
+	class AtomicPtr
+	{
+		volatile T* value;
+
+	public:
+
+		AtomicPtr()
+			: value(nullptr)
+		{
+			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
+		}
+
+		explicit AtomicPtr(T* v)
+			: value(v)
+		{
+			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
+		}
+
+		T* Get() const
+		{
+			return (T*)value;
+		}
+
+		// The function returns the initial value.
+		T* Set(T* val)
+		{
+			void* r = __sync_lock_test_and_set((void**)&value, (void*)val);
+			return (T*)r;
+		}
+
+		// The function returns the initial value.
+		T* CompareAndSwap(T* compareValue, T* newValue)
+		{
+			void* r = __sync_val_compare_and_swap((void**)&value, (void*)newValue, (void*)compareValue);
+			return (T*)r;
+		}
+	};
+
 
 }

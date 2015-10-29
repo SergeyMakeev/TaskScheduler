@@ -7,7 +7,7 @@
 
 SUITE(FiberTests)
 {
-    MT::AtomicInt counter = 0;
+  MT::AtomicInt counter(0);
 
 
 	MT::Fiber* fiberMain = nullptr;
