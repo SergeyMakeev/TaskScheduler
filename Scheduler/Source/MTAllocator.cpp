@@ -109,8 +109,8 @@ namespace MT
 	{
 #ifdef _WIN32
 
-		int res = VirtualFree(desc.stackMemory, desc.stackMemoryBytesCount, MEM_RELEASE);
-		MT_ASSERT(res == 0, "Can't free memory");
+		int res = VirtualFree(desc.stackMemory, 0, MEM_RELEASE);
+		MT_ASSERT(res != 0, "Can't free memory");
 
 #else
 
