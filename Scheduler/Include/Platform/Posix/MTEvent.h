@@ -95,7 +95,7 @@ namespace MT
 
 			pthread_mutex_init( &mutex, nullptr );
 			pthread_cond_init( &condition, nullptr );
-			val.Set(initialState ? SIGNALED : NOT_SIGNALED);
+			val.Store(initialState ? SIGNALED : NOT_SIGNALED);
 
 			isInitialized = true;
 			numOfWaitingThreads = 0;
@@ -107,7 +107,7 @@ namespace MT
 
 			pthread_mutex_lock( &mutex );
 
-			val.Set(SIGNALED);
+			val.Store(SIGNALED);
 
 			if (numOfWaitingThreads)
 			{
@@ -126,7 +126,7 @@ namespace MT
 		void Reset()
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
-			val.Set(NOT_SIGNALED);
+			val.Store(NOT_SIGNALED);
 		}
 
 		bool Wait(uint32 milliseconds)
@@ -136,7 +136,7 @@ namespace MT
 			pthread_mutex_lock( &mutex );
 
 			// early exit if event already signaled
-			if ( val.Get() != NOT_SIGNALED )
+			if ( val.Load() != NOT_SIGNALED )
 			{
 				AutoResetIfNeed();
 				pthread_mutex_unlock( &mutex );
