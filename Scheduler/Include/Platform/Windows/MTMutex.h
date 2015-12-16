@@ -45,7 +45,7 @@ namespace MT
 
 		Mutex()
 		{
-			::InitializeCriticalSection( &criticalSection );
+			::InitializeCriticalSectionAndSpinCount( &criticalSection, 16 );
 		}
 
 		~Mutex()

@@ -140,7 +140,7 @@ namespace MT
 
 			if ((Size() + 1) >= MAX_JOBS_COUNT)
 			{
-				MT_ASSERT(false, "Queue overflow");
+				MT_REPORT_ASSERT("Queue overflow");
 				return;
 			}
 
@@ -159,7 +159,7 @@ namespace MT
 
 			if ((Size() + count) >= MAX_JOBS_COUNT)
 			{
-				MT_ASSERT(false, "Queue overflow");
+				MT_REPORT_ASSERT("Queue overflow");
 				return;
 			}
 

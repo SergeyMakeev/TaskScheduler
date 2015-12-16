@@ -51,15 +51,18 @@ inline void ThrowException()
 
 #if defined(_DEBUG) || defined(MT_INSTRUMENTED_BUILD)
 
-#define MT_REPORT_ASSERT( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
+#define MT_REPORT_ASSERT_IMPL( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
 
-#define MT_ASSERT( condition, description ) { if ( !(condition) ) { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) } }
-#define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { MT_REPORT_ASSERT( #condition, description, __FILE__, __LINE__ ) }; operation; } }
+
+#define MT_REPORT_ASSERT( description ) { MT_REPORT_ASSERT_IMPL( "always", description, __FILE__, __LINE__ ) }
+#define MT_ASSERT( condition, description ) { if ( !(condition) ) { MT_REPORT_ASSERT_IMPL( #condition, description, __FILE__, __LINE__ ) } }
+#define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { MT_REPORT_ASSERT_IMPL( #condition, description, __FILE__, __LINE__ ) }; operation; } }
 
 #else
 
 //TODO: Remove condition from MT_ASSERT
 //      Currently condition removal produces too many unused variable warnings when compiling
+#define MT_REPORT_ASSERT( description )
 #define MT_ASSERT( condition, description ) { if ( !(condition) ) {} }
 #define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { operation; } }
 

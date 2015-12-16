@@ -103,7 +103,7 @@ namespace MT
 
 		if (!availableFibers.TryPopBack(fiberContext))
 		{
-			MT_ASSERT(false, "Fibers pool is empty. Too many fibers running simultaneously.");
+			MT_REPORT_ASSERT("Fibers pool is empty. Too many fibers running simultaneously.");
 		}
 
 		fiberContext->currentTask = task.desc;
@@ -288,7 +288,7 @@ namespace MT
 		context.taskScheduler->startedThreadsCount.IncFetch();
 
 		//Spinlock until all threads started and initialized
-		while(true)
+		for(;;)
 		{
 			if (context.taskScheduler->startedThreadsCount.Load() == (int)context.taskScheduler->threadsCount)
 			{
@@ -516,7 +516,7 @@ namespace MT
 		TaskGroup group;
 		if (!availableGroups.TryPopBack(group))
 		{
-			MT_ASSERT(false, "Group pool is empty");
+			MT_REPORT_ASSERT("Group pool is empty");
 		}
 
 		int idx = group.GetValidIndex();
