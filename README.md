@@ -115,3 +115,6 @@ Do-it-yourself Game Task Scheduling by Jerome Muffat-Meridol
 
 https://software.intel.com/en-us/articles/do-it-yourself-game-task-scheduling
 
+Acquire and Release Semantics
+
+http://preshing.com/20120913/acquire-and-release-semantics/

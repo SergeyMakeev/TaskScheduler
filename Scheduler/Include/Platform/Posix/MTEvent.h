@@ -45,7 +45,7 @@ namespace MT
 
 		pthread_mutex_t	mutex;
 		pthread_cond_t	condition;
-		AtomicInt val;
+		AtomicInt32 val;
 		EventReset::Type resetType;
 		bool isInitialized;
 
