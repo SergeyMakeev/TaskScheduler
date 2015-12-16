@@ -66,7 +66,7 @@ namespace MT
 		// Application can assign task group to task and later wait until group was finished.
 		class TaskGroupDescription
 		{
-			AtomicInt inProgressTaskCount;
+			AtomicInt32 inProgressTaskCount;
 			Event allDoneEvent;
 
 			//Tasks awaiting group through FiberContext::WaitGroupAndYield call
@@ -86,27 +86,58 @@ namespace MT
 
 			TaskGroupDescription()
 			{
-				inProgressTaskCount.Set(0);
+				inProgressTaskCount.Store(0);
 				allDoneEvent.Create( EventReset::MANUAL, true );
 				debugIsFree = true;
 			}
 
-			int GetTaskCount() const { return inProgressTaskCount.Get(); }
-			ConcurrentQueueLIFO<FiberContext*> & GetWaitQueue() { return waitTasksQueue; }
-			int Dec() { return inProgressTaskCount.Dec(); }
-			int Inc() { return inProgressTaskCount.Inc(); }
-			int Add(int sum) { return inProgressTaskCount.Add(sum); }
-			void Signal() { allDoneEvent.Signal(); }
-			void Reset() { allDoneEvent.Reset(); }
-			bool Wait(uint32 milliseconds) { return allDoneEvent.Wait(milliseconds); }
+			int GetTaskCount() const
+			{
+				return inProgressTaskCount.Load();
+			}
+
+			ConcurrentQueueLIFO<FiberContext*> & GetWaitQueue()
+			{
+				return waitTasksQueue;
+			}
+
+			int Dec()
+			{
+				return inProgressTaskCount.DecFetch();
+			}
+
+			int Inc()
+			{
+				return inProgressTaskCount.IncFetch();
+			}
+
+			int Add(int sum)
+			{
+				return inProgressTaskCount.AddFetch(sum);
+			}
+
+			void Signal()
+			{
+				allDoneEvent.Signal();
+			}
+
+			void Reset()
+			{
+				allDoneEvent.Reset();
+			}
+
+			bool Wait(uint32 milliseconds)
+			{
+				return allDoneEvent.Wait(milliseconds);
+			}
 		};
 
 
 		// Thread index for new task
-		AtomicInt roundRobinThreadIndex;
+		AtomicInt32 roundRobinThreadIndex;
 
 		// Started threads count
-		AtomicInt startedThreadsCount;
+		AtomicInt32 startedThreadsCount;
 
 		// Threads created by task manager
 		volatile uint32 threadsCount;

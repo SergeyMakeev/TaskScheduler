@@ -172,11 +172,11 @@ struct TaskSubtaskCombo_Sum1 : public MT::TaskBase<TaskSubtaskCombo_Sum1>
 {
 	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum1", MT_COLOR_DEFAULT);
 
-	MT::AtomicInt* data;
+	MT::AtomicInt32* data;
 
 	void Do(MT::FiberContext&)
 	{
-		data->Inc();
+		data->IncFetch();
 	}
 };
 
@@ -184,7 +184,7 @@ struct TaskSubtaskCombo_Sum4 : public MT::TaskBase<TaskSubtaskCombo_Sum4>
 {
 	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum4", MT_COLOR_DEFAULT);
 
-	MT::AtomicInt* data;
+	MT::AtomicInt32* data;
 
 	TaskSubtaskCombo_Sum1 tasks[2];
 
@@ -202,7 +202,7 @@ struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 {
 	MT_DECLARE_DEBUG_INFO("TaskSubtaskCombo_Sum16", MT_COLOR_DEFAULT);
 
-	MT::AtomicInt* data;
+	MT::AtomicInt32* data;
 
 	TaskSubtaskCombo_Sum4 tasks[2];
 
@@ -216,12 +216,12 @@ struct TaskSubtaskCombo_Sum16 : public MT::TaskBase<TaskSubtaskCombo_Sum16>
 	}
 };
 
-MT::AtomicInt sum;
+MT::AtomicInt32 sum;
 
 // Checks one simple task
 TEST(TaskSubtaskCombo)
 {
-	sum.Set(0);
+	sum.Store(0);
 
 	MT::TaskScheduler scheduler;
 
@@ -234,7 +234,7 @@ TEST(TaskSubtaskCombo)
 
 	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
 
-	CHECK_EQUAL(sum.Get(), 256);
+	CHECK_EQUAL(sum.Load(), 256);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -8,9 +8,9 @@ SUITE(GroupTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace SimpleWaitFromSubtask
 {
-	MT::AtomicInt subtaskCount(0);
-	MT::AtomicInt animTaskCount(0);
-	MT::AtomicInt physTaskCount(0);
+	MT::AtomicInt32 subtaskCount(0);
+	MT::AtomicInt32 animTaskCount(0);
+	MT::AtomicInt32 physTaskCount(0);
 
 
 	struct DummySubTask : public MT::TaskBase<DummySubTask>
@@ -26,7 +26,7 @@ namespace SimpleWaitFromSubtask
 				tempData[i] = cos((float)rand() / RAND_MAX) + sin((float)rand() / RAND_MAX);
 			}
 
-			subtaskCount.Inc();
+			subtaskCount.IncFetch();
 		}
 	};
 
@@ -48,7 +48,7 @@ namespace SimpleWaitFromSubtask
 			ctx.RunAsync(MT::TaskGroup::Default(), &subtasks[0], MT_ARRAY_SIZE(subtasks));
 			ctx.WaitGroupAndYield(MT::TaskGroup::Default());
 
-			animTaskCount.Inc();
+			animTaskCount.IncFetch();
 		}
 	};
 
@@ -69,7 +69,7 @@ namespace SimpleWaitFromSubtask
 			DummySubTask subtasks[8];
 			ctx.RunSubtasksAndYield(MT::TaskGroup::Default(), &subtasks[0], MT_ARRAY_SIZE(subtasks));
 
-			physTaskCount.Inc();
+			physTaskCount.IncFetch();
 		}
 	};
 
@@ -79,9 +79,9 @@ namespace SimpleWaitFromSubtask
 	{
 		static uint32 waitTime = 50000;
 
-		subtaskCount.Set(0);
-		animTaskCount.Set(0);
-		physTaskCount.Set(0);
+		subtaskCount.Store(0);
+		animTaskCount.Store(0);
+		physTaskCount.Store(0);
 
 		MT::TaskScheduler scheduler;
 
@@ -95,15 +95,15 @@ namespace SimpleWaitFromSubtask
 
 		CHECK(scheduler.WaitGroup(groupAnim, waitTime));
 
-		CHECK_EQUAL(4, animTaskCount.Get());
-		CHECK(subtaskCount.Get() >= 4 * 16);
+		CHECK_EQUAL(4, animTaskCount.Load());
+		CHECK(subtaskCount.Load() >= 4 * 16);
 
 
 		CHECK(scheduler.WaitGroup(groupPhysic, waitTime));
 
-		CHECK_EQUAL(4, animTaskCount.Get());
-		CHECK_EQUAL(4, physTaskCount.Get());
-		CHECK_EQUAL(96, subtaskCount.Get());
+		CHECK_EQUAL(4, animTaskCount.Load());
+		CHECK_EQUAL(4, physTaskCount.Load());
+		CHECK_EQUAL(96, subtaskCount.Load());
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

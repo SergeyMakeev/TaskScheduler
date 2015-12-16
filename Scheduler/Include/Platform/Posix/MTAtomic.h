@@ -22,49 +22,61 @@
 
 #pragma once
 
+#ifndef __MT_ATOMIC__
+#define __MT_ATOMIC__
+
+
 namespace MT
 {
+
+	inline void HardwareFullMemoryBarrier()
+	{
+		__sync_synchronize();
+	}
+
 	//
 	// Atomic int
 	//
-	class AtomicInt
+	class AtomicInt32
 	{
 		volatile long value;
 	public:
 
-		AtomicInt()
+		AtomicInt32()
 			: value(0)
 		{
+			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		explicit AtomicInt(int v)
+		explicit AtomicInt32(int v)
 			: value(v)
 		{
+			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		int Add(int sum)
+		int AddFetch(int sum)
 		{
 			return __sync_add_and_fetch(&value, sum);
 		}
 
-		int Inc()
+		int IncFetch()
 		{
 			return __sync_add_and_fetch(&value, 1);
 		}
 
-		int Dec()
+		int DecFetch()
 		{
 			return __sync_sub_and_fetch(&value, 1);
 		}
 
-		int Get() const
+		int Load() const
 		{
 			return value;
 		}
 
-		int Set(int val)
+		int Store(int val)
 		{
 			return __sync_lock_test_and_set(&value, val);
 		}
@@ -74,6 +86,19 @@ namespace MT
 		{
 			return __sync_val_compare_and_swap(&value, compareValue, newValue);
 		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		int LoadRelaxed() const
+		{
+			return value;
+		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		void StoreRelaxed(int val)
+		{
+			value = val;
+		}
+
 
 	};
 
@@ -100,13 +125,13 @@ namespace MT
 			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
 		}
 
-		T* Get() const
+		T* Load() const
 		{
 			return (T*)value;
 		}
 
 		// The function returns the initial value.
-		T* Set(T* val)
+		T* Store(T* val)
 		{
 			void* r = __sync_lock_test_and_set((void**)&value, (void*)val);
 			return (T*)r;
@@ -118,7 +143,22 @@ namespace MT
 			void* r = __sync_val_compare_and_swap((void**)&value, (void*)compareValue, (void*)newValue);
 			return (T*)r;
 		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		T* LoadRelaxed() const
+		{
+			return value;
+		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		void StoreRelaxed(T* val)
+		{
+			value = val;
+		}
+
 	};
 
 
 }
+
+#endif

@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_UTILS__
+#define __MT_UTILS__
+
+
 #include <sys/time.h>
 
 namespace MT
@@ -38,3 +42,6 @@ namespace MT
 		return GetTimeMicroSeconds() / 1000;
 	}
 }
+
+
+#endif

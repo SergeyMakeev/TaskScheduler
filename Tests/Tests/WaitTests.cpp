@@ -7,8 +7,8 @@ SUITE(WaitTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace SimpleWaitFromSubtask
 {
-	MT::AtomicInt subTaskCount;
-	MT::AtomicInt taskCount;
+	MT::AtomicInt32 subTaskCount;
+	MT::AtomicInt32 taskCount;
 
 	MT::TaskGroup testGroup;
 
@@ -19,7 +19,7 @@ namespace SimpleWaitFromSubtask
 		void Do(MT::FiberContext&)
 		{
 			MT::Thread::SpinSleep(2);
-			subTaskCount.Inc();
+			subTaskCount.IncFetch();
 		}
 	};
 
@@ -34,7 +34,7 @@ namespace SimpleWaitFromSubtask
 			ctx.RunAsync(testGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 			ctx.WaitGroupAndYield(testGroup);
 
-			taskCount.Inc();
+			taskCount.IncFetch();
 
 		}
 	};
@@ -43,8 +43,8 @@ namespace SimpleWaitFromSubtask
 	// Checks one simple task
 	TEST(RunOneSimpleWaitTask)
 	{
-		taskCount.Set(0);
-		subTaskCount.Set(0);
+		taskCount.Store(0);
+		subTaskCount.Store(0);
 
 		MT::TaskScheduler scheduler;
 
@@ -55,10 +55,10 @@ namespace SimpleWaitFromSubtask
 
 		CHECK(scheduler.WaitAll(2000));
 
-		int subTaskCountFinisehd = subTaskCount.Get();
+		int subTaskCountFinisehd = subTaskCount.Load();
 		CHECK(subTaskCountFinisehd == MT_ARRAY_SIZE(tasks) * 2);
 
-		int taskCountFinished = taskCount.Get();
+		int taskCountFinished = taskCount.Load();
 		CHECK(taskCountFinished == MT_ARRAY_SIZE(tasks));
 	}
 }

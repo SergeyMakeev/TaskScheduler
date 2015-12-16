@@ -100,7 +100,7 @@ namespace MT
 		TaskGroup currentGroup;
 
 		// Number of children fibers
-		AtomicInt childrenFibersCount;
+		AtomicInt32 childrenFibersCount;
 
 		// Parent fiber
 		FiberContext* parentFiber;

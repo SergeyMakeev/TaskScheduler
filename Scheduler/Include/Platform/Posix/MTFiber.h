@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_FIBER__
+#define __MT_FIBER__
+
+
 #include <ucontext.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +42,7 @@
 #endif
 
 #include <MTAllocator.h>
+#include "MTAtomic.h"
 
 namespace MT
 {
@@ -141,7 +146,7 @@ namespace MT
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
-			 __sync_synchronize();
+			HardwareFullMemoryBarrier();
 
 			MT_ASSERT(from.isInitialized, "Invalid from fiber");
 			MT_ASSERT(to.isInitialized, "Invalid to fiber");
@@ -159,3 +164,4 @@ namespace MT
 }
 
 
+#endif

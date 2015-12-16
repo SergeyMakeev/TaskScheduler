@@ -96,7 +96,7 @@ namespace MT
 				PoolElementHeader * poolHeader = (PoolElementHeader *)((char*)userData - sizeof(PoolElementHeader));
 
 				//Fixup pool header, mark task as unused
-				poolHeader->id.Set(TaskID::UNUSED);
+				poolHeader->id.Store(TaskID::UNUSED);
 			}
 
 		};

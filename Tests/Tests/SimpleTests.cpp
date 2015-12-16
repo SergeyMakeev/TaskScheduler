@@ -43,11 +43,11 @@ struct ALotOfTasks : public MT::TaskBase<ALotOfTasks>
 {
 	MT_DECLARE_DEBUG_INFO("ALotOfTasks", MT_COLOR_DEFAULT);
 
-	MT::AtomicInt* counter;
+	MT::AtomicInt32* counter;
 
 	void Do(MT::FiberContext&)
 	{
-		counter->Inc();
+		counter->IncFetch();
 		MT::Thread::SpinSleep(1);
 	}
 };
@@ -58,7 +58,7 @@ TEST(ALotOfTasks)
 
 	MT::TaskScheduler scheduler;
 
-	MT::AtomicInt counter;
+	MT::AtomicInt32 counter;
 
 	static const int TASK_COUNT = 1000;
 
@@ -72,7 +72,7 @@ TEST(ALotOfTasks)
 	int timeout = (TASK_COUNT / scheduler.GetWorkerCount()) * 2000;
 
 	CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), timeout));
-	CHECK_EQUAL(TASK_COUNT, counter.Get());
+	CHECK_EQUAL(TASK_COUNT, counter.Load());
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

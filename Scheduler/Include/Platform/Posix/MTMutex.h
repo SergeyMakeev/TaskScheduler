@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_MUTEX__
+#define __MT_MUTEX__
+
+
 #include <pthread.h>
 
 
@@ -86,3 +90,4 @@ namespace MT
 }
 
 
+#endif

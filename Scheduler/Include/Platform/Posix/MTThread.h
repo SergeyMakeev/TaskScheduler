@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_THREAD__
+#define __MT_THREAD__
+
+
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
@@ -190,3 +194,4 @@ namespace MT
 }
 
 
+#endif

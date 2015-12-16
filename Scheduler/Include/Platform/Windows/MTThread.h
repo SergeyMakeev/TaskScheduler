@@ -21,6 +21,10 @@
 // 	THE SOFTWARE.
 #pragma once
 
+#ifndef __MT_THREAD__
+#define __MT_THREAD__
+
+
 #include <Platform/Common/MTThread.h>
 
 namespace MT
@@ -98,3 +102,4 @@ namespace MT
 }
 
 
+#endif

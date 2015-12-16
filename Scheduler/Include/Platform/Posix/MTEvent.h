@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_EVENT__
+#define __MT_EVENT__
+
+
 #include <sys/time.h>
 #include <sched.h>
 #include <errno.h>
@@ -182,3 +186,4 @@ namespace MT
 }
 
 
+#endif

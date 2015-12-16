@@ -15,9 +15,9 @@ struct SimpleTask : public MT::TaskBase<SimpleTask>
 {
 	MT_DECLARE_DEBUG_INFO("SimpleTask", MT_COLOR_DEFAULT);
 
-	MT::AtomicInt* doCounter;
-	MT::AtomicInt* dtorCounter;
-	TestPoolType * taskPool;
+	MT::AtomicInt32* doCounter;
+	MT::AtomicInt32* dtorCounter;
+	TestPoolType* taskPool;
 
 	SimpleTask()
 		: doCounter(nullptr)
@@ -26,7 +26,7 @@ struct SimpleTask : public MT::TaskBase<SimpleTask>
 	{
 	}
 
-	SimpleTask(MT::AtomicInt* _doCounter, MT::AtomicInt* _dtorCounter, TestPoolType * _taskPool)
+	SimpleTask(MT::AtomicInt32* _doCounter, MT::AtomicInt32* _dtorCounter, TestPoolType * _taskPool)
 		: doCounter(_doCounter)
 		, dtorCounter(_dtorCounter)
 		, taskPool(_taskPool)
@@ -47,7 +47,7 @@ struct SimpleTask : public MT::TaskBase<SimpleTask>
 	{
 		if (dtorCounter)
 		{
-			dtorCounter->Inc();
+			dtorCounter->IncFetch();
 		}
 	}
 
@@ -55,7 +55,7 @@ struct SimpleTask : public MT::TaskBase<SimpleTask>
 	{
 		if (doCounter)
 		{
-			doCounter->Inc();
+			doCounter->IncFetch();
 		}
 
 		if (taskPool)
@@ -170,8 +170,8 @@ TEST(MultiThreadPoolTest)
 //
 TEST(FireAndForgetSimple)
 {
-	MT::AtomicInt doCounter(0);
-	MT::AtomicInt dtorCounter(0);
+	MT::AtomicInt32 doCounter(0);
+	MT::AtomicInt32 dtorCounter(0);
 
 	MT::TaskScheduler scheduler;
 	TestPoolType taskPool;
@@ -180,8 +180,8 @@ TEST(FireAndForgetSimple)
 	{
 		printf("--- step %d ---\n", pass);
 
-		doCounter.Set(0);
-		dtorCounter.Set(0);
+		doCounter.Store(0);
+		dtorCounter.Store(0);
 
 		MT::TaskHandle taskHandles[250];
 		for (size_t i = 0; i < MT_ARRAY_SIZE(taskHandles); ++i)
@@ -195,8 +195,8 @@ TEST(FireAndForgetSimple)
 		int timeout = 20000;
 		CHECK(scheduler.WaitAll(timeout));
 
-		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)doCounter.Get());
-		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)dtorCounter.Get());
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)doCounter.Load());
+		CHECK_EQUAL(MT_ARRAY_SIZE(taskHandles) * 2, (size_t)dtorCounter.Load());
 	}
 
 }

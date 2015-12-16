@@ -61,7 +61,7 @@ namespace MT
 
 	void FiberContext::Reset()
 	{
-		MT_ASSERT(childrenFibersCount.Get() == 0, "Can't release fiber with active children fibers");
+		MT_ASSERT(childrenFibersCount.Load() == 0, "Can't release fiber with active children fibers");
 		currentTask = internal::TaskDesc();
 		parentFiber = nullptr;
 		threadContext = nullptr;

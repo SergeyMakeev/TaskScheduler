@@ -22,7 +22,12 @@
 
 #pragma once
 
+#ifndef __MT_FIBER__
+#define __MT_FIBER__
+
+
 #include <MTAllocator.h>
+#include "MTAtomic.h"
 
 #if defined(_X86_)
 
@@ -177,7 +182,7 @@ namespace MT
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
-			MemoryBarrier();
+			HardwareFullMemoryBarrier();
 
 			MT_ASSERT(from.isInitialized, "Invalid from fiber");
 			MT_ASSERT(to.isInitialized, "Invalid to fiber");
@@ -213,3 +218,5 @@ namespace MT
 #undef ReadTeb
 #undef WriteTeb
 
+
+#endif

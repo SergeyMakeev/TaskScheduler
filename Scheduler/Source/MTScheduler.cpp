@@ -82,7 +82,7 @@ namespace MT
 	{
 		for (uint32 i = 0; i < threadsCount; i++)
 		{
-			threadContext[i].state.Set(internal::ThreadState::EXIT);
+			threadContext[i].state.Store(internal::ThreadState::EXIT);
 			threadContext[i].hasNewTasksEvent.Signal();
 		}
 
@@ -184,7 +184,7 @@ namespace MT
 			FiberContext* parentFiberContext = fiberContext->parentFiber;
 			if (parentFiberContext != nullptr)
 			{
-				int childrenFibersCount = parentFiberContext->childrenFibersCount.Dec();
+				int childrenFibersCount = parentFiberContext->childrenFibersCount.DecFetch();
 				MT_ASSERT(childrenFibersCount >= 0, "Sanity check failed!");
 
 				if (childrenFibersCount == 0)
@@ -285,12 +285,12 @@ namespace MT
 
 		uint32 workersCount = context.taskScheduler->GetWorkerCount();
 
-		context.taskScheduler->startedThreadsCount.Inc();
+		context.taskScheduler->startedThreadsCount.IncFetch();
 
 		//Spinlock until all threads started and initialized
 		while(true)
 		{
-			if (context.taskScheduler->startedThreadsCount.Get() == (int)context.taskScheduler->threadsCount)
+			if (context.taskScheduler->startedThreadsCount.Load() == (int)context.taskScheduler->threadsCount)
 			{
 				break;
 			}
@@ -302,7 +302,7 @@ namespace MT
 		context.NotifyThreadStart(context.workerIndex);
 #endif
 
-		while(context.state.Get() != internal::ThreadState::EXIT)
+		while(context.state.Load() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
 			if (context.queue.TryPopBack(task) || TryStealTask(context, task, workersCount) )
@@ -319,14 +319,14 @@ namespace MT
 #endif
 
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
-					fiberContext->childrenFibersCount.Inc();
+					fiberContext->childrenFibersCount.IncFetch();
 
 					FiberContext* parentFiber = ExecuteTask(context, fiberContext);
 
 					FiberTaskStatus::Type taskStatus = fiberContext->GetStatus();
 
 					//release guard
-					int childrenFibersCount = fiberContext->childrenFibersCount.Dec();
+					int childrenFibersCount = fiberContext->childrenFibersCount.DecFetch();
 
 					// Can drop fiber context - task is finished
 					if (taskStatus == FiberTaskStatus::FINISHED)
@@ -415,7 +415,7 @@ namespace MT
 		// Increments child fibers count on parent fiber
 		if (parentFiber)
 		{
-			parentFiber->childrenFibersCount.Add((uint32)count);
+			parentFiber->childrenFibersCount.AddFetch((int)count);
 		}
 
 		if (restoredFromAwaitState == false)
@@ -442,7 +442,7 @@ namespace MT
 		// Add to thread queue
 		for (size_t i = 0; i < buckets.Size(); ++i)
 		{
-			int bucketIndex = roundRobinThreadIndex.Inc() % threadsCount;
+			int bucketIndex = roundRobinThreadIndex.IncFetch() % threadsCount;
 			internal::ThreadContext & context = threadContext[bucketIndex];
 
 			internal::TaskBucket& bucket = buckets[i];

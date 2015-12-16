@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef __MT_EVENT__
+#define __MT_EVENT__
+
+
 namespace MT
 {
 	//
@@ -89,3 +93,4 @@ namespace MT
 }
 
 
+#endif

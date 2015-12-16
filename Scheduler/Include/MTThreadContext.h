@@ -92,7 +92,7 @@ namespace MT
 			Event hasNewTasksEvent;
 
 			// whether thread is alive
-			AtomicInt state;
+			AtomicInt32 state;
 
 			// Temporary buffer, fixed size = TASK_BUFFER_CAPACITY
 			void* descBuffer;

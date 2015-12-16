@@ -22,62 +22,88 @@
 
 #pragma once
 
+#ifndef __MT_ATOMIC__
+#define __MT_ATOMIC__
+
+#include <intrin.h>
+#include <cstdint>
+
 namespace MT
 {
+	inline void HardwareFullMemoryBarrier()
+	{
+		_mm_mfence();
+	}
+
 	//
 	// Atomic int
 	//
-	class AtomicInt
+	class AtomicInt32
 	{
 		volatile long value;
 	public:
 
-		AtomicInt()
+		AtomicInt32()
 			: value(0)
 		{
+			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		explicit AtomicInt(int v)
+		explicit AtomicInt32(int v)
 			: value(v)
 		{
+			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
 		// The function returns the resulting added value.
-		int Add(int sum)
+		int AddFetch(int sum)
 		{
-			return InterlockedExchangeAdd(&value, sum) + sum;
+			return _InterlockedExchangeAdd(&value, sum) + sum;
 		}
 
 		// The function returns the resulting incremented value.
-		int Inc()
+		int IncFetch()
 		{
-			return InterlockedIncrement(&value);
+			return _InterlockedIncrement(&value);
 		}
 
 		// The function returns the resulting decremented value.
-		int Dec()
+		int DecFetch()
 		{
-			return InterlockedDecrement(&value);
+			return _InterlockedDecrement(&value);
 		}
 
-		int Get() const
+		int Load() const
 		{
 			return value;
 		}
 
 		// The function returns the initial value.
-		int Set(int val)
+		int Store(int val)
 		{
-			return InterlockedExchange(&value, val); 
+			return _InterlockedExchange(&value, val); 
 		}
 
 		// The function returns the initial value.
 		int CompareAndSwap(int compareValue, int newValue)
 		{
-			return InterlockedCompareExchange(&value, newValue, compareValue);
+			return _InterlockedCompareExchange(&value, newValue, compareValue);
 		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		int LoadRelaxed() const
+		{
+			return value;
+		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		void StoreRelaxed(int val)
+		{
+			value = val;
+		}
+
 	};
 
 
@@ -103,23 +129,47 @@ namespace MT
 			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
 		}
 
-		T* Get() const
+		T* Load() const
 		{
 			return (T*)value;
 		}
 
 		// The function returns the initial value.
-		T* Set(T* val)
+		T* Store(T* val)
 		{
-			return (T*)InterlockedExchangePointer((PVOID volatile *)&value, (void*)val); 
+#if (UINTPTR_MAX == UINT32_MAX)
+			return (T*)_InterlockedExchange((volatile long *)&value, (long)val); 
+#else
+			return (T*)_InterlockedExchangePointer((PVOID volatile *)&value, (PVOID)val); 
+#endif
 		}
 
 		// The function returns the initial value.
 		T* CompareAndSwap(T* compareValue, T* newValue)
 		{
-			return (T*)InterlockedCompareExchangePointer((PVOID volatile *)&value, (void*)newValue, (void*)compareValue);
+#if (UINTPTR_MAX == UINT32_MAX)
+			return (T*)_InterlockedCompareExchange((volatile long *)&value, (long)newValue, (long)compareValue);
+#else
+			return (T*)_InterlockedCompareExchangePointer((PVOID volatile *)&value, (PVOID)newValue, (PVOID)compareValue);
+#endif
 		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		T* LoadRelaxed() const
+		{
+			return value;
+		}
+
+		// Relaxed operation: there are no synchronization or ordering constraints
+		void StoreRelaxed(T* val)
+		{
+			value = val;
+		}
+
 	};
 
 
 }
+
+
+#endif

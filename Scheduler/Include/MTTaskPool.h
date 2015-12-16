@@ -44,7 +44,7 @@ namespace MT
 	struct PoolElementHeader
 	{
 		//Task id (timestamp)
-		AtomicInt id;
+		AtomicInt32 id;
 
 		internal::TaskDesc desc;
 
@@ -147,7 +147,7 @@ namespace MT
 				return false;
 			}
 
-			if (check_id != task->id.Get())
+			if (check_id != task->id.Load())
 			{
 				return false;
 			}
@@ -230,8 +230,8 @@ namespace MT
 		static const size_t MASK = (N - 1);
 
 		void* data;
-		AtomicInt idGenerator;
-		AtomicInt index;
+		AtomicInt32 idGenerator;
+		AtomicInt32 index;
 
 		inline PoolItem* Buffer()
 		{
@@ -262,7 +262,7 @@ namespace MT
 			for(size_t idx = 0; idx < N; idx++)
 			{
 				PoolItem* pElement = Buffer() + idx;
-				pElement->id.Set(TaskID::UNUSED);
+				pElement->id.Store(TaskID::UNUSED);
 			}
 		}
 
@@ -275,7 +275,7 @@ namespace MT
 				{
 					PoolItem* pElement = Buffer() + idx;
 
-					int preValue = pElement->id.Set(TaskID::UNUSED);
+					int preValue = pElement->id.Store(TaskID::UNUSED);
 					if (preValue != TaskID::UNUSED)
 					{
 						pElement->task.~T();
@@ -289,13 +289,13 @@ namespace MT
 
 		TaskHandle TryAlloc(T && task)
 		{
-			int idx = index.Inc() - 1;
+			int idx = index.IncFetch() - 1;
 
 			int clampedIdx = (idx & MASK);
 
 			PoolItem* pElement = Buffer() + clampedIdx;
 
-			bool isUnused = ((pElement->id.Get() & 1 ) != 0);
+			bool isUnused = ((pElement->id.Load() & 1 ) != 0);
 
 			if (isUnused == false)
 			{
@@ -304,7 +304,7 @@ namespace MT
 			}
 
 			//generate next even number for id
-			int id = idGenerator.Add(2);
+			int id = idGenerator.AddFetch(2);
 			MoveCtor( pElement, id, std::move(task) );
 			return TaskHandle(id, pElement);
 		}

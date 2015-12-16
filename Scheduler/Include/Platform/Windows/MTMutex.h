@@ -21,6 +21,10 @@
 // 	THE SOFTWARE.
 #pragma once
 
+#ifndef __MT_MUTEX__
+#define __MT_MUTEX__
+
+
 namespace MT
 {
 	class ScopedGuard;
@@ -68,3 +72,4 @@ namespace MT
 }
 
 
+#endif
