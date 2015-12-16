@@ -23,7 +23,7 @@ install:
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then g++ --version && pushd OSX/ && sudo ./premake4 --file=../premake4.lua gmake && popd && pushd Build/gmake/ && make && popd; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then g++ --version && pushd OSX/ && sudo -s ./premake4 --file=../premake4.lua gmake && popd && pushd Build/gmake/ && make && popd; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo lshw; fi
   - pushd Bin/ && ./Tests 6 && popd
 
