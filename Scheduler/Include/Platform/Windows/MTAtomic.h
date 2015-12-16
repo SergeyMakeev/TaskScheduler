@@ -40,7 +40,7 @@ namespace MT
 	//
 	class AtomicInt32
 	{
-		volatile long value;
+		volatile int32 value;
 	public:
 
 		AtomicInt32()
@@ -58,48 +58,48 @@ namespace MT
 		}
 
 		// The function returns the resulting added value.
-		int AddFetch(int sum)
+		int32 AddFetch(int32 sum)
 		{
 			return _InterlockedExchangeAdd(&value, sum) + sum;
 		}
 
 		// The function returns the resulting incremented value.
-		int IncFetch()
+		int32 IncFetch()
 		{
 			return _InterlockedIncrement(&value);
 		}
 
 		// The function returns the resulting decremented value.
-		int DecFetch()
+		int32 DecFetch()
 		{
 			return _InterlockedDecrement(&value);
 		}
 
-		int Load() const
+		int32 Load() const
 		{
 			return value;
 		}
 
 		// The function returns the initial value.
-		int Store(int val)
+		int32 Store(int32 val)
 		{
 			return _InterlockedExchange(&value, val); 
 		}
 
 		// The function returns the initial value.
-		int CompareAndSwap(int compareValue, int newValue)
+		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
 			return _InterlockedCompareExchange(&value, newValue, compareValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		int LoadRelaxed() const
+		int32 LoadRelaxed() const
 		{
 			return value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(int val)
+		void StoreRelaxed(int32 val)
 		{
 			value = val;
 		}
@@ -138,7 +138,7 @@ namespace MT
 		T* Store(T* val)
 		{
 #if (UINTPTR_MAX == UINT32_MAX)
-			return (T*)_InterlockedExchange((volatile long *)&value, (long)val); 
+			return (T*)_InterlockedExchange((volatile int32 *)&value, (int32)val); 
 #else
 			return (T*)_InterlockedExchangePointer((PVOID volatile *)&value, (PVOID)val); 
 #endif
@@ -148,7 +148,7 @@ namespace MT
 		T* CompareAndSwap(T* compareValue, T* newValue)
 		{
 #if (UINTPTR_MAX == UINT32_MAX)
-			return (T*)_InterlockedCompareExchange((volatile long *)&value, (long)newValue, (long)compareValue);
+			return (T*)_InterlockedCompareExchange((volatile int32 *)&value, (int32)newValue, (int32)compareValue);
 #else
 			return (T*)_InterlockedCompareExchangePointer((PVOID volatile *)&value, (PVOID)newValue, (PVOID)compareValue);
 #endif

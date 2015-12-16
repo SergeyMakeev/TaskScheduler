@@ -39,7 +39,7 @@ namespace MT
 	//
 	class AtomicInt32
 	{
-		volatile long value;
+		volatile int32 value;
 	public:
 
 		AtomicInt32()
@@ -49,52 +49,52 @@ namespace MT
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		explicit AtomicInt32(int v)
+		explicit AtomicInt32(int32 v)
 			: value(v)
 		{
 			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
-		int AddFetch(int sum)
+		int32 AddFetch(int32 sum)
 		{
 			return __sync_add_and_fetch(&value, sum);
 		}
 
-		int IncFetch()
+		int32 IncFetch()
 		{
 			return __sync_add_and_fetch(&value, 1);
 		}
 
-		int DecFetch()
+		int32 DecFetch()
 		{
 			return __sync_sub_and_fetch(&value, 1);
 		}
 
-		int Load() const
+		int32 Load() const
 		{
 			return value;
 		}
 
-		int Store(int val)
+		int32 Store(int32 val)
 		{
 			return __sync_lock_test_and_set(&value, val);
 		}
 
 		// The function returns the initial value.
-		int CompareAndSwap(int compareValue, int newValue)
+		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
 			return __sync_val_compare_and_swap(&value, compareValue, newValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		int LoadRelaxed() const
+		int32 LoadRelaxed() const
 		{
 			return value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(int val)
+		void StoreRelaxed(int32 val)
 		{
 			value = val;
 		}
