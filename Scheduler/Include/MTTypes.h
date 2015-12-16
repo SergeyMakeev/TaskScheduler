@@ -21,15 +21,18 @@
 // 	THE SOFTWARE.
 
 #pragma once
+
+
+#include <stdint.h>
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 typedef signed char int8;
 typedef unsigned char uint8;
 typedef unsigned char byte;
-typedef short int16;
-typedef unsigned short uint16;
-typedef long int32;
-typedef unsigned long uint32;
-typedef unsigned int uint;
+typedef int16_t int16;
+typedef uint16_t uint16;
+typedef int32_t int32;
+typedef uint32_t uint32;
 
 
 #if defined(_MSC_VER)
@@ -43,3 +46,15 @@ typedef long long int64;
 typedef unsigned long long uint64;
 
 #endif
+
+
+
+static_assert( sizeof(int8) == 1, "Invalid type size, int8" );
+static_assert( sizeof(uint8) == 1, "Invalid type size, uint8" );
+static_assert( sizeof(byte) == 1, "Invalid type size, byte" );
+static_assert( sizeof(int16) == 2, "Invalid type size, int16" );
+static_assert( sizeof(uint16) == 2, "Invalid type size, uint16" );
+static_assert( sizeof(int32) == 4, "Invalid type size, int32" );
+static_assert( sizeof(uint32) == 4, "Invalid type size, uint32" );
+static_assert( sizeof(int64) == 8, "Invalid type size, int64" );
+static_assert( sizeof(uint64) == 8, "Invalid type size, uint64" );

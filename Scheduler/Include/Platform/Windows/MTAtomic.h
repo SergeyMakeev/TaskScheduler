@@ -47,6 +47,7 @@ namespace MT
 			: value(0)
 		{
 			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
+			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
@@ -54,25 +55,26 @@ namespace MT
 			: value(v)
 		{
 			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
+			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
 			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
 		}
 
 		// The function returns the resulting added value.
 		int32 AddFetch(int32 sum)
 		{
-			return _InterlockedExchangeAdd(&value, sum) + sum;
+			return _InterlockedExchangeAdd((volatile long *)&value, sum) + sum;
 		}
 
 		// The function returns the resulting incremented value.
 		int32 IncFetch()
 		{
-			return _InterlockedIncrement(&value);
+			return _InterlockedIncrement((volatile long *)&value);
 		}
 
 		// The function returns the resulting decremented value.
 		int32 DecFetch()
 		{
-			return _InterlockedDecrement(&value);
+			return _InterlockedDecrement((volatile long *)&value);
 		}
 
 		int32 Load() const
@@ -83,13 +85,13 @@ namespace MT
 		// The function returns the initial value.
 		int32 Store(int32 val)
 		{
-			return _InterlockedExchange(&value, val); 
+			return _InterlockedExchange((volatile long *)&value, val); 
 		}
 
 		// The function returns the initial value.
 		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
-			return _InterlockedCompareExchange(&value, newValue, compareValue);
+			return _InterlockedCompareExchange((volatile long *)&value, newValue, compareValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
@@ -137,8 +139,9 @@ namespace MT
 		// The function returns the initial value.
 		T* Store(T* val)
 		{
-#if (UINTPTR_MAX == UINT32_MAX)
-			return (T*)_InterlockedExchange((volatile int32 *)&value, (int32)val); 
+#ifdef _M_IX86
+			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedExchange will fail");
+			return (T*)_InterlockedExchange((volatile long *)&value, (int32)val); 
 #else
 			return (T*)_InterlockedExchangePointer((PVOID volatile *)&value, (PVOID)val); 
 #endif
@@ -147,8 +150,9 @@ namespace MT
 		// The function returns the initial value.
 		T* CompareAndSwap(T* compareValue, T* newValue)
 		{
-#if (UINTPTR_MAX == UINT32_MAX)
-			return (T*)_InterlockedCompareExchange((volatile int32 *)&value, (int32)newValue, (int32)compareValue);
+#ifdef _M_IX86
+			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedCompareExchange will fail");
+			return (T*)_InterlockedCompareExchange((volatile long *)&value, (int32)newValue, (int32)compareValue);
 #else
 			return (T*)_InterlockedCompareExchangePointer((PVOID volatile *)&value, (PVOID)newValue, (PVOID)compareValue);
 #endif
