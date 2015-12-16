@@ -4,13 +4,13 @@
 
 SUITE(PlatformTests)
 {
-	static const int DATA_VALUE = 13;
+	static const intptr_t DATA_VALUE = 13;
 
-	uint32 g_Variable = 0;
+	intptr_t g_Variable = 0;
 
 	void MyThreadFunc(void* userData)
 	{
-		uint32 data = (uint32)userData;
+		intptr_t data = (intptr_t)userData;
 
 		CHECK(data == DATA_VALUE);
 
@@ -19,7 +19,7 @@ SUITE(PlatformTests)
 
 	TEST(ThreadTest)
 	{
-		uint32 data = DATA_VALUE;
+		intptr_t data = DATA_VALUE;
 
 		MT::Thread thread;
 		thread.Start(32768, MyThreadFunc, (void*)data);

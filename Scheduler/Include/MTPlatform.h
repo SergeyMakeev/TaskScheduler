@@ -44,8 +44,7 @@ namespace MT
 
 inline bool IsPointerAligned( const volatile void* p, const uint32 align )
 {
-	static_assert (sizeof(void*) == sizeof(size_t), "Can't cast pointer to size_t, different type size");
-	return !(size_t(p) & (align - 1));
+	return !((uintptr_t)p & (align - 1));
 }
 
 #ifdef _WIN32
