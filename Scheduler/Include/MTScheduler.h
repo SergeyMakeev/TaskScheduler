@@ -87,7 +87,7 @@ namespace MT
 		/* query this pointer type */ \
 		typedef decltype(MT::TypeChecker::QueryThisType(this)) THIS_PTR_TYPE; \
 		/* query class type from this pointer type */ \
-		typedef std::remove_pointer<THIS_PTR_TYPE>::type CPP_TYPE; \
+		typedef typename std::remove_pointer<THIS_PTR_TYPE>::type CPP_TYPE; \
 		/* define macro type */ \
 		typedef TYPE MACRO_TYPE; \
 		/* compile time checking that is same types */ \
