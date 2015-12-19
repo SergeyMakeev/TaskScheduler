@@ -128,9 +128,9 @@ namespace MT
 #include <MTProfilerEventListener.h>
 
 #define MT_DECLARE_TASK(TYPE, colorID) \
-	static const char * GetDebugID() \
+	static const mt_char* GetDebugID() \
 	{ \
-		return #TYPE; \
+		return MT_TEXT( #TYPE ); \
 	} \
 	\
 	static int GetDebugColorIndex() \

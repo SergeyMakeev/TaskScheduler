@@ -58,19 +58,19 @@ end
 -- CONFIGURATIONS
 
 configuration "Instrumented_Release"
-	defines { "NDEBUG", "MT_INSTRUMENTED_BUILD" }
+	defines { "NDEBUG", "MT_INSTRUMENTED_BUILD", "MT_UNICODE" }
 	flags { "Symbols", optimization_flags }
 
 configuration "Instrumented_Debug"
-	defines { "_DEBUG", "MT_INSTRUMENTED_BUILD", "_CRTDBG_MAP_ALLOC" }
+	defines { "_DEBUG", "_CRTDBG_MAP_ALLOC", "MT_INSTRUMENTED_BUILD", "MT_UNICODE" }
 	flags { "Symbols" }
 
 configuration "Release"
-	defines { "NDEBUG" }
+	defines { "NDEBUG", "MT_UNICODE" }
 	flags { "Symbols", optimization_flags }
 
 configuration "Debug"
-	defines { "_DEBUG", "_CRTDBG_MAP_ALLOC"}
+	defines { "_DEBUG", "_CRTDBG_MAP_ALLOC", "MT_UNICODE"}
 	flags { "Symbols" }
 
 configuration "x32"

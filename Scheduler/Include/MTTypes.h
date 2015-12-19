@@ -25,6 +25,20 @@
 
 #include <stdint.h>
 
+
+#ifdef MT_UNICODE
+
+typedef wchar_t mt_char;
+#define MT_TEXT(quote) L##quote
+
+#else
+
+typedef char mt_char;
+#define MT_TEXT(quote) quote
+
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 typedef signed char int8;
 typedef unsigned char uint8;

@@ -54,7 +54,7 @@ namespace MT
 			void* userData;
 
 #ifdef MT_INSTRUMENTED_BUILD
-			const char * debugID;
+			const mt_char* debugID;
 			int colorIndex;
 #endif
 

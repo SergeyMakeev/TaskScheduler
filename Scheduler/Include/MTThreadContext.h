@@ -49,7 +49,7 @@ namespace MT
 	struct ProfileEventDesc
 	{
 		uint64 timeStampMicroSeconds;
-		const char * id;
+		const mt_char* id;
 		int colorIndex;
 		ProfileEventType::Type type;
 	};

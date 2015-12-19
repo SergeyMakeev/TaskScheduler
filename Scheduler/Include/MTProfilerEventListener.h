@@ -42,9 +42,9 @@ namespace MT
 		virtual void OnThreadStoped(uint64 timeStamp, uint32 workerIndex) = 0;
 		virtual void OnThreadIdle(uint64 timeStampFrom, uint64 timeStampTo, uint32 workerIndex) = 0;
 
-		virtual void OnTaskFinished(uint64 timeStamp, const char * debugID) = 0;
-		virtual void OnTaskResumed(uint64 timeStamp, const char * debugID) = 0;
-		virtual void OnTaskYielded(uint64 timeStamp, const char * debugID) = 0;
+		virtual void OnTaskFinished(uint64 timeStamp, const mt_char* debugID) = 0;
+		virtual void OnTaskResumed(uint64 timeStamp, const mt_char* debugID) = 0;
+		virtual void OnTaskYielded(uint64 timeStamp, const mt_char* debugID) = 0;
 	};
 
 }
