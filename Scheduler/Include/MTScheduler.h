@@ -62,12 +62,12 @@ namespace MT
 
 #define CALL_DTOR(p, TYPE) \
 	p; \
-	p->~##TYPE();
+	p->~ TYPE ();
 
 #else
 
 #define CALL_DTOR(p, TYPE) \
-	p->~##TYPE();
+	p->~ TYPE();
 
 #endif
 
