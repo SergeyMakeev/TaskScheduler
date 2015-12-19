@@ -37,14 +37,29 @@ namespace MT
 		IProfilerEventListener() {};
 		virtual ~IProfilerEventListener() {};
 
-		virtual void OnThreadCreated(uint64 timeStamp, uint32 workerIndex) = 0;
-		virtual void OnThreadStarted(uint64 timeStamp, uint32 workerIndex) = 0;
-		virtual void OnThreadStoped(uint64 timeStamp, uint32 workerIndex) = 0;
-		virtual void OnThreadIdle(uint64 timeStampFrom, uint64 timeStampTo, uint32 workerIndex) = 0;
+		// Called from worker thread context when worker thread created 
+		virtual void OnThreadCreated(uint32 workerIndex) = 0;
 
-		virtual void OnTaskFinished(uint64 timeStamp, const mt_char* debugID) = 0;
-		virtual void OnTaskResumed(uint64 timeStamp, const mt_char* debugID) = 0;
-		virtual void OnTaskYielded(uint64 timeStamp, const mt_char* debugID) = 0;
+		// Called from worker thread context when worker thread started
+		virtual void OnThreadStarted(uint32 workerIndex) = 0;
+
+		// Called from worker thread context when worker thread stopped
+		virtual void OnThreadStoped(uint32 workerIndex) = 0;
+
+		// Called from worker thread context when worker thread start to idle
+		virtual void OnThreadIdleBegin(uint32 workerIndex) = 0;
+
+		// Called from worker thread context when worker thread return to work
+		virtual void OnThreadIdleEnd(uint32 workerIndex) = 0;
+
+		// Called from the worker thread that has finished to execute the task
+		virtual void OnTaskFinished(MT::Color::Type debugColor, const mt_char* debugID) = 0;
+
+		// Called from the worker thread that has began to execute the task (new task or after old task was yielded)
+		virtual void OnTaskResumed(MT::Color::Type debugColor, const mt_char* debugID) = 0;
+
+		// Called from the worker thread that has yield the current task
+		virtual void OnTaskYielded(MT::Color::Type debugColor, const mt_char* debugID) = 0;
 	};
 
 }

@@ -37,9 +37,6 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 		profilerEventListener = listener;
-		webServerPort = profilerWebServer.Serve(8080, 8090);
-		//initialize start time
-		startTime = MT::GetTimeMicroSeconds();
 #endif
 
 		if (workerThreadsCount != 0)
@@ -361,7 +358,7 @@ namespace MT
 			} else
 			{
 #ifdef MT_INSTRUMENTED_BUILD
-				uint64 waitFrom = context.taskScheduler->GetTimeStamp();
+				context.NotifyThreadIdleBegin(context.workerIndex);
 #endif
 
 				// Queue is empty and stealing attempt failed
@@ -369,8 +366,7 @@ namespace MT
 				context.hasNewTasksEvent.Wait(2000);
 
 #ifdef MT_INSTRUMENTED_BUILD
-				uint64 waitTo = context.taskScheduler->GetTimeStamp();
-				context.NotifyThreadAwait(waitFrom, waitTo, context.workerIndex);
+				context.NotifyThreadIdleEnd(context.workerIndex);
 #endif
 
 			}
@@ -551,31 +547,4 @@ namespace MT
 		return groupDesc;
 	}
 
-
-#ifdef MT_INSTRUMENTED_BUILD
-
-	size_t TaskScheduler::GetProfilerEvents(uint32 workerIndex, ProfileEventDesc * dstBuffer, size_t dstBufferSize)
-	{
-		if (workerIndex >= MT_MAX_THREAD_COUNT)
-		{
-			return 0;
-		}
-
-		size_t elementsCount = threadContext[workerIndex].profileEvents.PopAll(dstBuffer, dstBufferSize);
-		return elementsCount;
-	}
-
-	void TaskScheduler::UpdateProfiler()
-	{
-		profilerWebServer.Update(*this);
-	}
-
-	int32 TaskScheduler::GetWebServerPort() const
-	{
-		return webServerPort;
-	}
-
-
-
-#endif
 }

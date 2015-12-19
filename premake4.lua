@@ -104,14 +104,6 @@ for _, config in ipairs(config_list) do
 end
 
 os.mkdir("./Bin")
-os.copyfile("./Scheduler/Profiler/filesaver.min.js", "./Bin/filesaver.min.js")
-os.copyfile("./Scheduler/Profiler/jquery.min.js", "./Bin/jquery.min.js")
-os.copyfile("./Scheduler/Profiler/jquery.mousewheel.min.js", "./Bin/jquery.mousewheel.min.js")
-os.copyfile("./Scheduler/Profiler/w2ui.min.js", "./Bin/w2ui.min.js")
-
-os.copyfile("./Scheduler/Profiler/Profiler.html", "./Bin/Profiler.html")
-
-os.copyfile("./Scheduler/Profiler/w2ui-dark.min.css", "./Bin/w2ui-dark.min.css")
 
 -- SUBPROJECTS
 
@@ -189,8 +181,5 @@ project "Tests"
 		links { "pthread" }
 	end
 
-	if isVisualStudio then
-		links { "Ws2_32" }
-	end
 
 

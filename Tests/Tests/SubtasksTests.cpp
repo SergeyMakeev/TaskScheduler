@@ -10,7 +10,7 @@ SUITE(SubtasksTests)
 template<size_t N>
 struct DeepSubtaskQueue
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT::Color::Blue);
 
 	int result;
 
@@ -31,7 +31,7 @@ struct DeepSubtaskQueue
 template<>
 struct DeepSubtaskQueue<0>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -44,7 +44,7 @@ struct DeepSubtaskQueue<0>
 template<>
 struct DeepSubtaskQueue<1>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -77,7 +77,7 @@ static MT::TaskGroup resultGroup;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct GroupSubtask
 {
-	MT_DECLARE_TASK(GroupSubtask, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(GroupSubtask, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -87,7 +87,7 @@ struct GroupSubtask
 
 struct GroupTask
 {
-	MT_DECLARE_TASK(GroupTask, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(GroupTask, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -98,7 +98,7 @@ struct GroupTask
 
 struct TaskWithManySubtasks
 {
-	MT_DECLARE_TASK(TaskWithManySubtasks, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(TaskWithManySubtasks, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -170,7 +170,7 @@ TEST(ManyTasksOneSubtask)
 
 struct TaskSubtaskCombo_Sum1
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 
@@ -182,7 +182,7 @@ struct TaskSubtaskCombo_Sum1
 
 struct TaskSubtaskCombo_Sum4
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 
@@ -200,7 +200,7 @@ struct TaskSubtaskCombo_Sum4
 
 struct TaskSubtaskCombo_Sum16
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 

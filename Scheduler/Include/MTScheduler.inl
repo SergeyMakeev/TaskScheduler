@@ -31,7 +31,7 @@ namespace MT
 			internal::TaskDesc desc(T::TaskEntryPoint, (void*)(src));
 #ifdef MT_INSTRUMENTED_BUILD
 			desc.debugID = T::GetDebugID();
-			desc.colorIndex = T::GetDebugColorIndex();
+			desc.debugColor = T::GetDebugColor();
 #endif
 			return internal::GroupedTask(desc, group);
 		}

@@ -14,7 +14,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Subtask
 	{
-		MT_DECLARE_TASK(Subtask, MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(Subtask, MT::Color::Blue);
 
 		void Do(MT::FiberContext&)
 		{
@@ -26,7 +26,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Task
 	{
-		MT_DECLARE_TASK(Task, MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(Task, MT::Color::Blue);
 
 		void Do(MT::FiberContext& ctx)
 		{

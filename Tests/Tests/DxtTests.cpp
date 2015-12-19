@@ -45,6 +45,63 @@ int _kbhit(void)
 }
 #endif
 
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+class Microprofile : public MT::IProfilerEventListener
+{
+	void OnThreadCreated(uint32 workerIndex)
+	{
+		workerIndex;
+	}
+
+	void OnThreadStarted(uint32 workerIndex)
+	{
+		workerIndex;
+	}
+
+	void OnThreadStoped(uint32 workerIndex)
+	{
+		workerIndex;
+	}
+
+	void OnThreadIdleBegin(uint32 workerIndex)
+	{
+		workerIndex;
+	}
+
+	void OnThreadIdleEnd(uint32 workerIndex)
+	{
+		workerIndex;
+	}
+
+	void OnTaskFinished(MT::Color::Type debugColor, const mt_char* debugID)
+	{
+		debugColor;
+		debugID;
+	}
+
+	void OnTaskResumed(MT::Color::Type debugColor, const mt_char* debugID)
+	{
+		debugColor;
+		debugID;
+	}
+
+	void OnTaskYielded(MT::Color::Type debugColor, const mt_char* debugID)
+	{
+		debugColor;
+		debugID;
+	}
+
+};
+
+
+#endif
+
+
+
+
+
 namespace EmbeddedImage
 {
 	#include "LenaDxt/LenaColor.h"
@@ -83,7 +140,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxtBlock
 	{
-		MT_DECLARE_TASK(CompressDxtBlock, MT_COLOR_BLUE);
+		MT_DECLARE_TASK(CompressDxtBlock, MT::Color::Blue);
 
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dstBlocks;
@@ -162,7 +219,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxt
 	{
-		MT_DECLARE_TASK(CompressDxt, MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(CompressDxt, MT::Color::Aqua);
 
 		uint32 width;
 		uint32 height;
@@ -221,7 +278,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxtBlock
 	{
-		MT_DECLARE_TASK(DecompressDxtBlock, MT_COLOR_RED);
+		MT_DECLARE_TASK(DecompressDxtBlock, MT::Color::Red);
 
 		MT::ArrayView<uint8> srcBlocks;
 		MT::ArrayView<uint8> dstPixels;
@@ -298,7 +355,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxt
 	{
-		MT_DECLARE_TASK(DecompressDxt, MT_COLOR_YELLOW);
+		MT_DECLARE_TASK(DecompressDxt, MT::Color::Yellow);
 
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::ArrayView<uint8> decompressedImage;
@@ -367,10 +424,6 @@ SUITE(DxtTests)
 			{
 				break;
 			}
-
-#ifdef MT_INSTRUMENTED_BUILD
-			scheduler.UpdateProfiler();
-#endif
 		}
 	}
 
@@ -388,13 +441,15 @@ SUITE(DxtTests)
 		CompressDxt compressTask(128, 128, stride, srcImage);
 		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
 
+#ifdef MT_INSTRUMENTED_BUILD
+		Microprofile profiler;
+		MT::TaskScheduler scheduler(0, &profiler);
+#else
 		MT::TaskScheduler scheduler;
+#endif
+
 		int workerCount = (int)scheduler.GetWorkerCount();
 		printf("Scheduler started, %d workers\n", workerCount);
-
-#ifdef MT_INSTRUMENTED_BUILD
-		printf("Profiler: http://127.0.0.1:%d\n", (int)scheduler.GetWebServerPort());
-#endif
 
 		printf("Compress image\n");
 		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask, 1);
@@ -435,7 +490,6 @@ SUITE(DxtTests)
 		printf("Press any key to continue\n");
 		while(true)
 		{
-			scheduler.UpdateProfiler();
 			if (_kbhit() != 0)
 			{
 				break;

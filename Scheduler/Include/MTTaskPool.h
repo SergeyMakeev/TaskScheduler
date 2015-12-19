@@ -82,7 +82,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			desc.debugID = T::GetDebugID();
-			desc.colorIndex = T::GetDebugColorIndex();
+			desc.debugColor = T::GetDebugColor();
 #endif
 		}
 

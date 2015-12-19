@@ -34,29 +34,6 @@ namespace MT
 	class TaskScheduler;
 
 
-#ifdef MT_INSTRUMENTED_BUILD
-
-	namespace ProfileEventType
-	{
-		enum Type
-		{
-			TASK_RESUME = 0,
-			TASK_YIELD = 1,
-			TASK_DONE = 2
-		};
-	}
-
-	struct ProfileEventDesc
-	{
-		uint64 timeStampMicroSeconds;
-		const mt_char* id;
-		int colorIndex;
-		ProfileEventType::Type type;
-	};
-
-#endif
-
-
 
 	namespace internal
 	{
@@ -103,13 +80,6 @@ namespace MT
 			// Thread random number generator
 			LcgRandom random;
 
-
-#ifdef MT_INSTRUMENTED_BUILD
-
-			ConcurrentRingBuffer<ProfileEventDesc, 4096> profileEvents;
-
-#endif
-
 			// prevent false sharing between threads
 			uint8 cacheline[64];
 
@@ -130,7 +100,8 @@ namespace MT
 			void NotifyTaskResumed(const internal::TaskDesc & desc);
 			void NotifyTaskYielded(const internal::TaskDesc & desc);
 
-			void NotifyThreadAwait(uint64 timeStampMicroSecondsFrom, uint64 timeStampMicroSecondsTo, uint32 threadIndex);
+			void NotifyThreadIdleBegin(uint32 threadIndex);
+			void NotifyThreadIdleEnd(uint32 threadIndex);
 
 #endif
 		};

@@ -27,6 +27,7 @@
 #include <MTConcurrentQueueLIFO.h>
 #include <MTStackArray.h>
 #include <MTArrayView.h>
+#include <MTColorTable.h>
 
 
 namespace MT
@@ -55,7 +56,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			const mt_char* debugID;
-			int colorIndex;
+			MT::Color::Type debugColor;
 #endif
 
 			TaskDesc()
@@ -65,7 +66,7 @@ namespace MT
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;
-				colorIndex = 0;
+				debugColor = MT::Color::Blue;
 #endif
 			}
 
@@ -76,7 +77,7 @@ namespace MT
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;
-				colorIndex = 0;
+				debugColor = MT::Color::Blue;
 #endif
 			}
 
@@ -87,7 +88,7 @@ namespace MT
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;
-				colorIndex = 0;
+				debugColor = MT::Color::Blue;
 #endif
 			}
 

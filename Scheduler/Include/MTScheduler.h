@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <MTColorTable.h>
 #include <MTTools.h>
 #include <MTPlatform.h>
 #include <MTConcurrentQueueLIFO.h>
@@ -62,11 +63,6 @@ namespace MT
 	}
 
 }
-
-#define MT_COLOR_DEFAULT (0)
-#define MT_COLOR_BLUE (1)
-#define MT_COLOR_RED (2)
-#define MT_COLOR_YELLOW (3)
 
 #if _MSC_VER
 
@@ -124,18 +120,17 @@ namespace MT
 
 
 #ifdef MT_INSTRUMENTED_BUILD
-#include <MTMicroWebSrv.h>
 #include <MTProfilerEventListener.h>
 
-#define MT_DECLARE_TASK(TYPE, colorID) \
+#define MT_DECLARE_TASK(TYPE, DEBUG_COLOR) \
 	static const mt_char* GetDebugID() \
 	{ \
 		return MT_TEXT( #TYPE ); \
 	} \
 	\
-	static int GetDebugColorIndex() \
+	static MT::Color::Type GetDebugColor() \
 	{ \
-		return colorID; \
+		return DEBUG_COLOR; \
 	} \
 	\
 	MT_DECLARE_TASK_IMPL(TYPE);
@@ -275,9 +270,6 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 		IProfilerEventListener * profilerEventListener;
-		int64 startTime;
-		profile::MicroWebServer profilerWebServer;
-		int32 webServerPort;
 #endif
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
@@ -323,20 +315,6 @@ namespace MT
 		bool IsWorkerThread() const;
 
 #ifdef MT_INSTRUMENTED_BUILD
-
-		size_t GetProfilerEvents(uint32 workerIndex, MT::ProfileEventDesc * dstBuffer, size_t dstBufferSize);
-		void UpdateProfiler();
-		int32 GetWebServerPort() const;
-
-		inline int64 GetStartTime() const
-		{
-			return startTime;
-		}
-
-		inline uint64 GetTimeStamp() const
-		{
-			return MT::GetTimeMicroSeconds() - startTime;
-		}
 
 		inline IProfilerEventListener* GetProfilerEventListener()
 		{
