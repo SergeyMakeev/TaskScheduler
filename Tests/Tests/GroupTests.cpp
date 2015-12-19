@@ -13,9 +13,9 @@ namespace SimpleWaitFromSubtask
 	MT::AtomicInt32 physTaskCount(0);
 
 
-	struct DummySubTask : public MT::TaskBase<DummySubTask>
+	struct DummySubTask
 	{
-		MT_DECLARE_DEBUG_INFO("DummySubtask", MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(DummySubTask, MT_COLOR_DEFAULT);
 
 		float tempData[64];
 
@@ -31,9 +31,9 @@ namespace SimpleWaitFromSubtask
 	};
 
 
-	struct DummyAnimTask : public MT::TaskBase<DummyAnimTask>
+	struct DummyAnimTask
 	{
-		MT_DECLARE_DEBUG_INFO("DummyAnim", MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(DummyAnimTask, MT_COLOR_DEFAULT);
 
 		float tempData[128];
 
@@ -53,9 +53,9 @@ namespace SimpleWaitFromSubtask
 	};
 
 
-	struct DummyPhysicTask : public MT::TaskBase<DummyPhysicTask>
+	struct DummyPhysicTask
 	{
-		MT_DECLARE_DEBUG_INFO("DummyPhysic", MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(DummyPhysicTask, MT_COLOR_DEFAULT);
 
 		float tempData[128];
 

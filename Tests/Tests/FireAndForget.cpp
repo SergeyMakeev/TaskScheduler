@@ -11,9 +11,9 @@ struct SimpleTask;
 
 typedef MT::TaskPool<SimpleTask, 512> TestPoolType;
 
-struct SimpleTask : public MT::TaskBase<SimpleTask>
+struct SimpleTask
 {
-	MT_DECLARE_DEBUG_INFO("SimpleTask", MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(SimpleTask, MT_COLOR_DEFAULT);
 
 	MT::AtomicInt32* doCounter;
 	MT::AtomicInt32* dtorCounter;
@@ -125,9 +125,9 @@ TEST(SingleThreadPoolTest)
 }
 
 
-struct ThreadTest : public MT::TaskBase<ThreadTest>
+struct ThreadTest
 {
-	MT_DECLARE_DEBUG_INFO("ThreadTestTask", MT_COLOR_DEFAULT);
+	MT_DECLARE_TASK(ThreadTest, MT_COLOR_DEFAULT);
 
 	TestPoolType * taskPool;
 

@@ -81,9 +81,9 @@ bool CompareImagesPSNR(uint8 * img1, uint8 * img2, uint32 bytesCount, double psn
 SUITE(DxtTests)
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct CompressDxtBlock : public MT::TaskBase<CompressDxtBlock>
+	struct CompressDxtBlock
 	{
-		MT_DECLARE_DEBUG_INFO("CompressDxtBlock", MT_COLOR_BLUE);
+		MT_DECLARE_TASK(CompressDxtBlock, MT_COLOR_BLUE);
 
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dstBlocks;
@@ -160,9 +160,9 @@ SUITE(DxtTests)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct CompressDxt : public MT::TaskBase<CompressDxt>
+	struct CompressDxt
 	{
-		MT_DECLARE_DEBUG_INFO("CompressDxt", MT_COLOR_DEFAULT);
+		MT_DECLARE_TASK(CompressDxt, MT_COLOR_DEFAULT);
 
 		uint32 width;
 		uint32 height;
@@ -219,9 +219,9 @@ SUITE(DxtTests)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct DecompressDxtBlock : public MT::TaskBase<DecompressDxtBlock>
+	struct DecompressDxtBlock
 	{
-		MT_DECLARE_DEBUG_INFO("DecompressDxtBlock", MT_COLOR_RED);
+		MT_DECLARE_TASK(DecompressDxtBlock, MT_COLOR_RED);
 
 		MT::ArrayView<uint8> srcBlocks;
 		MT::ArrayView<uint8> dstPixels;
@@ -296,9 +296,9 @@ SUITE(DxtTests)
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct DecompressDxt : public MT::TaskBase<DecompressDxt>
+	struct DecompressDxt
 	{
-		MT_DECLARE_DEBUG_INFO("DecompressDxt", MT_COLOR_YELLOW);
+		MT_DECLARE_TASK(DecompressDxt, MT_COLOR_YELLOW);
 
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::ArrayView<uint8> decompressedImage;

@@ -29,14 +29,103 @@
 #include <MTArrayView.h>
 #include <MTThreadContext.h>
 #include <MTFiberContext.h>
-#include <MTTaskBase.h>
 #include <MTAllocator.h>
 #include <MTTaskPool.h>
+
+
+namespace MT
+{
+
+	template<typename CLASS_TYPE, typename MACRO_TYPE>
+	struct CheckType
+	{
+		static_assert(std::is_same<CLASS_TYPE, MACRO_TYPE>::value, "Invalid type in MT_DECLARE_TASK macro. See CheckType template instantiation params to details.");
+	};
+
+	struct TypeChecker
+	{
+		template <typename T>
+		static T QueryThisType(T thisPtr)
+		{
+			return (T)nullptr;
+		}
+	};
+
+}
+
+#define MT_COLOR_DEFAULT (0)
+#define MT_COLOR_BLUE (1)
+#define MT_COLOR_RED (2)
+#define MT_COLOR_YELLOW (3)
+
+#if _MSC_VER
+
+#define CALL_DTOR(p, TYPE) \
+	p; \
+	p->~##TYPE();
+
+#else
+
+#define CALL_DTOR(p, TYPE) \
+	p->~##TYPE();
+
+#endif
+
+
+#define MT_DECLARE_TASK_IMPL(TYPE) \
+	void CompileTimeCheckMethod() \
+	{ \
+		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, TYPE > compileTypeTypesCheck; \
+		compileTypeTypesCheck; \
+	} \
+	\
+	static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
+	{ \
+		TYPE * task = static_cast< TYPE *>(userData); \
+		task->Do(fiberContext); \
+	} \
+	\
+	static void PoolTaskDestroy(void* userData) \
+	{ \
+		TYPE * task = static_cast< TYPE *>(userData); \
+		CALL_DTOR( task, TYPE ); \
+		/* Find task pool header */ \
+		MT::PoolElementHeader * poolHeader = (MT::PoolElementHeader *)((char*)userData - sizeof(MT::PoolElementHeader)); \
+		/* Fixup pool header, mark task as unused */ \
+		poolHeader->id.Store(MT::TaskID::UNUSED); \
+	} \
+
+
 
 #ifdef MT_INSTRUMENTED_BUILD
 #include <MTMicroWebSrv.h>
 #include <MTProfilerEventListener.h>
+
+#define MT_DECLARE_TASK(TYPE, colorID) \
+	static const char * GetDebugID() \
+	{ \
+		return #TYPE; \
+	} \
+	\
+	static int GetDebugColorIndex() \
+	{ \
+		return colorID; \
+	} \
+	\
+	MT_DECLARE_TASK_IMPL(TYPE);
+
+
+#else
+
+#define MT_DECLARE_TASK(TYPE, colorID) \
+	MT_DECLARE_TASK_IMPL(TYPE);
+
 #endif
+
+
+
+
+
 
 namespace MT
 {
