@@ -72,7 +72,7 @@ namespace MT
 #define MT_DECLARE_TASK_IMPL(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
-		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, TYPE > compileTypeTypesCheck; \
+		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, typename TYPE > compileTypeTypesCheck; \
 		compileTypeTypesCheck; \
 	} \
 	\
