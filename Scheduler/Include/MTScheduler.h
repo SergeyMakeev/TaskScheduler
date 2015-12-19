@@ -74,19 +74,28 @@ namespace MT
 #define COMPILE_TIME_TYPE_CHECK(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
-		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, typename TYPE > compileTypeTypesCheck; \
+		MT::CheckType< typename std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, typename TYPE > compileTypeTypesCheck; \
 		compileTypeTypesCheck; \
 	}
+
 #else
 
 // GCC, Clang and other compilers compile time check
 #define COMPILE_TIME_TYPE_CHECK(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
-		typedef TYPE MACRO_TYPE;\
-		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, MACRO_TYPE > compileTypeTypesCheck; \
+		/* query this pointer type */ \
+		typedef decltype(MT::TypeChecker::QueryThisType(this)) THIS_PTR_TYPE; \
+		/* query class type from this pointer type */ \
+		typedef std::remove_pointer<THIS_PTR_TYPE>::type CPP_TYPE; \
+		/* define macro type */ \
+		typedef TYPE MACRO_TYPE; \
+		/* compile time checking that is same types */ \
+		MT::CheckType< CPP_TYPE, MACRO_TYPE > compileTypeTypesCheck; \
+		/* remove unused variable warning */ \
 		compileTypeTypesCheck; \
 	}
+
 #endif
 
 
