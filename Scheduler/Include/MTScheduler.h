@@ -68,13 +68,33 @@ namespace MT
 #define MT_COLOR_RED (2)
 #define MT_COLOR_YELLOW (3)
 
+#if _MSC_VER
 
-#define MT_DECLARE_TASK_IMPL(TYPE) \
+// Visual Studio compile time check
+#define COMPILE_TIME_TYPE_CHECK(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
 		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, typename TYPE > compileTypeTypesCheck; \
 		compileTypeTypesCheck; \
-	} \
+	}
+#else
+
+// GCC, Clang and other compilers compile time check
+#define COMPILE_TIME_TYPE_CHECK(TYPE) \
+	void CompileTimeCheckMethod() \
+	{ \
+		typedef TYPE MACRO_TYPE;\
+		MT::CheckType< std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, MACRO_TYPE > compileTypeTypesCheck; \
+		compileTypeTypesCheck; \
+	}
+#endif
+
+
+
+
+#define MT_DECLARE_TASK_IMPL(TYPE) \
+	\
+	COMPILE_TIME_TYPE_CHECK(TYPE) \
 	\
 	static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
 	{ \
