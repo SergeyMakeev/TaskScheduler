@@ -51,25 +51,22 @@ namespace MT
 		}
 	};
 
+
+	template <typename T>
+	inline void CallDtor(T * p)
+	{
+#if _MSC_VER
+		p;
+#endif
+		p->~T();
+	}
+
 }
 
 #define MT_COLOR_DEFAULT (0)
 #define MT_COLOR_BLUE (1)
 #define MT_COLOR_RED (2)
 #define MT_COLOR_YELLOW (3)
-
-#if _MSC_VER
-
-#define CALL_DTOR(p, TYPE) \
-	p; \
-	p->~ TYPE ();
-
-#else
-
-#define CALL_DTOR(p, TYPE) \
-	p->~ TYPE();
-
-#endif
 
 
 #define MT_DECLARE_TASK_IMPL(TYPE) \
@@ -88,7 +85,7 @@ namespace MT
 	static void PoolTaskDestroy(void* userData) \
 	{ \
 		TYPE * task = static_cast< TYPE *>(userData); \
-		CALL_DTOR( task, TYPE ); \
+		MT::CallDtor( task ); \
 		/* Find task pool header */ \
 		MT::PoolElementHeader * poolHeader = (MT::PoolElementHeader *)((char*)userData - sizeof(MT::PoolElementHeader)); \
 		/* Fixup pool header, mark task as unused */ \
