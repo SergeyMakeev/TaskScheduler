@@ -103,37 +103,37 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct AtomicPtrBase
 	{
-		volatile void* value;
+		volatile void* _value;
 
 		void* Load() const
 		{
-			return (void*)value;
+			return (void*)_value;
 		}
 
 		// The function returns the initial value.
 		void* Store(void* val)
 		{
-			void* r = __sync_lock_test_and_set((void**)&value, val);
+			void* r = __sync_lock_test_and_set((void**)&_value, val);
 			return r;
 		}
 
 		// The function returns the initial value.
 		void* CompareAndSwap(void* compareValue, void* newValue)
 		{
-			void* r = __sync_val_compare_and_swap((void**)&value, compareValue, newValue);
+			void* r = __sync_val_compare_and_swap((void**)&_value, compareValue, newValue);
 			return r;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		void* LoadRelaxed() const
 		{
-			return (void*)value;
+			return (void*)_value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		void StoreRelaxed(void* val)
 		{
-			value = val;
+			_value = val;
 		}
 
 	};
