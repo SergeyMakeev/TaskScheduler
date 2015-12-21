@@ -74,7 +74,6 @@ namespace MT
 		{
 			_value = 0;
 			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
 			MT_ASSERT(IsPointerAligned(&_value, 4), "Invalid atomic int alignment");
 		}
 
@@ -82,7 +81,6 @@ namespace MT
 		{
 			_value = v;
 			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
 			MT_ASSERT(IsPointerAligned(&_value, 4), "Invalid atomic int alignment");
 		}
 	};
