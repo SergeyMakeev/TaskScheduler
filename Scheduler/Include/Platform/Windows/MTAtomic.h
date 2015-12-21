@@ -27,150 +27,131 @@
 
 #include <intrin.h>
 #include <cstdint>
+#include <type_traits>
 
 namespace MT
 {
+	//
+	// Full memory barrier
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void HardwareFullMemoryBarrier()
 	{
 		_mm_mfence();
 	}
 
 	//
-	// Atomic int
+	// Atomic int (pod type)
 	//
-	class AtomicInt32
+	// You must use this type when you need to declare static variable instead of AtomicInt32
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct AtomicInt32Base
 	{
-		volatile int32 value;
-	public:
-
-		AtomicInt32()
-			: value(0)
-		{
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
-			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
-		}
-
-		explicit AtomicInt32(int v)
-			: value(v)
-		{
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail");
-			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
-		}
+		volatile int32 _value;
 
 		// The function returns the resulting added value.
 		int32 AddFetch(int32 sum)
 		{
-			return _InterlockedExchangeAdd((volatile long *)&value, sum) + sum;
+			return _InterlockedExchangeAdd((volatile long *)&_value, sum) + sum;
 		}
 
 		// The function returns the resulting incremented value.
 		int32 IncFetch()
 		{
-			return _InterlockedIncrement((volatile long *)&value);
+			return _InterlockedIncrement((volatile long *)&_value);
 		}
 
 		// The function returns the resulting decremented value.
 		int32 DecFetch()
 		{
-			return _InterlockedDecrement((volatile long *)&value);
+			return _InterlockedDecrement((volatile long *)&_value);
 		}
 
 		int32 Load() const
 		{
-			return value;
+			return _value;
 		}
 
 		// The function returns the initial value.
 		int32 Store(int32 val)
 		{
-			return _InterlockedExchange((volatile long *)&value, val); 
+			return _InterlockedExchange((volatile long *)&_value, val); 
 		}
 
 		// The function returns the initial value.
 		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
-			return _InterlockedCompareExchange((volatile long *)&value, newValue, compareValue);
+			return _InterlockedCompareExchange((volatile long *)&_value, newValue, compareValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		int32 LoadRelaxed() const
 		{
-			return value;
+			return _value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		void StoreRelaxed(int32 val)
 		{
-			value = val;
+			_value = val;
 		}
 
 	};
 
 
+
 	//
-	// Atomic pointer
+	// Atomic pointer (pod type)
 	//
-	template<typename T>
-	class AtomicPtr
+	// You must use this type when you need to declare static variable instead of AtomicInt32
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct AtomicPtrBase
 	{
-		volatile T* value;
+		volatile void* _value;
 	
-	public:
-
-		AtomicPtr()
-			: value(nullptr)
+		void* Load() const
 		{
-			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
-		}
-
-		explicit AtomicPtr(T* v)
-			: value(v)
-		{
-			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
-		}
-
-		T* Load() const
-		{
-			return (T*)value;
+			return (void*)_value;
 		}
 
 		// The function returns the initial value.
-		T* Store(T* val)
+		void* Store(void* val)
 		{
 #ifdef _M_IX86
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedExchange will fail");
-			return (T*)_InterlockedExchange((volatile long *)&value, (int32)val); 
+			return (void*)_InterlockedExchange((volatile long *)&_value, (long)val); 
 #else
-			return (T*)_InterlockedExchangePointer((PVOID volatile *)&value, (PVOID)val); 
+			return _InterlockedExchangePointer((void* volatile *)&_value, (void*)val); 
 #endif
 		}
 
 		// The function returns the initial value.
-		T* CompareAndSwap(T* compareValue, T* newValue)
+		void* CompareAndSwap(void* compareValue, void* newValue)
 		{
 #ifdef _M_IX86
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedCompareExchange will fail");
-			return (T*)_InterlockedCompareExchange((volatile long *)&value, (int32)newValue, (int32)compareValue);
+			return (void*)_InterlockedCompareExchange((volatile long *)&_value, (long)newValue, (long)compareValue);
 #else
-			return (T*)_InterlockedCompareExchangePointer((PVOID volatile *)&value, (PVOID)newValue, (PVOID)compareValue);
+			return _InterlockedCompareExchangePointer((void* volatile *)&_value, (void*)newValue, (void*)compareValue);
 #endif
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		T* LoadRelaxed() const
+		void* LoadRelaxed() const
 		{
-			return value;
+			return (void*)_value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(T* val)
+		void StoreRelaxed(void* val)
 		{
-			value = val;
+			_value = val;
 		}
 
 	};
+
 
 
 }

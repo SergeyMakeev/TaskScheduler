@@ -25,138 +25,120 @@
 #ifndef __MT_ATOMIC__
 #define __MT_ATOMIC__
 
+#include <type_traits>
+
 
 namespace MT
 {
 
+	//
+	// Full memory barrier
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void HardwareFullMemoryBarrier()
 	{
 		__sync_synchronize();
 	}
 
 	//
-	// Atomic int
+	// Atomic int (pod type)
 	//
-	class AtomicInt32
+	// You must use this type when you need to declare static variable instead of AtomicInt32
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct AtomicInt32Base
 	{
-		volatile int32 value;
-	public:
-
-		AtomicInt32()
-			: value(0)
-		{
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
-		}
-
-		explicit AtomicInt32(int32 v)
-			: value(v)
-		{
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			MT_ASSERT(IsPointerAligned(&value, 4), "Invalid atomic int alignment");
-		}
+		volatile int32 _value;
 
 		int32 AddFetch(int32 sum)
 		{
-			return __sync_add_and_fetch(&value, sum);
+			return __sync_add_and_fetch(&_value, sum);
 		}
 
 		int32 IncFetch()
 		{
-			return __sync_add_and_fetch(&value, 1);
+			return __sync_add_and_fetch(&_value, 1);
 		}
 
 		int32 DecFetch()
 		{
-			return __sync_sub_and_fetch(&value, 1);
+			return __sync_sub_and_fetch(&_value, 1);
 		}
 
 		int32 Load() const
 		{
-			return value;
+			return _value;
 		}
 
 		int32 Store(int32 val)
 		{
-			return __sync_lock_test_and_set(&value, val);
+			return __sync_lock_test_and_set(&_value, val);
 		}
 
 		// The function returns the initial value.
 		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
-			return __sync_val_compare_and_swap(&value, compareValue, newValue);
+			return __sync_val_compare_and_swap(&_value, compareValue, newValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		int32 LoadRelaxed() const
 		{
-			return value;
+			return _value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		void StoreRelaxed(int32 val)
 		{
-			value = val;
+			_value = val;
 		}
-
-
 	};
 
 
 	//
-	// Atomic pointer
+	// Atomic pointer (pod type)
 	//
-	template<typename T>
-	class AtomicPtr
+	// You must use this type when you need to declare static variable instead of AtomicInt32
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct AtomicPtrBase
 	{
-		volatile T* value;
+		volatile void* value;
 
-	public:
-
-		AtomicPtr()
-			: value(nullptr)
+		void* Load() const
 		{
-			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
-		}
-
-		explicit AtomicPtr(T* v)
-			: value(v)
-		{
-			MT_ASSERT(IsPointerAligned(&value, sizeof(void*)), "Invalid atomic ptr alignment");
-		}
-
-		T* Load() const
-		{
-			return (T*)value;
+			return (void*)value;
 		}
 
 		// The function returns the initial value.
-		T* Store(T* val)
+		void* Store(void* val)
 		{
-			void* r = __sync_lock_test_and_set((void**)&value, (void*)val);
-			return (T*)r;
+			void* r = __sync_lock_test_and_set((void**)&value, val);
+			return r;
 		}
 
 		// The function returns the initial value.
-		T* CompareAndSwap(T* compareValue, T* newValue)
+		void* CompareAndSwap(void* compareValue, void* newValue)
 		{
-			void* r = __sync_val_compare_and_swap((void**)&value, (void*)compareValue, (void*)newValue);
-			return (T*)r;
+			void* r = __sync_val_compare_and_swap((void**)&value, compareValue, newValue);
+			return r;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		T* LoadRelaxed() const
+		void* LoadRelaxed() const
 		{
-			return value;
+			return (void*)value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(T* val)
+		void StoreRelaxed(void* val)
 		{
 			value = val;
 		}
 
 	};
+
+
 
 
 }

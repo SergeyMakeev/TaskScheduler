@@ -10,8 +10,33 @@ SUITE(CleanupTests)
 	static const int NEW_VALUE = 16;
 	static const int RELAXED_VALUE = 27;
 
+	void TestStatics()
+	{
+		// This variables must be placed to .data / .bss section
+		//
+		// From "Cpp Standard"
+		//
+		// 6.7 Declaration statement
+		//
+		// 4 The zero-initialization (8.5) of all block-scope variables with static storage duration (3.7.1) or thread storage
+		//   duration (3.7.2) is performed before any other initialization takes place.
+		//   Constant initialization (3.6.2) of a block-scope entity with static storage duration, if applicable,
+		//   is performed before its block is first entered.
+		//
+		static MT::AtomicInt32Base test = { 0 };
+		static MT::AtomicPtrBase pTest = { nullptr };
+
+		test.Store(13);
+		pTest.Store(nullptr);
+
+		CHECK_EQUAL(13, test.Load());
+		CHECK(pTest.Load() == nullptr);
+	}
+
 TEST(AtomicSimpleTest)
 {
+	TestStatics();
+
 	MT::AtomicInt32 test_relaxed;
 	test_relaxed.StoreRelaxed(RELAXED_VALUE);
 	CHECK(test_relaxed.Load() == RELAXED_VALUE);
