@@ -79,7 +79,7 @@ if isVisualStudio then
 else
 	buildoptions { "-std=c++11 -fsanitize=thread" }
   if isPosix then
-  	linkoptions { "-rdynamic -fsanitize=thread" }
+  	linkoptions { "-rdynamic -fsanitize=thread -pie" }
   end
 end
 
@@ -89,7 +89,7 @@ if isVisualStudio then
 else
 	buildoptions { "-std=c++11 -fsanitize=thread" }
   if isPosix then
-  	linkoptions { "-rdynamic -fsanitize=thread" }
+  	linkoptions { "-rdynamic -fsanitize=thread -pie" }
   end
 end
 
