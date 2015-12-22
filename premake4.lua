@@ -81,7 +81,7 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
@@ -98,7 +98,7 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }

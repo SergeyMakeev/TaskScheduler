@@ -67,7 +67,7 @@ namespace MT
 #if _MSC_VER
 
 // Visual Studio compile time check
-#define COMPILE_TIME_TYPE_CHECK(TYPE) \
+#define MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
 		MT::CheckType< typename std::remove_pointer< decltype(MT::TypeChecker::QueryThisType(this)) >::type, typename TYPE > compileTypeTypesCheck; \
@@ -76,8 +76,10 @@ namespace MT
 
 #else
 
+#define MT_UNUSED(x) (void)(x)
+
 // GCC, Clang and other compilers compile time check
-#define COMPILE_TIME_TYPE_CHECK(TYPE) \
+#define MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	void CompileTimeCheckMethod() \
 	{ \
 		/* query this pointer type */ \
@@ -89,7 +91,7 @@ namespace MT
 		/* compile time checking that is same types */ \
 		MT::CheckType< CPP_TYPE, MACRO_TYPE > compileTypeTypesCheck; \
 		/* remove unused variable warning */ \
-		compileTypeTypesCheck; \
+		MT_UNUSED(compileTypeTypesCheck); \
 	}
 
 #endif
@@ -99,7 +101,7 @@ namespace MT
 
 #define MT_DECLARE_TASK_IMPL(TYPE) \
 	\
-	COMPILE_TIME_TYPE_CHECK(TYPE) \
+	MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	\
 	static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
 	{ \
