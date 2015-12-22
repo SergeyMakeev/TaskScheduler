@@ -45,7 +45,7 @@ namespace MT
 		} else
 		{
 			//query number of processor
-			threadsCount = (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 2, 1, (int)MT_MAX_THREAD_COUNT);
+			threadsCount = (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads(), 1, (int)MT_MAX_THREAD_COUNT);
 		}
 
 		// create fiber pool
