@@ -2,7 +2,11 @@
 #include <UnitTest++.h>
 #include <MTScheduler.h>
 
-
+#ifdef MT_THREAD_SANITIZER
+	#define SMALLEST_STACK_SIZE (566656)
+#else
+	#define SMALLEST_STACK_SIZE (32768)
+#endif
 
 
 SUITE(FiberTests)
@@ -37,7 +41,7 @@ SUITE(FiberTests)
 
 		MT::Fiber fiber1;
         
-		fiber1.Create(32768, FiberFunc, &fiber1);
+		fiber1.Create(SMALLEST_STACK_SIZE, FiberFunc, &fiber1);
 
 		MT::Fiber::SwitchTo(*fiberMain, fiber1);
 
@@ -56,7 +60,7 @@ SUITE(FiberTests)
 TEST(FiberSimpleTest)
 {
 	MT::Thread thread;
-	thread.Start(32768, TestThread, &thread);
+	thread.Start(SMALLEST_STACK_SIZE, TestThread, &thread);
 
 	thread.Stop();
 }
