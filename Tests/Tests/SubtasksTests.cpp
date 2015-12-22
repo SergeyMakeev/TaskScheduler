@@ -2,7 +2,12 @@
 #include <UnitTest++.h>
 #include <MTScheduler.h>
 
-#define MT_DEFAULT_WAIT_TIME (5000)
+
+#ifdef MT_THREAD_SANITIZER
+	#define MT_DEFAULT_WAIT_TIME (50000)
+#else
+	#define MT_DEFAULT_WAIT_TIME (5000)
+#endif
 
 SUITE(SubtasksTests)
 {
@@ -155,7 +160,7 @@ TEST(ManyTasksOneSubtask)
 		//if (!scheduler.WaitAll(MT_DEFAULT_WAIT_TIME))
 		if (!scheduler.WaitGroup(sourceGroup, MT_DEFAULT_WAIT_TIME))
 		{
-			printf("Failed iteration %d\n", i);
+			printf("Timeout: Failed iteration %d\n", i);
 			waitAllOK = false;
 			break;
 		}
