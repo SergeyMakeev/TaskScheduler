@@ -5,8 +5,12 @@
 
 #ifdef MT_THREAD_SANITIZER
 	#define MT_DEFAULT_WAIT_TIME (500000)
+	#define MT_SUBTASK_QUEUE_DEEP (3)
+	#define MT_ITERATIONS_COUNT (10)
 #else
 	#define MT_DEFAULT_WAIT_TIME (5000)
+	#define MT_SUBTASK_QUEUE_DEEP (12)
+	#define MT_ITERATIONS_COUNT (100000)
 #endif
 
 SUITE(SubtasksTests)
@@ -59,20 +63,16 @@ struct DeepSubtaskQueue<1>
 };
 
 
-// Checks one simple task
+//
 TEST(DeepSubtaskQueue)
 {
 	MT::TaskScheduler scheduler;
 
-	//while(true)
-	{
-		DeepSubtaskQueue<12> task;
-		scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
+	DeepSubtaskQueue<MT_SUBTASK_QUEUE_DEEP> task;
+	scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
 
-		CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
-
-		CHECK_EQUAL(task.result, 144);
-	}
+	CHECK(scheduler.WaitAll(MT_DEFAULT_WAIT_TIME));
+	CHECK_EQUAL(task.result, 144);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -117,7 +117,7 @@ struct TaskWithManySubtasks
 
 };
 
-// Checks one simple task
+//
 TEST(SubtaskGroup)
 {
 	MT::TaskScheduler scheduler;
@@ -153,7 +153,7 @@ TEST(ManyTasksOneSubtask)
 
 	sourceGroup = scheduler.CreateGroup();
 
-	for (int i = 0; i < 100000; ++i)
+	for (int i = 0; i < MT_ITERATIONS_COUNT; ++i)
 	{
 		GroupTask group;
 		scheduler.RunAsync(sourceGroup, &group, 1);
@@ -223,7 +223,7 @@ struct TaskSubtaskCombo_Sum16
 
 MT::AtomicInt32 sum;
 
-// Checks one simple task
+//
 TEST(TaskSubtaskCombo)
 {
 	sum.Store(0);
