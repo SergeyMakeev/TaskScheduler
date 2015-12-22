@@ -80,7 +80,9 @@ else
 	buildoptions { "-std=c++11" }
   if isPosix then
   	linkoptions { "-rdynamic" }
-  	if not isOSX then
+  	if isOSX then
+		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
@@ -94,7 +96,9 @@ else
 	buildoptions { "-std=c++11" }
   if isPosix then
   	linkoptions { "-rdynamic" }
-  	if not isOSX then
+  	if isOSX then
+		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
