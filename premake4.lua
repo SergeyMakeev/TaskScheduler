@@ -81,7 +81,7 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		buildoptions { "-faddress-sanitizer -fno-omit-frame-pointer" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
@@ -97,7 +97,7 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		buildoptions { "-faddress-sanitizer -fno-omit-frame-pointer" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
