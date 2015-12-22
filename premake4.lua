@@ -77,7 +77,7 @@ configuration "x32"
 if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=c++11 -fsanitize=thread" }
   if isPosix then
   	linkoptions { "-rdynamic" }
   end
@@ -87,7 +87,7 @@ configuration "x64"
 if isVisualStudio then
         buildoptions { "/wd4127"  }
 else
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=c++11 -fsanitize=thread" }
   if isPosix then
   	linkoptions { "-rdynamic" }
   end
