@@ -84,8 +84,8 @@ else
 		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g" }
-  		linkoptions { "-fsanitize=address -static-libtsan -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=thread -fPIE -g" }
+  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
   end
 end
@@ -101,8 +101,8 @@ else
 		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g" }
-  		linkoptions { "-fsanitize=address -static-libtsan -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=thread -fPIE -g" }
+  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
   end
 end
