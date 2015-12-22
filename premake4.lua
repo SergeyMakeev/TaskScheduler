@@ -82,6 +82,7 @@ else
   	linkoptions { "-rdynamic" }
   	if isOSX then
 		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		linkoptions { "-fsanitize=address" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
@@ -98,6 +99,7 @@ else
   	linkoptions { "-rdynamic" }
   	if isOSX then
 		buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+		linkoptions { "-fsanitize=address" }
 	else
 		buildoptions { "-fsanitize=thread -fPIE -g" }
   		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
