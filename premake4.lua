@@ -84,9 +84,9 @@ else
 		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
-		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=thread -fPIE -g" }
-  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
+--		defines { "MT_THREAD_SANITIZER"}
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=memory -fsanitize-memory-track-origins -fPIE -g -fno-omit-frame-pointer" }
+  		linkoptions { "-fsanitize=memory -static-libtsan -pie" }
   	end
   end
 end
@@ -102,9 +102,9 @@ else
 		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address" }
 	else
-		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=thread -fPIE -g" }
-  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
+--		defines { "MT_THREAD_SANITIZER"}
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=memory -fsanitize-memory-track-origins -fPIE -g -fno-omit-frame-pointer" }
+  		linkoptions { "-fsanitize=memory -static-libtsan -pie" }
   	end
   end
 end
