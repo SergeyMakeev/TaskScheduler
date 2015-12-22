@@ -252,7 +252,7 @@ namespace MT
 		AtomicInt32 startedThreadsCount;
 
 		// Threads created by task manager
-		volatile uint32 threadsCount;
+		AtomicInt32 threadsCount;
 		internal::ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// All groups task statistic
@@ -312,7 +312,7 @@ namespace MT
 
 		bool IsEmpty();
 
-		uint32 GetWorkerCount() const;
+		int32 GetWorkersCount() const;
 
 		bool IsWorkerThread() const;
 

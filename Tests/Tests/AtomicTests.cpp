@@ -3,7 +3,7 @@
 #include <MTScheduler.h>
 
 
-SUITE(CleanupTests)
+SUITE(AtomicTests)
 {
 	static const int OLD_VALUE = 1;
 	static const int VALUE = 13;

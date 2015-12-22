@@ -448,8 +448,8 @@ SUITE(DxtTests)
 		MT::TaskScheduler scheduler;
 #endif
 
-		int workerCount = (int)scheduler.GetWorkerCount();
-		printf("Scheduler started, %d workers\n", workerCount);
+		int workersCount = (int)scheduler.GetWorkersCount();
+		printf("Scheduler started, %d workers\n", workersCount);
 
 		printf("Compress image\n");
 		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask, 1);

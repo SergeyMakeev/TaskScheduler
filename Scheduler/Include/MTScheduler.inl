@@ -103,7 +103,7 @@ namespace MT
 
 		ArrayView<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
 
-		size_t bucketCount = MT::Min(threadsCount, taskCount);
+		uint32 bucketCount = MT::Min((uint32)GetWorkersCount(), taskCount);
 		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);

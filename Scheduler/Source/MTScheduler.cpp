@@ -41,11 +41,11 @@ namespace MT
 
 		if (workerThreadsCount != 0)
 		{
-			threadsCount = MT::Clamp(workerThreadsCount, (uint32)1, (uint32)MT_MAX_THREAD_COUNT);
+			threadsCount.StoreRelaxed( MT::Clamp(workerThreadsCount, (uint32)1, (uint32)MT_MAX_THREAD_COUNT) );
 		} else
 		{
 			//query number of processor
-			threadsCount = (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads(), 1, (int)MT_MAX_THREAD_COUNT);
+			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads(), 1, (int)MT_MAX_THREAD_COUNT) );
 		}
 
 		// create fiber pool
@@ -67,7 +67,8 @@ namespace MT
 		groupStats[TaskGroup::DEFAULT].debugIsFree = false;
 
 		// create worker thread pool
-		for (uint32 i = 0; i < threadsCount; i++)
+		int32 totalThreadsCount = GetWorkersCount();
+		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
 			threadContext[i].SetThreadIndex(i);
 			threadContext[i].taskScheduler = this;
@@ -77,13 +78,14 @@ namespace MT
 
 	TaskScheduler::~TaskScheduler()
 	{
-		for (uint32 i = 0; i < threadsCount; i++)
+		int32 totalThreadsCount = GetWorkersCount();
+		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
 			threadContext[i].state.Store(internal::ThreadState::EXIT);
 			threadContext[i].hasNewTasksEvent.Signal();
 		}
 
-		for (uint32 i = 0; i < threadsCount; i++)
+		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
 			threadContext[i].thread.Stop();
 		}
@@ -280,14 +282,17 @@ namespace MT
 
 		context.schedulerFiber.CreateFromThread(context.thread);
 
-		uint32 workersCount = context.taskScheduler->GetWorkerCount();
+		uint32 workersCount = context.taskScheduler->GetWorkersCount();
+
+		int32 totalThreadsCount = context.taskScheduler->threadsCount.LoadRelaxed();
 
 		context.taskScheduler->startedThreadsCount.IncFetch();
 
-		//Spinlock until all threads started and initialized
+		//Simple spinlock until all threads is started and initialized
 		for(;;)
 		{
-			if (context.taskScheduler->startedThreadsCount.Load() == (int)context.taskScheduler->threadsCount)
+			int32 initializedThreadsCount = context.taskScheduler->startedThreadsCount.Load();
+			if (initializedThreadsCount == totalThreadsCount)
 			{
 				break;
 			}
@@ -438,7 +443,7 @@ namespace MT
 		// Add to thread queue
 		for (size_t i = 0; i < buckets.Size(); ++i)
 		{
-			int bucketIndex = roundRobinThreadIndex.IncFetch() % threadsCount;
+			int bucketIndex = roundRobinThreadIndex.IncFetch() % threadsCount.LoadRelaxed();
 			internal::ThreadContext & context = threadContext[bucketIndex];
 
 			internal::TaskBucket& bucket = buckets[i];
@@ -454,7 +459,7 @@ namespace MT
 
 		ArrayView<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskHandleCount), taskHandleCount);
 
-		size_t bucketCount = MT::Min(threadsCount, taskHandleCount);
+		uint32 bucketCount = MT::Min((uint32)GetWorkersCount(), taskHandleCount);
 		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(group, taskHandleArray, buffer, buckets);
@@ -488,9 +493,9 @@ namespace MT
 		return true;
 	}
 
-	uint32 TaskScheduler::GetWorkerCount() const
+	int32 TaskScheduler::GetWorkersCount() const
 	{
-		return threadsCount;
+		return threadsCount.LoadRelaxed();
 	}
 
 	bool TaskScheduler::IsWorkerThread() const

@@ -33,7 +33,7 @@ namespace MT
 
 		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskCount);
 
-		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
+		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkersCount(), taskCount);
 		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
@@ -50,7 +50,7 @@ namespace MT
 
 		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, taskCount);
 
-		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkerCount(), taskCount);
+		size_t bucketCount = MT::Min((size_t)scheduler.GetWorkersCount(), taskCount);
 		ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
 
 		internal::DistibuteDescriptions(taskGroup, taskArray, buffer, buckets);
