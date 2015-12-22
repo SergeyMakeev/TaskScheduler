@@ -75,6 +75,7 @@ configuration "Debug"
 
 configuration "x32"
 if isVisualStudio then
+-- Compiler Warning (level 4) C4127. Conditional expression is constant
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
@@ -93,6 +94,7 @@ end
 
 configuration "x64"
 if isVisualStudio then
+-- Compiler Warning (level 4) C4127. Conditional expression is constant
         buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
