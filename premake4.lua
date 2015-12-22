@@ -81,8 +81,8 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if not isOSX then
-		buildoptions { "-fsanitize=thread" }
-  		linkoptions { "-fsanitize=thread -static-libtsan" }
+		buildoptions { "-fsanitize=thread -fPIE -g" }
+  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
   end
 end
@@ -95,8 +95,8 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if not isOSX then
-		buildoptions { "-fsanitize=thread" }
-  		linkoptions { "-fsanitize=thread -static-libtsan" }
+		buildoptions { "-fsanitize=thread -fPIE -g" }
+  		linkoptions { "-fsanitize=thread -static-libtsan -pie" }
   	end
   end
 end
