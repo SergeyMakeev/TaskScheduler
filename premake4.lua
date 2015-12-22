@@ -85,8 +85,8 @@ else
 		linkoptions { "-fsanitize=address" }
 	else
 --		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=memory -fPIE -g -fno-omit-frame-pointer" }
-  		linkoptions { "-fsanitize=memory -static-libtsan -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=undefined -fPIE -g -fno-omit-frame-pointer" }
+  		linkoptions { "-fsanitize=undefined -pie" }
   	end
   end
 end
@@ -103,8 +103,8 @@ else
 		linkoptions { "-fsanitize=address" }
 	else
 --		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=memory -fPIE -g -fno-omit-frame-pointer" }
-  		linkoptions { "-fsanitize=memory -static-libtsan -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=undefined -fPIE -g -fno-omit-frame-pointer" }
+  		linkoptions { "-fsanitize=undefined -pie" }
   	end
   end
 end
