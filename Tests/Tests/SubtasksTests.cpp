@@ -4,7 +4,7 @@
 
 
 #ifdef MT_THREAD_SANITIZER
-	#define MT_DEFAULT_WAIT_TIME (50000)
+	#define MT_DEFAULT_WAIT_TIME (500000)
 #else
 	#define MT_DEFAULT_WAIT_TIME (5000)
 #endif
