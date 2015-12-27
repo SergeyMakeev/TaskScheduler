@@ -52,7 +52,7 @@ namespace MT
 	//
 	class Fiber
 	{
-		void * funcData;
+		void* funcData;
 		TThreadEntryPoint func;
 
 		Memory::StackDesc stackDesc;
@@ -60,7 +60,7 @@ namespace MT
 		ucontext_t fiberContext;
 		bool isInitialized;
 
-		static void FiberFuncInternal(void *pFiber)
+		static void FiberFuncInternal(void* pFiber)
 		{
 			MT_ASSERT(pFiber != nullptr, "Invalid fiber");
 			Fiber* self = (Fiber*)pFiber;
@@ -71,12 +71,9 @@ namespace MT
 			self->func(self->funcData);
 		}
 
-	private:
-
-		Fiber(const Fiber &) {}
-		void operator=(const Fiber &) {}
-
 	public:
+
+		MT_NOCOPYABLE(Fiber);
 
 		Fiber()
 			: funcData(nullptr)

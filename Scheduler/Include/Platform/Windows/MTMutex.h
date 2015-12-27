@@ -36,12 +36,9 @@ namespace MT
 	{
 		::CRITICAL_SECTION criticalSection;
 
-	private:
-
-		Mutex(const Mutex &) {}
-		void operator=(const Mutex &) {}
-
 	public:
+
+		MT_NOCOPYABLE(Mutex);
 
 		Mutex()
 		{

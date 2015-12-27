@@ -28,6 +28,7 @@
 #include <intrin.h>
 #include <cstdint>
 #include <type_traits>
+#include <xmmintrin.h>
 
 namespace MT
 {
@@ -39,6 +40,16 @@ namespace MT
 	{
 		_mm_mfence();
 	}
+
+	//
+	// Signals to the processor to give resources to threads that are waiting for them.
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	inline void YieldCpu()
+	{
+		_mm_pause();
+	}
+
 
 	//
 	// Atomic int (pod type)
@@ -53,19 +64,19 @@ namespace MT
 		// The function returns the resulting added value.
 		int32 AddFetch(int32 sum)
 		{
-			return _InterlockedExchangeAdd((volatile long *)&_value, sum) + sum;
+			return _InterlockedExchangeAdd((volatile long*)&_value, sum) + sum;
 		}
 
 		// The function returns the resulting incremented value.
 		int32 IncFetch()
 		{
-			return _InterlockedIncrement((volatile long *)&_value);
+			return _InterlockedIncrement((volatile long*)&_value);
 		}
 
 		// The function returns the resulting decremented value.
 		int32 DecFetch()
 		{
-			return _InterlockedDecrement((volatile long *)&_value);
+			return _InterlockedDecrement((volatile long*)&_value);
 		}
 
 		int32 Load() const
@@ -76,13 +87,13 @@ namespace MT
 		// The function returns the initial value.
 		int32 Store(int32 val)
 		{
-			return _InterlockedExchange((volatile long *)&_value, val); 
+			return _InterlockedExchange((volatile long*)&_value, val); 
 		}
 
 		// The function returns the initial value.
 		int32 CompareAndSwap(int32 compareValue, int32 newValue)
 		{
-			return _InterlockedCompareExchange((volatile long *)&_value, newValue, compareValue);
+			return _InterlockedCompareExchange((volatile long*)&_value, newValue, compareValue);
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
@@ -113,7 +124,7 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct AtomicPtrBase
 	{
-		volatile void* _value;
+		volatile const void* _value;
 	
 		void* Load() const
 		{
@@ -121,35 +132,35 @@ namespace MT
 		}
 
 		// The function returns the initial value.
-		void* Store(void* val)
+		const void* Store(const void* val)
 		{
 #ifdef _M_IX86
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedExchange will fail");
-			return (void*)_InterlockedExchange((volatile long *)&_value, (long)val); 
+			return (void*)_InterlockedExchange((volatile long*)&_value, (long)val); 
 #else
-			return _InterlockedExchangePointer((void* volatile *)&_value, (void*)val); 
+			return _InterlockedExchangePointer((void* volatile*)&_value, (void*)val); 
 #endif
 		}
 
 		// The function returns the initial value.
-		void* CompareAndSwap(void* compareValue, void* newValue)
+		const void* CompareAndSwap(const void* compareValue, const void* newValue)
 		{
 #ifdef _M_IX86
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedCompareExchange will fail");
-			return (void*)_InterlockedCompareExchange((volatile long *)&_value, (long)newValue, (long)compareValue);
+			return (void*)_InterlockedCompareExchange((volatile long*)&_value, (long)newValue, (long)compareValue);
 #else
-			return _InterlockedCompareExchangePointer((void* volatile *)&_value, (void*)newValue, (void*)compareValue);
+			return _InterlockedCompareExchangePointer((void* volatile*)&_value, (void*)newValue, (void*)compareValue);
 #endif
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void* LoadRelaxed() const
+		const void* LoadRelaxed() const
 		{
-			return (void*)_value;
+			return (const void*)_value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(void* val)
+		void StoreRelaxed(const void* val)
 		{
 			_value = val;
 		}

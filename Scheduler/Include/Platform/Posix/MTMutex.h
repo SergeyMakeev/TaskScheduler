@@ -41,12 +41,9 @@ namespace MT
 		pthread_mutexattr_t mutexAttr;
 		pthread_mutex_t mutex;
 
-	private:
-
-		Mutex(const Mutex &) {}
-		void operator=(const Mutex &) {}
-
 	public:
+
+		MT_NOCOPYABLE(Mutex);
 
 		Mutex()
 		{

@@ -67,11 +67,7 @@ namespace MT
 
 		inline void Dtor(T* element)
 		{
-#if _MSC_VER
-			// warning C4100: 'element' : unreferenced formal parameter
-			// if type T has not destructor
-			element;
-#endif
+			MT_UNUSED(element);
 			element->~T();
 		}
 
@@ -105,12 +101,9 @@ namespace MT
 		}
 
 
-	private:
-
-		ConcurrentQueueLIFO(const ConcurrentQueueLIFO&) {}
-		void operator=(const ConcurrentQueueLIFO&) {}
-
 	public:
+
+		MT_NOCOPYABLE(ConcurrentQueueLIFO);
 
 		/// \name Initializes a new instance of the ConcurrentQueueLIFO class.
 		/// \brief  
@@ -118,7 +111,6 @@ namespace MT
 			: begin(0)
 			, end(0)
 		{
-
 			size_t bytesCount = sizeof(T) * MAX_JOBS_COUNT;
 			data = Memory::Alloc(bytesCount);
 		}

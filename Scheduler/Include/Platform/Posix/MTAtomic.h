@@ -26,6 +26,7 @@
 #define __MT_ATOMIC__
 
 #include <type_traits>
+#include <xmmintrin.h>
 
 
 namespace MT
@@ -38,6 +39,15 @@ namespace MT
 	inline void HardwareFullMemoryBarrier()
 	{
 		__sync_synchronize();
+	}
+
+	//
+	// Signals to the processor to give resources to threads that are waiting for them.
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	inline void YieldCpu()
+	{
+		_mm_pause();
 	}
 
 	//
@@ -105,33 +115,33 @@ namespace MT
 	{
 		volatile void* _value;
 
-		void* Load() const
+		const void* Load() const
 		{
 			return (void*)_value;
 		}
 
 		// The function returns the initial value.
-		void* Store(void* val)
+		const void* Store(const void* val)
 		{
-			void* r = __sync_lock_test_and_set((void**)&_value, val);
+			const void* r = __sync_lock_test_and_set((void**)&_value, val);
 			return r;
 		}
 
 		// The function returns the initial value.
-		void* CompareAndSwap(void* compareValue, void* newValue)
+		const void* CompareAndSwap(const void* compareValue, const void* newValue)
 		{
-			void* r = __sync_val_compare_and_swap((void**)&_value, compareValue, newValue);
+			const void* r = __sync_val_compare_and_swap((void**)&_value, compareValue, newValue);
 			return r;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void* LoadRelaxed() const
+		const void* LoadRelaxed() const
 		{
-			return (void*)_value;
+			return (const void*)_value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(void* val)
+		void StoreRelaxed(const void* val)
 		{
 			_value = val;
 		}

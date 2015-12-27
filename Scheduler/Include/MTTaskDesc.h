@@ -34,7 +34,6 @@ namespace MT
 {
 	class FiberContext;
 	typedef void (*TTaskEntryPoint)(FiberContext & context, void* userData);
-
 	typedef void (*TPoolTaskDestroy)(void* userData);
 
 

@@ -32,7 +32,7 @@
 #include <MTFiberContext.h>
 #include <MTAllocator.h>
 #include <MTTaskPool.h>
-
+#include <Scopes/MTScopes.h>
 
 
 namespace MT
@@ -55,11 +55,9 @@ namespace MT
 
 
 	template <typename T>
-	inline void CallDtor(T * p)
+	inline void CallDtor(T* p)
 	{
-#if _MSC_VER
-		p;
-#endif
+		MT_UNUSED(p);
 		p->~T();
 	}
 
@@ -77,7 +75,6 @@ namespace MT
 
 #else
 
-#define MT_UNUSED(x) (void)(x)
 
 // GCC, Clang and other compilers compile time check
 #define MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
@@ -185,17 +182,11 @@ namespace MT
 			//Tasks awaiting group through FiberContext::WaitGroupAndYield call
 			ConcurrentQueueLIFO<FiberContext*> waitTasksQueue;
 
-		public:
-
 			bool debugIsFree;
 
-
-		private:
-
-			TaskGroupDescription(TaskGroupDescription& ) {}
-			void operator=(const TaskGroupDescription&) {}
-
 		public:
+
+			MT_NOCOPYABLE(TaskGroupDescription);
 
 			TaskGroupDescription()
 			{
@@ -242,6 +233,16 @@ namespace MT
 			bool Wait(uint32 milliseconds)
 			{
 				return allDoneEvent.Wait(milliseconds);
+			}
+
+			void SetDebugIsFree(bool _debugIsFree)
+			{
+				debugIsFree = _debugIsFree;
+			}
+
+			bool GetDebugIsFree() const
+			{
+				return debugIsFree;
 			}
 		};
 

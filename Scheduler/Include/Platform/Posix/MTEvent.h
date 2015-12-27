@@ -51,9 +51,6 @@ namespace MT
 
 	private:
 
-		Event(const Event&) {}
-		void operator=(const Event&) {}
-
 		void AutoResetIfNeed()
 		{
 			if (resetType == EventReset::MANUAL)
@@ -64,6 +61,9 @@ namespace MT
 		}
 
 	public:
+
+		MT_NOCOPYABLE(Event);
+
 
 		Event()
 			: numOfWaitingThreads(0)

@@ -42,16 +42,11 @@ namespace MT
 	{
 		MT::Mutex mutex;
 
-		void * data;
+		void* data;
 
 		size_t writeIndex;
 		size_t readIndex;
 		size_t size;
-
-	private:
-
-		ConcurrentRingBuffer(const ConcurrentRingBuffer&) {}
-		void operator=(const ConcurrentRingBuffer&) {}
 
 		inline T* Buffer()
 		{
@@ -65,14 +60,9 @@ namespace MT
 
 		inline void Dtor(T* element)
 		{
-#if _MSC_VER
-			// warning C4100: 'element' : unreferenced formal parameter
-			// if type T has not destructor
-			element;
-#endif
+			MT_UNUSED(element);
 			element->~T();
 		}
-
 
 		size_t NextIndex(size_t index)
 		{
@@ -82,6 +72,8 @@ namespace MT
 		}
 
 	public:
+
+		MT_NOCOPYABLE(ConcurrentRingBuffer);
 
 		ConcurrentRingBuffer()
 			: writeIndex(0)

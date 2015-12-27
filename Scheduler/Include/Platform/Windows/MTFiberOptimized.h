@@ -52,7 +52,7 @@ namespace MT
 	//
 	class Fiber
 	{
-		void * funcData;
+		void* funcData;
 		TThreadEntryPoint func;
 
 		Memory::StackDesc stackDesc;
@@ -83,12 +83,9 @@ namespace MT
 			self->func(self->funcData);
 		}
 
-	private:
-
-		Fiber(const Fiber &) {}
-		void operator=(const Fiber &) {}
-
 	public:
+
+		MT_NOCOPYABLE(Fiber);
 
 		Fiber()
 			: funcData(nullptr)
@@ -114,11 +111,14 @@ namespace MT
 
 		void CreateFromThread(Thread & thread)
 		{
+			MT_USED_IN_ASSERT(thread);
+
 			MT_ASSERT(!isInitialized, "Already initialized");
 			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
 
 			fiberContext.ContextFlags = CONTEXT_FULL;
 			BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );
+			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != 0, "GetThreadContext - failed");
 
 			func = nullptr;
@@ -131,7 +131,7 @@ namespace MT
 			isInitialized = true;
 		}
 
-		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
+		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void* userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
 
@@ -140,6 +140,7 @@ namespace MT
 
 			fiberContext.ContextFlags = CONTEXT_FULL;
 			BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );
+			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != 0, "GetThreadContext - failed");
 
 			stackDesc = Memory::AllocStack(stackSize);

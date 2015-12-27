@@ -36,23 +36,20 @@ namespace MT
 	//
 	class Fiber
 	{
-		void * funcData;
+		void* funcData;
 		TThreadEntryPoint func;
 
 		void* fiber;
 
-		static void __stdcall FiberFuncInternal(void *pFiber)
+		static void __stdcall FiberFuncInternal(void* pFiber)
 		{
 			Fiber* self = (Fiber*)pFiber;
 			self->func(self->funcData);
 		}
 
-	private:
-
-		Fiber(const Fiber &) {}
-		void operator=(const Fiber &) {}
-
 	public:
+
+		MT_NOCOPYABLE(Fiber);
 
 		Fiber()
 			: fiber(nullptr)
@@ -87,7 +84,7 @@ namespace MT
 		}
 
 
-		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
+		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void* userData)
 		{
 			MT_ASSERT(fiber == nullptr, "Fiber already created");
 

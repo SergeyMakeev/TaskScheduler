@@ -25,6 +25,17 @@
 
 #include <stdint.h>
 
+#define MT_USED_IN_ASSERT(x) (void)(x)
+
+#define MT_UNUSED(x) (void)(x)
+
+#define MT_NOCOPYABLE(TYPE) \
+	private: \
+		TYPE (const TYPE &) {} \
+		void operator= (const TYPE &) {} \
+	public: \
+
+
 
 #ifdef MT_UNICODE
 

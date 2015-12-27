@@ -55,7 +55,6 @@ inline bool IsPointerAligned( const volatile void* p, const uint32 align )
 
 #include <Platform/Common/MTAtomic.h>
 
-
 namespace MT
 {
 	//
@@ -111,4 +110,25 @@ namespace MT
 	};
 
 }
+
+
+#ifdef __GNUC__
+
+#define mt_thread_local __thread
+
+#elif __STDC_VERSION__ >= 201112L
+
+#define mt_thread_local _Thread_local
+
+#elif defined(_MSC_VER)
+
+#define mt_thread_local __declspec(thread)
+
+#else
+
+#error Can't define mt_thread_local. Unknown platform.
+
+#endif
+
+
 

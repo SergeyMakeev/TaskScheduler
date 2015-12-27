@@ -56,7 +56,7 @@ namespace MT
 			availableFibers.Push( &context );
 		}
 
-		for (uint32 i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
+		for (int16 i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
 		{
 			if (i != TaskGroup::DEFAULT)
 			{
@@ -64,7 +64,7 @@ namespace MT
 			}
 		}
 
-		groupStats[TaskGroup::DEFAULT].debugIsFree = false;
+		groupStats[TaskGroup::DEFAULT].SetDebugIsFree(false);
 
 		// create worker thread pool
 		int32 totalThreadsCount = GetWorkersCount();
@@ -148,7 +148,6 @@ namespace MT
 			{
 				poolDestroyFunc(poolUserData);
 			}
-
 
 			TaskGroup taskGroup = fiberContext->currentGroup;
 
@@ -319,7 +318,6 @@ namespace MT
 #ifdef MT_INSTRUMENTED_BUILD
 					context.NotifyTaskResumed(fiberContext->currentTask);
 #endif
-
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
 					fiberContext->childrenFibersCount.IncFetch();
 
@@ -522,8 +520,8 @@ namespace MT
 
 		int idx = group.GetValidIndex();
 
-		MT_ASSERT(groupStats[idx].debugIsFree == true, "Bad logic!");
-		groupStats[idx].debugIsFree = false;
+		MT_ASSERT(groupStats[idx].GetDebugIsFree() == true, "Bad logic!");
+		groupStats[idx].SetDebugIsFree(false);
 
 		return group;
 	}
@@ -535,8 +533,8 @@ namespace MT
 
 		int idx = group.GetValidIndex();
 
-		MT_ASSERT(groupStats[idx].debugIsFree == false, "Group already released");
-		groupStats[idx].debugIsFree = true;
+		MT_ASSERT(groupStats[idx].GetDebugIsFree() == false, "Group already released");
+		groupStats[idx].SetDebugIsFree(true);
 
 		availableGroups.Push(group);
 	}
@@ -548,7 +546,7 @@ namespace MT
 		int idx = group.GetValidIndex();
 		TaskScheduler::TaskGroupDescription & groupDesc = groupStats[idx];
 
-		MT_ASSERT(groupDesc.debugIsFree == false, "Invalid group");
+		MT_ASSERT(groupDesc.GetDebugIsFree() == false, "Invalid group");
 		return groupDesc;
 	}
 

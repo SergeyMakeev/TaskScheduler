@@ -7,10 +7,9 @@ namespace MT
 	protected:
 		void * funcData;
 		TThreadEntryPoint func;
-	private:
-		ThreadBase(const ThreadBase &) {}
-		void operator=(const ThreadBase &) {}
 	public:
+
+		MT_NOCOPYABLE(ThreadBase);
 
 		ThreadBase()
 			: funcData(nullptr)

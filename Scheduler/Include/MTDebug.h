@@ -60,10 +60,8 @@ inline void ThrowException()
 
 #else
 
-//TODO: Remove condition from MT_ASSERT
-//      Currently condition removal produces too many unused variable warnings when compiling
 #define MT_REPORT_ASSERT( description )
-#define MT_ASSERT( condition, description ) { if ( !(condition) ) {} }
+#define MT_ASSERT( condition, description )
 #define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { operation; } }
 
 #endif

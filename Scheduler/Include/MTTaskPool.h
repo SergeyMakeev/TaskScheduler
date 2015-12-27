@@ -94,14 +94,13 @@ namespace MT
 	//////////////////////////////////////////////////////////////////////////
 	class TaskHandle
 	{
-
-		int check_id;
+		int32 check_id;
 
 	protected:
 
 		friend struct PoolElementHeader;
 
-		PoolElementHeader * task;
+		PoolElementHeader* task;
 
 	public:
 
@@ -177,8 +176,6 @@ namespace MT
 			return *this;
 		}
 
-
-
 		const internal::TaskDesc & GetDesc()
 		{
 			MT_ASSERT(IsValid(), "Task handle is invalid");
@@ -243,12 +240,9 @@ namespace MT
 			new(element) PoolItem(id, std::move(val));
 		}
 
-	private:
-
-		TaskPool(const TaskPool &) {}
-		void operator=(const TaskPool &) {}
-
 	public:
+
+		MT_NOCOPYABLE(TaskPool);
 
 		TaskPool()
 			: idGenerator(0)

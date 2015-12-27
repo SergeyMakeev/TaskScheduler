@@ -39,10 +39,10 @@ namespace MT
 	{
 		struct StackDesc
 		{
-			void * stackBottom;
-			void * stackTop;
+			void* stackBottom;
+			void* stackTop;
 
-			char * stackMemory;
+			char* stackMemory;
 			size_t stackMemoryBytesCount;
 
 			StackDesc()

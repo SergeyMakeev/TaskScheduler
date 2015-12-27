@@ -28,11 +28,11 @@ namespace MT
 	//Task group ID
 	class TaskGroup
 	{
-		int id;
+		int16 id;
 
 	public:
 
-		static const int MT_MAX_GROUPS_COUNT = 256;
+		static const int16 MT_MAX_GROUPS_COUNT = 256;
 
 		enum PredefinedValues
 		{
@@ -49,10 +49,10 @@ namespace MT
 
 		explicit TaskGroup(PredefinedValues v)
 		{
-			id = v;
+			id = (int16)v;
 		}
 
-		explicit TaskGroup(int _id)
+		explicit TaskGroup(int16 _id)
 		{
 			id = _id;
 		}
@@ -64,7 +64,7 @@ namespace MT
 
 		TaskGroup & operator= (const PredefinedValues & v)
 		{
-			id = v;
+			id = (int16)v;
 			return *this;
 		}
 

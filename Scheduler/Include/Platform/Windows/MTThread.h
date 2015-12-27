@@ -38,7 +38,7 @@ namespace MT
 
 		static DWORD __stdcall ThreadFuncInternal(void *pThread)
 		{
-			Thread * self = (Thread *)pThread;
+			Thread* self = (Thread*)pThread;
 
 			self->func(self->funcData);
 
@@ -76,6 +76,7 @@ namespace MT
 
 			::WaitForSingleObject(thread, INFINITE);
 			BOOL res = CloseHandle(thread);
+			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != 0, "Can't close thread handle");
 			thread = nullptr;
 		}

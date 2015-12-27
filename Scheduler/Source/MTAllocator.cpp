@@ -72,6 +72,7 @@ namespace MT
 
 		DWORD oldProtect = 0;
 		BOOL res = VirtualProtect(desc.stackMemory, pageSize, PAGE_NOACCESS, &oldProtect);
+		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res != 0, "Can't protect memory");
 
 #else
@@ -110,6 +111,7 @@ namespace MT
 #ifdef _WIN32
 
 		int res = VirtualFree(desc.stackMemory, 0, MEM_RELEASE);
+		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res != 0, "Can't free memory");
 
 #else

@@ -65,12 +65,10 @@ namespace MT
 
 		bool isStarted;
 
-		static void* ThreadFuncInternal(void *pThread)
+		static void* ThreadFuncInternal(void* pThread)
 		{
-			Thread * self = (Thread *)pThread;
-
+			Thread* self = (Thread *)pThread;
 			self->func(self->funcData);
-
 			return nullptr;
 		}
 
@@ -93,7 +91,7 @@ namespace MT
 		}
 
 
-		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void *userData)
+		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void* userData)
 		{
 			MT_ASSERT(!isStarted, "Thread already stared");
 
@@ -177,12 +175,12 @@ namespace MT
 
 		static void Sleep(uint32 milliseconds)
 		{
-      struct timespec req;
-      time_t sec = (int)(milliseconds/1000);
-      milliseconds = milliseconds - (sec*1000);
-      req.tv_sec = sec;
-      req.tv_nsec = milliseconds * 1000000L;
-      while (nanosleep(&req,&req) == -1 )
+			struct timespec req;
+			time_t sec = (int)(milliseconds/1000);
+			milliseconds = milliseconds - (sec*1000);
+			req.tv_sec = sec;
+			req.tv_nsec = milliseconds * 1000000L;
+			while (nanosleep(&req,&req) == -1 )
 			{
 				continue;
 			}

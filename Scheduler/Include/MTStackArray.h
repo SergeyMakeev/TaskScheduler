@@ -31,8 +31,8 @@ namespace MT
 	template<class T, size_t capacity>
 	class StackArray
 	{
-		char data[sizeof(T) * capacity];
-		size_t count;
+		byte data[sizeof(T) * capacity];
+		uint32 count;
 
 		inline T* Buffer()
 		{
@@ -51,20 +51,13 @@ namespace MT
 
 		inline void Dtor(T* element)
 		{
-#if _MSC_VER
-			// warning C4100: 'element' : unreferenced formal parameter
-			// if type T has not destructor
-			element;
-#endif
+			MT_UNUSED(element);
 			element->~T();
 		}
 
-	private:
-
-		StackArray(StackArray& ) {}
-		void operator=(const StackArray&) {}
-
 	public:
+
+		MT_NOCOPYABLE(StackArray);
 
 		inline StackArray()
 			: count(0)
