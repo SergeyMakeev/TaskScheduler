@@ -52,9 +52,9 @@ namespace MT
 	public:
 
 		ScopeDesc(const char* srcFile, int32 srcLine, const char* scopeName)
-			: file(srcFile)
+			: name(scopeName)
+			, file(srcFile)
 			, line(srcLine)
-			, name(scopeName)
 		{
 		}
 
@@ -152,7 +152,7 @@ namespace MT
 		{
 			//new element index
 			int32 index = top.IncFetch() - 1;
-			MT_VERIFY(index < capacity, "Area allocator is full. Can't allocate more memory.", return -1);
+			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return -1);
 
 			//get memory for object
 			T* pObject = (T*)&rawMemory[index * sizeof(T)];
@@ -204,7 +204,7 @@ namespace MT
 		T* AllocObject()
 		{
 			int32 index = top;
-			MT_VERIFY(index < capacity, "Stack allocator overflow. Can't allocate more memory.", return nullptr);
+			MT_VERIFY(index < (int32)capacity, "Stack allocator overflow. Can't allocate more memory.", return nullptr);
 			top++;
 			T* pObject = IndexToObject(index);
 			return pObject;
@@ -329,7 +329,7 @@ namespace MT
 			top++;
 
 			int32 index = count;
-			MT_VERIFY(index < capacity, "Stack allocator overflow. Can't allocate more memory.", return nullptr);
+			MT_VERIFY(index < (int32)capacity, "Stack allocator overflow. Can't allocate more memory.", return nullptr);
 			count++;
 			T* pObject = IndexToObject(index);
 
