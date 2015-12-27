@@ -123,14 +123,14 @@ namespace MT
 		// The function returns the initial value.
 		const void* Store(const void* val)
 		{
-			const void* r = __sync_lock_test_and_set((void**)&_value, val);
+			const void* r = __sync_lock_test_and_set((void**)&_value, (void*)val);
 			return r;
 		}
 
 		// The function returns the initial value.
 		const void* CompareAndSwap(const void* compareValue, const void* newValue)
 		{
-			const void* r = __sync_val_compare_and_swap((void**)&_value, compareValue, newValue);
+			const void* r = __sync_val_compare_and_swap((void**)&_value, (void*)compareValue, (void*)newValue);
 			return r;
 		}
 

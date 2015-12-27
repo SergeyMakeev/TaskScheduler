@@ -48,21 +48,26 @@ namespace MT
 		Mutex()
 		{
 			int res = pthread_mutexattr_init(&mutexAttr);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutexattr_init - failed");
 
 			res = pthread_mutexattr_settype(&mutexAttr, PTHREAD_MUTEX_RECURSIVE);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutexattr_settype - failed");
 
 			res = pthread_mutex_init(&mutex, &mutexAttr);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutex_init - failed");
 		}
 
 		~Mutex()
 		{
 			int res = pthread_mutex_destroy(&mutex);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutex_destroy - failed");
 
 			res = pthread_mutexattr_destroy(&mutexAttr);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutexattr_destroy - failed");
 		}
 
@@ -73,11 +78,13 @@ namespace MT
 		void Lock()
 		{
 			int res = pthread_mutex_lock(&mutex);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutex_lock - failed");
 		}
 		void Unlock()
 		{
 			int res = pthread_mutex_unlock(&mutex);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "pthread_mutex_unlock - failed");
 		}
 

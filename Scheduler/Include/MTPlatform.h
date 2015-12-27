@@ -126,7 +126,7 @@ namespace MT
 
 #else
 
-#error Can't define mt_thread_local. Unknown platform.
+#error Can not define mt_thread_local. Unknown platform.
 
 #endif
 

@@ -106,17 +106,21 @@ namespace MT
 			MT_ASSERT(stackSize >= PTHREAD_STACK_MIN, "Thread stack to small");
 
 			int err = pthread_attr_init(&threadAttr);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_init - error");
 
 			err = pthread_attr_setstack(&threadAttr, stackDesc.stackBottom, stackSize);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_setstack - error");
 
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_setdetachstate - error");
 
 			isStarted = true;
 
 			err = pthread_create(&thread, &threadAttr, ThreadFuncInternal, this);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_create - error");
 		}
 
@@ -131,9 +135,11 @@ namespace MT
 
 			void *threadStatus = nullptr;
 			int err = pthread_join(thread, &threadStatus);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_join - error");
 
 			err = pthread_attr_destroy(&threadAttr);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_destroy - error");
 
 			func = nullptr;

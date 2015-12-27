@@ -104,6 +104,7 @@ namespace MT
 			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
 
 			int res = getcontext(&fiberContext);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
 			fiberContext.uc_link = nullptr;
@@ -127,6 +128,7 @@ namespace MT
 			funcData = userData;
 
 			int res = getcontext(&fiberContext);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
 			stackDesc = Memory::AllocStack(stackSize);
@@ -149,6 +151,7 @@ namespace MT
 			MT_ASSERT(to.isInitialized, "Invalid to fiber");
 
 			int res = swapcontext(&from.fiberContext, &to.fiberContext);
+			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(res == 0, "setcontext - failed");
 
 		}

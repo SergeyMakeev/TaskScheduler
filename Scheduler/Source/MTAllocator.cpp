@@ -77,28 +77,29 @@ namespace MT
 
 #else
 
-			int pageSize = sysconf(_SC_PAGE_SIZE);
-			int pagesCount = size / pageSize;
+		int pageSize = sysconf(_SC_PAGE_SIZE);
+		int pagesCount = size / pageSize;
 
-			//need additional page for stack tail
-			if ((size % pageSize) > 0)
-			{
-				pagesCount++;
-			}
-
-			//protected guard page
+		//need additional page for stack tail
+		if ((size % pageSize) > 0)
+		{
 			pagesCount++;
+		}
 
-			desc.stackMemoryBytesCount = pagesCount * pageSize;
-			desc.stackMemory = (char*)mmap(NULL, desc.stackMemoryBytesCount, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+		//protected guard page
+		pagesCount++;
 
-			MT_ASSERT((void *)desc.stackMemory != (void *)-1, "Can't allocate memory");
+		desc.stackMemoryBytesCount = pagesCount * pageSize;
+		desc.stackMemory = (char*)mmap(NULL, desc.stackMemoryBytesCount, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 
-			desc.stackBottom = desc.stackMemory + pageSize;
-			desc.stackTop = desc.stackMemory + desc.stackMemoryBytesCount;
+		MT_ASSERT((void *)desc.stackMemory != (void *)-1, "Can't allocate memory");
 
-			int res = mprotect(desc.stackMemory, pageSize, PROT_NONE);
-			MT_ASSERT(res == 0, "Can't protect memory");
+		desc.stackBottom = desc.stackMemory + pageSize;
+		desc.stackTop = desc.stackMemory + desc.stackMemoryBytesCount;
+
+		int res = mprotect(desc.stackMemory, pageSize, PROT_NONE);
+		MT_USED_IN_ASSERT(err);
+		MT_ASSERT(res == 0, "Can't protect memory");
 
 
 #endif
@@ -117,6 +118,7 @@ namespace MT
 #else
 
 		int res = munmap(desc.stackMemory, desc.stackMemoryBytesCount);
+		MT_USED_IN_ASSERT(err);
 		MT_ASSERT(res == 0, "Can't free memory");
 
 #endif
