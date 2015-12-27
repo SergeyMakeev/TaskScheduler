@@ -98,7 +98,7 @@ namespace MT
 		desc.stackTop = desc.stackMemory + desc.stackMemoryBytesCount;
 
 		int res = mprotect(desc.stackMemory, pageSize, PROT_NONE);
-		MT_USED_IN_ASSERT(err);
+		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res == 0, "Can't protect memory");
 
 
