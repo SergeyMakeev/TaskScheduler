@@ -118,7 +118,7 @@ namespace MT
 #else
 
 		int res = munmap(desc.stackMemory, desc.stackMemoryBytesCount);
-		MT_USED_IN_ASSERT(err);
+		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res == 0, "Can't free memory");
 
 #endif
