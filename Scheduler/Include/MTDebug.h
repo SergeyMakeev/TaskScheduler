@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "MTTools.h"
 #include <stdio.h>
 
 #if defined(_MSC_VER)
@@ -53,15 +52,30 @@ inline void ThrowException()
 
 #define MT_REPORT_ASSERT_IMPL( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
 
-
+#ifndef MT_REPORT_ASSERT
 #define MT_REPORT_ASSERT( description ) { MT_REPORT_ASSERT_IMPL( "always", description, __FILE__, __LINE__ ) }
+#endif
+
+#ifndef MT_ASSERT
 #define MT_ASSERT( condition, description ) { if ( !(condition) ) { MT_REPORT_ASSERT_IMPL( #condition, description, __FILE__, __LINE__ ) } }
+#endif
+
+#ifndef MT_VERIFY
 #define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { { MT_REPORT_ASSERT_IMPL( #condition, description, __FILE__, __LINE__ ) }; operation; } }
+#endif
 
 #else
 
+#ifndef MT_REPORT_ASSERT
 #define MT_REPORT_ASSERT( description )
+#endif
+
+#ifndef MT_ASSERT
 #define MT_ASSERT( condition, description )
+#endif
+
+#ifndef MT_VERIFY
 #define MT_VERIFY( condition, description, operation ) { if ( !(condition) ) { operation; } }
+#endif
 
 #endif

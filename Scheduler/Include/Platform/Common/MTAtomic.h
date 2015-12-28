@@ -33,6 +33,12 @@
 
 namespace MT
 {
+	inline bool IsPointerAligned( const volatile void* p, const uint32 align )
+	{
+		return !((uintptr_t)p & (align - 1));
+	}
+
+
 	//compile time POD type check
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	static_assert(std::is_pod<AtomicInt32Base>::value == true, "AtomicInt32Base must be a POD (plain old data type)");

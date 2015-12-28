@@ -1,6 +1,6 @@
 #include "Tests.h"
 #include <UnitTest++.h>
-#include <MTScheduler.h>
+#include <MTAtomic.h>
 
 
 SUITE(AtomicTests)
