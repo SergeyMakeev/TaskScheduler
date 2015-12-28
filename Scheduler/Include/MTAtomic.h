@@ -27,7 +27,7 @@
 
 #include <MTTypes.h>
 #include <MTDebug.h>
-#include <Platform\Common\MTAtomic.h>
+#include <Platform/Common/MTAtomic.h>
 
 
 #endif
