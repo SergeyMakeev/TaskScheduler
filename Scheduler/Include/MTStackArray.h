@@ -31,8 +31,8 @@ namespace MT
 	template<class T, size_t capacity>
 	class StackArray
 	{
-		byte data[sizeof(T) * capacity];
 		uint32 count;
+		byte data[sizeof(T) * capacity];
 
 		inline T* Buffer()
 		{
@@ -64,7 +64,7 @@ namespace MT
 		{
 		}
 
-		inline StackArray(size_t _count, const T & defaultElement = T())
+		inline StackArray(uint32 _count, const T & defaultElement = T())
 			: count(_count)
 		{
 			MT_ASSERT(count <= capacity, "Too big size");
