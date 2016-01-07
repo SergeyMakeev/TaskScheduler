@@ -29,11 +29,13 @@ const char* assetName2 = "some_another_name.asset";
 
 void MacroSyntaxCheckerFunction()
 {
+	int32 descId = MT::invalidStackId;
+
 	//declare scope descriptor
-	DECLARE_SCOPE_DESCRIPTOR("test", globalScopesStorage);
+	DECLARE_SCOPE_DESCRIPTOR("test", globalScopesStorage, descId);
 
 	//push to stack
-	SCOPE_STACK_PUSH1(scope_descId, assetName1, threadScopesStack);
+	SCOPE_STACK_PUSH1(descId, assetName1, threadScopesStack);
 
 	AssetStackEntry* stackTop = SCOPE_STACK_TOP(threadScopesStack);
 	CHECK(stackTop != nullptr);
@@ -41,8 +43,10 @@ void MacroSyntaxCheckerFunction()
 	CHECK(parentStackId == MT::invalidStackId);
 
 	{
-		DECLARE_SCOPE_DESCRIPTOR("test2", globalScopesStorage);
-		SCOPE_STACK_PUSH1(scope_descId, assetName2, threadScopesStack);
+		int32 innerDescId = MT::invalidStackId;
+
+		DECLARE_SCOPE_DESCRIPTOR("test2", globalScopesStorage, innerDescId);
+		SCOPE_STACK_PUSH1(innerDescId, assetName2, threadScopesStack);
 
 		AssetStackEntry* assetStackEntry = SCOPE_STACK_TOP(threadScopesStack);
 

@@ -152,7 +152,7 @@ namespace MT
 		{
 			//new element index
 			int32 index = top.IncFetch() - 1;
-			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return -1);
+			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return invalidStorageId);
 
 			//get memory for object
 			T* pObject = (T*)&rawMemory[index * sizeof(T)];
@@ -436,24 +436,29 @@ namespace MT
 
 } //MT namespace
 
-#define DECLARE_SCOPE_DESCRIPTOR_IMPL( file, line, name, storagePointer ) \
+
+#define SCOPE_CONCAT_IMPL(x, y) x##y
+#define SCOPE_CONCAT(x, y) SCOPE_CONCAT_IMPL(x, y)
+
+
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL( file, line, name, storagePointer, resultID ) \
 	const int32 scope_notInitialized = 0; \
 	const int32 scope_notYetInitialized = -1; \
 	\
-	static MT::AtomicInt32Base scope_descriptorIndex = { scope_notInitialized }; \
+	static MT::AtomicInt32Base SCOPE_CONCAT(scope_descriptorIndex_, line) = { scope_notInitialized }; \
 	static_assert(std::is_pod<MT::AtomicInt32Base>::value == true, "AtomicInt32Base type should be POD, to be placed in bss/data section"); \
 	\
-	int32 scope_descId = scope_notInitialized; \
+	int32 SCOPE_CONCAT(scope_descId_, line) = scope_notInitialized; \
 	\
-	int32 scope_state = scope_descriptorIndex.CompareAndSwap(scope_notInitialized, scope_notYetInitialized); \
-	switch(scope_state) \
+	int32 SCOPE_CONCAT(scope_state_, line) = SCOPE_CONCAT(scope_descriptorIndex_, line).CompareAndSwap(scope_notInitialized, scope_notYetInitialized); \
+	switch(SCOPE_CONCAT(scope_state_, line)) \
 	{ \
 		/* first time here, need to allocate descriptor*/ \
 		case scope_notInitialized: \
 		{ \
 			MT_ASSERT( storagePointer != nullptr, "Scopes storage pointer was not initialized!"); \
-			scope_descId = storagePointer -> Alloc(file, line, name); \
-			scope_descriptorIndex.Store(scope_descId);  \
+			SCOPE_CONCAT(scope_descId_, line) = storagePointer -> Alloc(file, line, name); \
+			SCOPE_CONCAT(scope_descriptorIndex_, line).Store( SCOPE_CONCAT(scope_descId_, line) );  \
 			break; \
 		} \
 		\
@@ -463,8 +468,8 @@ namespace MT
 		{ \
 			for(;;) \
 			{ \
-				scope_descId = scope_descriptorIndex.Load(); \
-				if (scope_descId != scope_notYetInitialized) \
+				SCOPE_CONCAT(scope_descId_, line) = SCOPE_CONCAT(scope_descriptorIndex_, line).Load(); \
+				if (SCOPE_CONCAT(scope_descId_, line) != scope_notYetInitialized) \
 				{ \
 					break; \
 				} \
@@ -475,14 +480,15 @@ namespace MT
 		/* description already allocated */ \
 		default: \
 		{ \
-			scope_descId = scope_state; \
+			SCOPE_CONCAT(scope_descId_, line) = SCOPE_CONCAT(scope_state_, line); \
 			break; \
 		} \
 	} \
+	resultID = SCOPE_CONCAT(scope_descId_, line);
 
 
 // declare scope descriptor for current scope.
-#define DECLARE_SCOPE_DESCRIPTOR(name, storagePointer) DECLARE_SCOPE_DESCRIPTOR_IMPL(__FILE__, __LINE__, name, storagePointer)
+#define DECLARE_SCOPE_DESCRIPTOR(name, storagePointer, resultID) DECLARE_SCOPE_DESCRIPTOR_IMPL(__FILE__, __LINE__, name, storagePointer, resultID)
 
 // push new stack entry to stack
 #define SCOPE_STACK_PUSH(scopeDescriptorId, stackPointer) \
