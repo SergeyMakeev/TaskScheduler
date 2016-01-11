@@ -129,6 +129,23 @@ namespace MT
 		MT::AtomicInt32 top;
 		byte rawMemory[ capacity * sizeof(T) ];
 
+
+
+		T* AllocObject(int32 & id)
+		{
+			//new element index
+			int32 index = top.IncFetch() - 1;
+			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return invalidStorageId);
+
+			//get memory for object
+			T* pObject = (T*)&rawMemory[index * sizeof(T)];
+
+			id = (index + 1);
+
+			return pObject;
+		}
+
+
 	public:
 
 		PersistentScopeDescriptorStorage()
@@ -150,19 +167,46 @@ namespace MT
 
 		int32 Alloc(const char* srcFile, int32 srcLine, const char* scopeName)
 		{
-			//new element index
-			int32 index = top.IncFetch() - 1;
-			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return invalidStorageId);
-
-			//get memory for object
-			T* pObject = (T*)&rawMemory[index * sizeof(T)];
+			int32 id;
+			T* pObject = AllocObject(id);
 
 			//placement ctor
 			new(pObject) T(srcFile, srcLine, scopeName);
 
-			int32 id = (index + 1);
 			return id;
 		}
+
+		template<typename T1>
+		int32 Alloc(const char* srcFile, int32 srcLine, const char* scopeName, const T1 & p1)
+		{
+			int32 id;
+			T* pObject = AllocObject(id);
+			//placement ctor
+			new(pObject) T(srcFile, srcLine, scopeName, p1);
+			return id;
+		}
+
+		template<typename T1, typename T2>
+		int32 Alloc(const char* srcFile, int32 srcLine, const char* scopeName, const T1 & p1, const T1 & p2)
+		{
+			int32 id;
+			T* pObject = AllocObject(id);
+			//placement ctor
+			new(pObject) T(srcFile, srcLine, scopeName, p1, p2);
+			return id;
+		}
+
+		template<typename T1, typename T2>
+		int32 Alloc(const char* srcFile, int32 srcLine, const char* scopeName, const T1 & p1, const T1 & p2, const T1 & p3)
+		{
+			int32 id;
+			T* pObject = AllocObject(id);
+			//placement ctor
+			new(pObject) T(srcFile, srcLine, scopeName, p1, p2, p3);
+			return id;
+		}
+
+
 
 
 		T* Get(int32 id)
@@ -261,7 +305,7 @@ namespace MT
 		}
 
 		template<typename T1>
-		T* Push(T1 p1)
+		T* Push(const T1 & p1)
 		{
 			T* pObject = AllocObject();
 			new(pObject) T(p1);
@@ -269,7 +313,7 @@ namespace MT
 		}
 
 		template<typename T1, typename T2>
-		T* Push(T1 p1, T2 p2)
+		T* Push(const T1 & p1, const T2 & p2)
 		{
 			T* pObject = AllocObject();
 			new(pObject) T(p1, p2);
@@ -277,7 +321,7 @@ namespace MT
 		}
 
 		template<typename T1, typename T2, typename T3>
-		T* Push(T1 p1, T2 p2, T3 p3)
+		T* Push(const T1 & p1, const T2 & p2, const T3 & p3)
 		{
 			T* pObject = AllocObject();
 			new(pObject) T(p1, p2, p3);
@@ -285,7 +329,7 @@ namespace MT
 		}
 
 		template<typename T1, typename T2, typename T3, typename T4>
-		T* Push(T1 p1, T2 p2, T3 p3, T4 p4)
+		T* Push(const T1 & p1, const T2 & p2, const T3 & p3, const T4 & p4)
 		{
 			T* pObject = AllocObject();
 			new(pObject) T(p1, p2, p3, p4);
@@ -440,8 +484,7 @@ namespace MT
 #define SCOPE_CONCAT_IMPL(x, y) x##y
 #define SCOPE_CONCAT(x, y) SCOPE_CONCAT_IMPL(x, y)
 
-
-#define DECLARE_SCOPE_DESCRIPTOR_IMPL( file, line, name, storagePointer, resultID ) \
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL_PRE( file, line, name, storagePointer, resultID ) \
 	const int32 scope_notInitialized = 0; \
 	const int32 scope_notYetInitialized = -1; \
 	\
@@ -457,7 +500,10 @@ namespace MT
 		case scope_notInitialized: \
 		{ \
 			MT_ASSERT( storagePointer != nullptr, "Scopes storage pointer was not initialized!"); \
-			SCOPE_CONCAT(scope_descId_, line) = storagePointer -> Alloc(file, line, name); \
+
+
+
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL_POST( file, line, name, storagePointer, resultID ) \
 			SCOPE_CONCAT(scope_descriptorIndex_, line).Store( SCOPE_CONCAT(scope_descId_, line) );  \
 			break; \
 		} \
@@ -487,8 +533,32 @@ namespace MT
 	resultID = SCOPE_CONCAT(scope_descId_, line);
 
 
+
+
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL( file, line, name, storagePointer, resultID ) \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_PRE(file, line, name, storagePointer, resultID); \
+		SCOPE_CONCAT(scope_descId_, line) = storagePointer -> Alloc(file, line, name); \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_POST(file, line, name, storagePointer, resultID); \
+
+
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL1( file, line, name, storagePointer, resultID, param1) \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_PRE(file, line, name, storagePointer, resultID); \
+		SCOPE_CONCAT(scope_descId_, line) = storagePointer -> Alloc(file, line, name, param1); \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_POST(file, line, name, storagePointer, resultID); \
+
+#define DECLARE_SCOPE_DESCRIPTOR_IMPL2( file, line, name, storagePointer, resultID, param1, param2) \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_PRE(file, line, name, storagePointer, resultID); \
+		SCOPE_CONCAT(scope_descId_, line) = storagePointer -> Alloc(file, line, name, param1, param2); \
+	DECLARE_SCOPE_DESCRIPTOR_IMPL_POST(file, line, name, storagePointer, resultID); \
+
+
+
 // declare scope descriptor for current scope.
 #define DECLARE_SCOPE_DESCRIPTOR(name, storagePointer, resultID) DECLARE_SCOPE_DESCRIPTOR_IMPL(__FILE__, __LINE__, name, storagePointer, resultID)
+
+#define DECLARE_SCOPE_DESCRIPTOR1(name, storagePointer, resultID, param1) DECLARE_SCOPE_DESCRIPTOR_IMPL1(__FILE__, __LINE__, name, storagePointer, resultID, param1)
+
+#define DECLARE_SCOPE_DESCRIPTOR2(name, storagePointer, resultID, param1, param2) DECLARE_SCOPE_DESCRIPTOR_IMPL2(__FILE__, __LINE__, name, storagePointer, resultID, param1, param2)
 
 // push new stack entry to stack
 #define SCOPE_STACK_PUSH(scopeDescriptorId, stackPointer) \
