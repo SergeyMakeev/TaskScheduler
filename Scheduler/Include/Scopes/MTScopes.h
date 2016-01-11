@@ -129,13 +129,11 @@ namespace MT
 		MT::AtomicInt32 top;
 		byte rawMemory[ capacity * sizeof(T) ];
 
-
-
 		T* AllocObject(int32 & id)
 		{
 			//new element index
 			int32 index = top.IncFetch() - 1;
-			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return invalidStorageId);
+			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return nullptr);
 
 			//get memory for object
 			T* pObject = (T*)&rawMemory[index * sizeof(T)];
@@ -169,6 +167,8 @@ namespace MT
 		{
 			int32 id;
 			T* pObject = AllocObject(id);
+			if (pObject == nullptr)
+				return invalidStorageId;
 
 			//placement ctor
 			new(pObject) T(srcFile, srcLine, scopeName);
@@ -181,6 +181,9 @@ namespace MT
 		{
 			int32 id;
 			T* pObject = AllocObject(id);
+			if (pObject == nullptr)
+				return invalidStorageId;
+
 			//placement ctor
 			new(pObject) T(srcFile, srcLine, scopeName, p1);
 			return id;
@@ -191,6 +194,9 @@ namespace MT
 		{
 			int32 id;
 			T* pObject = AllocObject(id);
+			if (pObject == nullptr)
+				return invalidStorageId;
+
 			//placement ctor
 			new(pObject) T(srcFile, srcLine, scopeName, p1, p2);
 			return id;
@@ -201,6 +207,9 @@ namespace MT
 		{
 			int32 id;
 			T* pObject = AllocObject(id);
+			if (pObject == nullptr)
+				return invalidStorageId;
+
 			//placement ctor
 			new(pObject) T(srcFile, srcLine, scopeName, p1, p2, p3);
 			return id;
