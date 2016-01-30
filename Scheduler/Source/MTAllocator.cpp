@@ -24,10 +24,6 @@
 #include <MTTools.h>
 #include <xmmintrin.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#endif
 
 namespace MT
 {
@@ -48,7 +44,7 @@ namespace MT
 
 #ifdef _WIN32
 
-		SYSTEM_INFO systemInfo;
+		MW_SYSTEM_INFO systemInfo;
 		GetSystemInfo(&systemInfo);
 
 		int pageSize = (int)systemInfo.dwPageSize;
@@ -64,14 +60,14 @@ namespace MT
 		pagesCount++;
 
 		desc.stackMemoryBytesCount = pagesCount * pageSize;
-		desc.stackMemory = (char*)VirtualAlloc(NULL, desc.stackMemoryBytesCount, MEM_COMMIT, PAGE_READWRITE);
+		desc.stackMemory = (char*)VirtualAlloc(NULL, desc.stackMemoryBytesCount, MW_MEM_COMMIT, MW_PAGE_READWRITE);
 		MT_ASSERT(desc.stackMemory != NULL, "Can't allocate memory");
 
 		desc.stackBottom = desc.stackMemory + pageSize;
 		desc.stackTop = desc.stackMemory + desc.stackMemoryBytesCount;
 
-		DWORD oldProtect = 0;
-		BOOL res = VirtualProtect(desc.stackMemory, pageSize, PAGE_NOACCESS, &oldProtect);
+		MW_DWORD oldProtect = 0;
+		MW_BOOL res = VirtualProtect(desc.stackMemory, pageSize, MW_PAGE_NOACCESS, &oldProtect);
 		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res != 0, "Can't protect memory");
 
@@ -111,7 +107,7 @@ namespace MT
 	{
 #ifdef _WIN32
 
-		int res = VirtualFree(desc.stackMemory, 0, MEM_RELEASE);
+		int res = VirtualFree(desc.stackMemory, 0, MW_MEM_RELEASE);
 		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res != 0, "Can't free memory");
 

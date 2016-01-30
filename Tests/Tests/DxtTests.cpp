@@ -123,7 +123,7 @@ bool CompareImagesPSNR(uint8 * img1, uint8 * img2, uint32 bytesCount, double psn
 
 	if (mse > 0.0)
 	{
-		double psnr = 10.0 * log10(255.0*255.0/mse) / log10(10.0);
+		double psnr = 10.0 * log10(255.0*255.0/mse);
 		if (psnr < psnrThreshold)
 		{
 			return false;

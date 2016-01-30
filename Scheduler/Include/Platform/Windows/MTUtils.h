@@ -24,27 +24,26 @@
 #ifndef __MT_UTILS__
 #define __MT_UTILS__
 
-
 namespace MT
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 inline int64 GetFrequency()
 {
-	LARGE_INTEGER frequency;
+	MW_LARGE_INTEGER frequency;
 	QueryPerformanceFrequency(&frequency);
 	return frequency.QuadPart;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 inline int64 GetTimeMilliSeconds()
 {
-	LARGE_INTEGER largeInteger;
+	MW_LARGE_INTEGER largeInteger;
 	QueryPerformanceCounter( &largeInteger );
 	return ( largeInteger.QuadPart * int64(1000) ) / GetFrequency();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 inline int64 GetTimeMicroSeconds()
 {
-	LARGE_INTEGER largeInteger;
+	MW_LARGE_INTEGER largeInteger;
 	QueryPerformanceCounter( &largeInteger );
 	return ( largeInteger.QuadPart * int64(1000000) ) / GetFrequency();
 }

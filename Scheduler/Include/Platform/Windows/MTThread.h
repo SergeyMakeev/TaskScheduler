@@ -33,15 +33,13 @@ namespace MT
 
 	class Thread : public ThreadBase
 	{
-		DWORD threadId;
-		HANDLE thread;
+		MW_DWORD threadId;
+		MW_HANDLE thread;
 
-		static DWORD __stdcall ThreadFuncInternal(void *pThread)
+		static MW_DWORD __stdcall ThreadFuncInternal(void *pThread)
 		{
 			Thread* self = (Thread*)pThread;
-
 			self->func(self->funcData);
-
 			return 0;
 		}
 	public:
@@ -74,8 +72,8 @@ namespace MT
 				return;
 			}
 
-			::WaitForSingleObject(thread, INFINITE);
-			BOOL res = CloseHandle(thread);
+			::WaitForSingleObject(thread, MW_INFINITE);
+			MW_BOOL res = CloseHandle(thread);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != 0, "Can't close thread handle");
 			thread = nullptr;
@@ -88,7 +86,7 @@ namespace MT
 
 		static int GetNumberOfHardwareThreads()
 		{
-			SYSTEM_INFO sysinfo;
+			MW_SYSTEM_INFO sysinfo;
 			::GetSystemInfo( &sysinfo );
 			return sysinfo.dwNumberOfProcessors;
 		}

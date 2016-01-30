@@ -34,7 +34,7 @@ namespace MT
 	//
 	class Mutex
 	{
-		::CRITICAL_SECTION criticalSection;
+		::MW_CRITICAL_SECTION criticalSection;
 
 	public:
 

@@ -33,7 +33,7 @@ namespace MT
 	//
 	class Event
 	{
-		::HANDLE eventHandle;
+		::MW_HANDLE eventHandle;
 
 	public:
 
@@ -41,7 +41,7 @@ namespace MT
 
 		Event()
 		{
-			static_assert(sizeof(Event) == sizeof(::HANDLE), "sizeof(Event) is invalid");
+			static_assert(sizeof(Event) == sizeof(::MW_HANDLE), "sizeof(Event) is invalid");
 			eventHandle = nullptr;
 		}
 
@@ -64,9 +64,9 @@ namespace MT
 				CloseHandle(eventHandle);
 			}
 
-			BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? FALSE : TRUE;
-			BOOL bInitialState = initialState ? TRUE : FALSE;
-			eventHandle = ::CreateEvent(nullptr, bManualReset, bInitialState, nullptr);
+			MW_BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? 0 : 1;
+			MW_BOOL bInitialState = initialState ? 1 : 0;
+			eventHandle = ::CreateEventW(nullptr, bManualReset, bInitialState, nullptr);
 		}
 
 		void Signal()
@@ -81,8 +81,8 @@ namespace MT
 
 		bool Wait(uint32 milliseconds)
 		{
-			DWORD res = WaitForSingleObject(eventHandle, milliseconds);
-			return (res == WAIT_OBJECT_0);
+			MW_DWORD res = WaitForSingleObject(eventHandle, milliseconds);
+			return (res == MW_WAIT_OBJECT_0);
 		}
 
 	};
