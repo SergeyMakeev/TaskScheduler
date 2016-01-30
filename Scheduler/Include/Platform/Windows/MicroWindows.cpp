@@ -19,6 +19,9 @@
 // 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
+
+#ifdef _WIN32
+
 #include <type_traits>
 
 #define MW_SKIP_FUNCTIONS
@@ -97,5 +100,4 @@ void DummyAssignableCheck()
 	mw_func = func;
 }
 
-
-
+#endif
