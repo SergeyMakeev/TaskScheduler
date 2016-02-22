@@ -78,6 +78,7 @@ namespace MT
 			
 			desc.poolDestroyFunc = T::PoolTaskDestroy;
 			desc.taskFunc = T::TaskEntryPoint;
+			desc.stackRequirements = T::GetStackRequirements();
 			desc.userData = &task;
 
 #ifdef MT_INSTRUMENTED_BUILD
@@ -176,7 +177,7 @@ namespace MT
 			return *this;
 		}
 
-		const internal::TaskDesc & GetDesc()
+		const internal::TaskDesc & GetDesc() const
 		{
 			MT_ASSERT(IsValid(), "Task handle is invalid");
 			return task->desc;

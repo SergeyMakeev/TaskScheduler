@@ -20,12 +20,19 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 
-#include "Tests.h"
-#include <UnitTest++.h>
+#pragma once
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int Tests::RunAll()
+namespace MT
 {
-	return UnitTest::RunAllTests();
+	namespace StackRequirements
+	{
+		enum Type
+		{
+			INVALID,
+
+			STANDARD,
+			EXTENDED
+		};
+	}
 }

@@ -78,10 +78,16 @@ namespace MT
 			return count == 0;
 		}
 
-		void* GetRawData()
+		T* GetRawData()
 		{
 			return data;
 		}
+
+		const T* GetRawData() const
+		{
+			return data;
+		}
+
 	};
 
 

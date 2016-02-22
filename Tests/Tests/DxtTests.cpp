@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+//
+// 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
+//
+// 	Permission is hereby granted, free of charge, to any person obtaining a copy
+// 	of this software and associated documentation files (the "Software"), to deal
+// 	in the Software without restriction, including without limitation the rights
+// 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// 	copies of the Software, and to permit persons to whom the Software is
+// 	furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+// 	all copies or substantial portions of the Software.
+//
+// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// 	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// 	THE SOFTWARE.
+
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
@@ -140,7 +162,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxtBlock
 	{
-		MT_DECLARE_TASK(CompressDxtBlock, MT::Color::Blue);
+		MT_DECLARE_TASK(CompressDxtBlock, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dstBlocks;
@@ -219,7 +241,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxt
 	{
-		MT_DECLARE_TASK(CompressDxt, MT::Color::Aqua);
+		MT_DECLARE_TASK(CompressDxt, MT::StackRequirements::EXTENDED, MT::Color::Aqua);
 
 		uint32 width;
 		uint32 height;
@@ -278,7 +300,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxtBlock
 	{
-		MT_DECLARE_TASK(DecompressDxtBlock, MT::Color::Red);
+		MT_DECLARE_TASK(DecompressDxtBlock, MT::StackRequirements::STANDARD, MT::Color::Red);
 
 		MT::ArrayView<uint8> srcBlocks;
 		MT::ArrayView<uint8> dstPixels;
@@ -355,7 +377,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxt
 	{
-		MT_DECLARE_TASK(DecompressDxt, MT::Color::Yellow);
+		MT_DECLARE_TASK(DecompressDxt, MT::StackRequirements::EXTENDED, MT::Color::Yellow);
 
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::ArrayView<uint8> decompressedImage;

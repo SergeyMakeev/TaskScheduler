@@ -65,6 +65,7 @@ namespace MT
 		currentTask = internal::TaskDesc();
 		parentFiber = nullptr;
 		threadContext = nullptr;
+		stackRequirements = StackRequirements::INVALID;
 	}
 
 	void FiberContext::WaitGroupAndYield(TaskGroup group)
@@ -128,7 +129,7 @@ namespace MT
 	}
 
 
-	void FiberContext::RunAsync(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	void FiberContext::RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
@@ -145,7 +146,7 @@ namespace MT
 	}
 
 
-	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(taskHandleCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");

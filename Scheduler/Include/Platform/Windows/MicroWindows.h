@@ -70,8 +70,7 @@ typedef CONTEXT MW_CONTEXT;
 
 #else
 
-
-
+// windows.h is not included declare types
 
 //
 // define types
@@ -234,18 +233,3 @@ MW_WINBASEAPI MW_BOOL MW_WINAPI VirtualFree( void* lpAddress, size_t dwSize, MW_
 }
 
 #endif
-
-
-/*
-#ifdef WINBASEAPI
-
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-
-#pragma message ("WINBASEAPI = " STR(WINBASEAPI))
-#pragma message ("MW_WINBASEAPI = " STR(MW_WINBASEAPI))
-#pragma message ("WINAPI = " STR(WINAPI))
-#pragma message ("MW_WINAPI = " STR(MW_WINAPI))
-
-#endif
-*/

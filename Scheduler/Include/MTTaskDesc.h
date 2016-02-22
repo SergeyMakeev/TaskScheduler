@@ -28,13 +28,14 @@
 #include <MTStackArray.h>
 #include <MTArrayView.h>
 #include <MTColorTable.h>
+#include <MTStackRequirements.h>
 
 
 namespace MT
 {
 	class FiberContext;
-	typedef void (*TTaskEntryPoint)(FiberContext & context, void* userData);
-	typedef void (*TPoolTaskDestroy)(void* userData);
+	typedef void (*TTaskEntryPoint)(FiberContext & context, const void* userData);
+	typedef void (*TPoolTaskDestroy)(const void* userData);
 
 
 	namespace internal
@@ -51,7 +52,10 @@ namespace MT
 			TPoolTaskDestroy poolDestroyFunc;
 
 			//Task user data (task data context)
-			void* userData;
+			const void* userData;
+
+			//Stack requirements for task
+			MT::StackRequirements::Type stackRequirements;
 
 #ifdef MT_INSTRUMENTED_BUILD
 			const mt_char* debugID;
@@ -62,6 +66,7 @@ namespace MT
 				: taskFunc(nullptr)
 				, poolDestroyFunc(nullptr)
 				, userData(nullptr)
+				, stackRequirements(MT::StackRequirements::INVALID)
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;
@@ -69,10 +74,11 @@ namespace MT
 #endif
 			}
 
-			TaskDesc(TTaskEntryPoint _taskFunc, void* _userData)
+			TaskDesc(TTaskEntryPoint _taskFunc, const void* _userData, MT::StackRequirements::Type _stackRequirements)
 				: taskFunc(_taskFunc)
 				, poolDestroyFunc(nullptr)
 				, userData(_userData)
+				, stackRequirements(_stackRequirements)
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;
@@ -80,10 +86,11 @@ namespace MT
 #endif
 			}
 
-			TaskDesc(TTaskEntryPoint _taskFunc, TPoolTaskDestroy _poolDestroyFunc, void* _userData)
+			TaskDesc(TTaskEntryPoint _taskFunc, TPoolTaskDestroy _poolDestroyFunc, const void* _userData, MT::StackRequirements::Type _stackRequirements)
 				: taskFunc(_taskFunc)
 				, poolDestroyFunc(_poolDestroyFunc)
 				, userData(_userData)
+				, stackRequirements(_stackRequirements)
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;

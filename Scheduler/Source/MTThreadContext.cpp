@@ -77,7 +77,8 @@ namespace MT
 			}
 
 			//copy awaiting tasks list to stack
-			StackArray<FiberContext*, MT_MAX_FIBERS_COUNT> groupQueueCopy(MT_MAX_FIBERS_COUNT, nullptr);
+			const int maximumFibersCount = MT_MAX_STANDART_FIBERS_COUNT + MT_MAX_EXTENDED_FIBERS_COUNT;
+			StackArray<FiberContext*, maximumFibersCount> groupQueueCopy(maximumFibersCount, nullptr);
 			size_t taskCount = groupQueue.PopAll(groupQueueCopy.Begin(), groupQueueCopy.Size());
 
 			ArrayView<internal::GroupedTask> buffer(descBuffer, taskCount);
@@ -157,9 +158,6 @@ namespace MT
 				eventListener->OnThreadIdleEnd(threadIndex);
 			}
 		}
-
-
-
 
 #endif
 

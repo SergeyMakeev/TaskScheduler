@@ -67,11 +67,11 @@ namespace MT
 		void RunSubtasksAndYield(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount);
 
 		template<class TTask>
-		void RunAsync(TaskGroup taskGroup, TTask* taskArray, size_t taskCount);
+		void RunAsync(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount);
 
 		//
-		void RunAsync(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount);
-		void RunSubtasksAndYield(TaskGroup taskGroup, TaskHandle* taskHandleArray, uint32 taskHandleCount);
+		void RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
+		void RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 
 		void WaitGroupAndYield(TaskGroup group);
 
@@ -98,6 +98,9 @@ namespace MT
 
 		// Active task group
 		TaskGroup currentGroup;
+
+		// Requirements for stack
+		StackRequirements::Type stackRequirements;
 
 		// Number of children fibers
 		AtomicInt32 childrenFibersCount;

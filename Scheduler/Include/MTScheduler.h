@@ -32,6 +32,7 @@
 #include <MTFiberContext.h>
 #include <MTAllocator.h>
 #include <MTTaskPool.h>
+#include <MTStackRequirements.h>
 #include <Scopes/MTScopes.h>
 
 
@@ -97,24 +98,31 @@ namespace MT
 
 
 
-#define MT_DECLARE_TASK_IMPL(TYPE) \
+#define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS) \
 	\
 	MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	\
-	static void TaskEntryPoint(MT::FiberContext& fiberContext, void* userData) \
+	static void TaskEntryPoint(MT::FiberContext& fiberContext, const void* userData) \
 	{ \
-		TYPE * task = static_cast< TYPE *>(userData); \
+		/* C style cast */ \
+		TYPE * task = (TYPE *)(userData); \
 		task->Do(fiberContext); \
 	} \
 	\
-	static void PoolTaskDestroy(void* userData) \
+	static void PoolTaskDestroy(const void* userData) \
 	{ \
-		TYPE * task = static_cast< TYPE *>(userData); \
+		/* C style cast */ \
+		TYPE * task = (TYPE *)(userData); \
 		MT::CallDtor( task ); \
 		/* Find task pool header */ \
 		MT::PoolElementHeader * poolHeader = (MT::PoolElementHeader *)((char*)userData - sizeof(MT::PoolElementHeader)); \
 		/* Fixup pool header, mark task as unused */ \
 		poolHeader->id.Store(MT::TaskID::UNUSED); \
+	} \
+	\
+	static MT::StackRequirements::Type GetStackRequirements() \
+	{ \
+		return STACK_REQUIREMENTS; \
 	} \
 
 
@@ -122,7 +130,7 @@ namespace MT
 #ifdef MT_INSTRUMENTED_BUILD
 #include <MTProfilerEventListener.h>
 
-#define MT_DECLARE_TASK(TYPE, DEBUG_COLOR) \
+#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, DEBUG_COLOR) \
 	static const mt_char* GetDebugID() \
 	{ \
 		return MT_TEXT( #TYPE ); \
@@ -133,13 +141,13 @@ namespace MT
 		return DEBUG_COLOR; \
 	} \
 	\
-	MT_DECLARE_TASK_IMPL(TYPE);
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS);
 
 
 #else
 
-#define MT_DECLARE_TASK(TYPE, colorID) \
-	MT_DECLARE_TASK_IMPL(TYPE);
+#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, DEBUG_COLOR) \
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS);
 
 #endif
 
@@ -151,9 +159,13 @@ namespace MT
 namespace MT
 {
 	const uint32 MT_MAX_THREAD_COUNT = 64;
-	const uint32 MT_MAX_FIBERS_COUNT = 256;
-	const uint32 MT_SCHEDULER_STACK_SIZE = 1048576;
-	const uint32 MT_FIBER_STACK_SIZE = 65536;
+	const uint32 MT_SCHEDULER_STACK_SIZE = 1048576; // 1Mb
+
+	const uint32 MT_MAX_STANDART_FIBERS_COUNT = 256;
+	const uint32 MT_STANDART_FIBER_STACK_SIZE = 32768; //32Kb
+
+	const uint32 MT_MAX_EXTENDED_FIBERS_COUNT = 8;
+	const uint32 MT_EXTENDED_FIBER_STACK_SIZE = 1048576; // 1Mb
 
 	namespace internal
 	{
@@ -266,11 +278,15 @@ namespace MT
 		//
 		TaskGroupDescription groupStats[TaskGroup::MT_MAX_GROUPS_COUNT];
 
-		// Fibers pool
-		ConcurrentQueueLIFO<FiberContext*> availableFibers;
-
 		// Fibers context
-		FiberContext fiberContext[MT_MAX_FIBERS_COUNT];
+		FiberContext standartFiberContexts[MT_MAX_STANDART_FIBERS_COUNT];
+		FiberContext extendedFiberContexts[MT_MAX_EXTENDED_FIBERS_COUNT];
+
+		// Fibers pool
+		ConcurrentQueueLIFO<FiberContext*> standartFibersAvailable;
+		ConcurrentQueueLIFO<FiberContext*> extendedFibersAvailable;
+
+		ConcurrentQueueLIFO<FiberContext*>* GetFibersStorage(MT::StackRequirements::Type stackRequirements);
 
 #ifdef MT_INSTRUMENTED_BUILD
 		IProfilerEventListener * profilerEventListener;
@@ -301,9 +317,9 @@ namespace MT
 		~TaskScheduler();
 
 		template<class TTask>
-		void RunAsync(TaskGroup group, TTask* taskArray, uint32 taskCount);
+		void RunAsync(TaskGroup group, const TTask* taskArray, uint32 taskCount);
 
-		void RunAsync(TaskGroup group, TaskHandle* taskHandleArray, uint32 taskHandleCount);
+		void RunAsync(TaskGroup group, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 
 
 		bool WaitGroup(TaskGroup group, uint32 milliseconds);

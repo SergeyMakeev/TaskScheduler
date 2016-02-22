@@ -117,7 +117,7 @@ namespace MT
 
 		const void* Load() const
 		{
-			return (void*)_value;
+			return const_cast<void*>(_value);
 		}
 
 		// The function returns the initial value.

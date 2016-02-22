@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+//
+// 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
+//
+// 	Permission is hereby granted, free of charge, to any person obtaining a copy
+// 	of this software and associated documentation files (the "Software"), to deal
+// 	in the Software without restriction, including without limitation the rights
+// 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// 	copies of the Software, and to permit persons to whom the Software is
+// 	furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+// 	all copies or substantial portions of the Software.
+//
+// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// 	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// 	THE SOFTWARE.
+
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
@@ -19,7 +41,7 @@ SUITE(SubtasksTests)
 template<size_t N>
 struct DeepSubtaskQueue
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	int result;
 
@@ -40,7 +62,7 @@ struct DeepSubtaskQueue
 template<>
 struct DeepSubtaskQueue<0>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -53,7 +75,7 @@ struct DeepSubtaskQueue<0>
 template<>
 struct DeepSubtaskQueue<1>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -82,7 +104,7 @@ static MT::TaskGroup resultGroup;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct GroupSubtask
 {
-	MT_DECLARE_TASK(GroupSubtask, MT::Color::Blue);
+	MT_DECLARE_TASK(GroupSubtask, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -92,7 +114,7 @@ struct GroupSubtask
 
 struct GroupTask
 {
-	MT_DECLARE_TASK(GroupTask, MT::Color::Blue);
+	MT_DECLARE_TASK(GroupTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -103,7 +125,7 @@ struct GroupTask
 
 struct TaskWithManySubtasks
 {
-	MT_DECLARE_TASK(TaskWithManySubtasks, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskWithManySubtasks, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -175,7 +197,7 @@ TEST(ManyTasksOneSubtask)
 
 struct TaskSubtaskCombo_Sum1
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 
@@ -187,7 +209,7 @@ struct TaskSubtaskCombo_Sum1
 
 struct TaskSubtaskCombo_Sum4
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 
@@ -205,7 +227,7 @@ struct TaskSubtaskCombo_Sum4
 
 struct TaskSubtaskCombo_Sum16
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
 	MT::AtomicInt32* data;
 

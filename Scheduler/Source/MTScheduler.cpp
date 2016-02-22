@@ -48,13 +48,22 @@ namespace MT
 			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads(), 1, (int)MT_MAX_THREAD_COUNT) );
 		}
 
-		// create fiber pool
-		for (uint32 i = 0; i < MT_MAX_FIBERS_COUNT; i++)
+		// create fiber pool (fibers with standard stack size)
+		for (uint32 i = 0; i < MT_MAX_STANDART_FIBERS_COUNT; i++)
 		{
-			FiberContext& context = fiberContext[i];
-			context.fiber.Create(MT_FIBER_STACK_SIZE, FiberMain, &context);
-			availableFibers.Push( &context );
+			FiberContext& context = standartFiberContexts[i];
+			context.fiber.Create(MT_STANDART_FIBER_STACK_SIZE, FiberMain, &context);
+			standartFibersAvailable.Push( &context );
 		}
+
+		// create fiber pool (fibers with extended stack size)
+		for (uint32 i = 0; i < MT_MAX_EXTENDED_FIBERS_COUNT; i++)
+		{
+			FiberContext& context = extendedFiberContexts[i];
+			context.fiber.Create(MT_EXTENDED_FIBER_STACK_SIZE, FiberMain, &context);
+			extendedFibersAvailable.Push( &context );
+		}
+
 
 		for (int16 i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
 		{
@@ -91,6 +100,24 @@ namespace MT
 		}
 	}
 
+	ConcurrentQueueLIFO<FiberContext*>* TaskScheduler::GetFibersStorage(MT::StackRequirements::Type stackRequirements)
+	{
+		ConcurrentQueueLIFO<FiberContext*>* availableFibers = nullptr;
+		switch(stackRequirements)
+		{
+		case MT::StackRequirements::STANDARD:
+			availableFibers = &standartFibersAvailable;
+			break;
+		case MT::StackRequirements::EXTENDED:
+			availableFibers = &extendedFibersAvailable;
+			break;
+		default:
+			MT_REPORT_ASSERT("Unknown stack requrements");
+		}
+
+		return availableFibers;
+	}
+
 	FiberContext* TaskScheduler::RequestFiberContext(internal::GroupedTask& task)
 	{
 		FiberContext *fiberContext = task.awaitingFiber;
@@ -100,7 +127,13 @@ namespace MT
 			return fiberContext;
 		}
 
-		if (!availableFibers.TryPopBack(fiberContext))
+
+		MT::StackRequirements::Type stackRequirements = task.desc.stackRequirements;
+
+		ConcurrentQueueLIFO<FiberContext*>* availableFibers = GetFibersStorage(stackRequirements);
+		MT_VERIFY(availableFibers != nullptr, "Can't find fiber storage", return nullptr;);
+
+		if (!availableFibers->TryPopBack(fiberContext))
 		{
 			MT_REPORT_ASSERT("Fibers pool is empty. Too many fibers running simultaneously.");
 		}
@@ -108,14 +141,21 @@ namespace MT
 		fiberContext->currentTask = task.desc;
 		fiberContext->currentGroup = task.group;
 		fiberContext->parentFiber = task.parentFiber;
+		fiberContext->stackRequirements = stackRequirements;
 		return fiberContext;
 	}
 
 	void TaskScheduler::ReleaseFiberContext(FiberContext* fiberContext)
 	{
 		MT_ASSERT(fiberContext != nullptr, "Can't release nullptr Fiber");
+
+		MT::StackRequirements::Type stackRequirements = fiberContext->stackRequirements;
 		fiberContext->Reset();
-		availableFibers.Push(fiberContext);
+
+		ConcurrentQueueLIFO<FiberContext*>* availableFibers = GetFibersStorage(stackRequirements);
+		MT_VERIFY(availableFibers != nullptr, "Can't find fiber storage", return;);
+
+		availableFibers->Push(fiberContext);
 	}
 
 	FiberContext* TaskScheduler::ExecuteTask(internal::ThreadContext& threadContext, FiberContext* fiberContext)
@@ -133,7 +173,7 @@ namespace MT
 
 		MT_ASSERT(fiberContext->GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
-		void * poolUserData = fiberContext->currentTask.userData;
+		const void* poolUserData = fiberContext->currentTask.userData;
 		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
 
 		// Run current task code
@@ -299,6 +339,8 @@ namespace MT
 		}
 
 
+		HardwareFullMemoryBarrier();
+
 #ifdef MT_INSTRUMENTED_BUILD
 		context.NotifyThreadStart(context.workerIndex);
 #endif
@@ -312,6 +354,7 @@ namespace MT
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
 				MT_ASSERT(fiberContext, "Can't get execution context from pool");
 				MT_ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
+				MT_ASSERT(fiberContext->stackRequirements == task.desc.stackRequirements, "Sanity check failed");
 
 				while(fiberContext)
 				{
@@ -451,7 +494,7 @@ namespace MT
 		}
 	}
 
-	void TaskScheduler::RunAsync(TaskGroup group, TaskHandle* taskHandleArray, uint32 taskHandleCount)
+	void TaskScheduler::RunAsync(TaskGroup group, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 

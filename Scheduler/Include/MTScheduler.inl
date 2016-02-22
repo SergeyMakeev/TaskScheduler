@@ -25,10 +25,11 @@ namespace MT
 
 	namespace internal
 	{
+		//generic template
 		template<class T>
-		inline internal::GroupedTask GetGroupedTask(TaskGroup group, T * src)
+		inline internal::GroupedTask GetGroupedTask(TaskGroup group, const T * src)
 		{
-			internal::TaskDesc desc(T::TaskEntryPoint, (void*)(src));
+			internal::TaskDesc desc(T::TaskEntryPoint, src, T::GetStackRequirements());
 #ifdef MT_INSTRUMENTED_BUILD
 			desc.debugID = T::GetDebugID();
 			desc.debugColor = T::GetDebugColor();
@@ -38,22 +39,22 @@ namespace MT
 
 		//template specialization for FiberContext*
 		template<>
-		inline internal::GroupedTask GetGroupedTask(TaskGroup group, FiberContext ** src)
+		inline internal::GroupedTask GetGroupedTask(TaskGroup group, FiberContext* const * src)
 		{
 			MT_USED_IN_ASSERT(group);
 			MT_ASSERT(group == TaskGroup::ASSIGN_FROM_CONTEXT, "Group must be assigned from context");
 			FiberContext * fiberContext = *src;
+			MT_ASSERT(fiberContext->currentTask.stackRequirements == fiberContext->stackRequirements, "Sanity check failed");
 			internal::GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
 			groupedTask.awaitingFiber = fiberContext;
 			return groupedTask;
 		}
 
-		//template specialization for TaskHandle*
+		//template specialization for TaskHandle
 		template<>
-		inline internal::GroupedTask GetGroupedTask(TaskGroup group, MT::TaskHandle * src)
+		inline internal::GroupedTask GetGroupedTask(TaskGroup group, const MT::TaskHandle * src)
 		{
 			MT_ASSERT(src->IsValid(), "Invalid task handle!");
-
 			const internal::TaskDesc & desc = src->GetDesc();
 			return internal::GroupedTask(desc, group);
 		}
@@ -98,7 +99,7 @@ namespace MT
 
 
 	template<class TTask>
-	void TaskScheduler::RunAsync(TaskGroup group, TTask* taskArray, uint32 taskCount)
+	void TaskScheduler::RunAsync(TaskGroup group, const TTask* taskArray, uint32 taskCount)
 	{
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
