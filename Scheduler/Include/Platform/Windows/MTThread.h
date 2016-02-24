@@ -39,6 +39,7 @@ namespace MT
 		static MW_DWORD __stdcall ThreadFuncInternal(void *pThread)
 		{
 			Thread* self = (Thread*)pThread;
+			self->threadId = ::GetCurrentThreadId();
 			self->func(self->funcData);
 			return 0;
 		}
@@ -61,7 +62,7 @@ namespace MT
 
 			func = entryPoint;
 			funcData = userData;
-			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, 0, &threadId );
+			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, 0, nullptr );
 			MT_ASSERT(thread != nullptr, "Can't create thread");
 		}
 
@@ -81,7 +82,8 @@ namespace MT
 
 		bool IsCurrentThread() const
 		{
-			return threadId == ::GetCurrentThreadId();
+			MW_DWORD id = ::GetCurrentThreadId();
+			return (threadId == id);
 		}
 
 		static int GetNumberOfHardwareThreads()
