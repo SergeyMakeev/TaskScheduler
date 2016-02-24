@@ -73,13 +73,14 @@ namespace MT
 
 		void CreateFromThread(Thread & thread)
 		{
+			MT_USED_IN_ASSERT(thread);
 			MT_ASSERT(fiber == nullptr, "Fiber already created");
 			MT_ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
 			func = nullptr;
 			funcData = nullptr;
 
-			fiber = ::ConvertThreadToFiberEx(nullptr, FIBER_FLAG_FLOAT_SWITCH);
+			fiber = ::ConvertThreadToFiberEx(nullptr, MW_FIBER_FLAG_FLOAT_SWITCH);
 			MT_ASSERT(fiber != nullptr, "Can't create fiber");
 		}
 
@@ -96,12 +97,14 @@ namespace MT
 
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
+			MT_USED_IN_ASSERT(from);
+
 			HardwareFullMemoryBarrier();
 
 			MT_ASSERT(from.fiber != nullptr, "Invalid from fiber");
 			MT_ASSERT(to.fiber != nullptr, "Invalid to fiber");
 
-			::SwitchToFiber( (LPVOID)to.fiber );
+			::SwitchToFiber( (void*)to.fiber );
 		}
 
 

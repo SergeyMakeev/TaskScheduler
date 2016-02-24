@@ -33,7 +33,7 @@
 #define MW_WINAPI __stdcall
 
 
-#if defined(_WINDOWS_)
+#if defined(_WINDOWS_) || defined(_WINBASE_)
 
 //
 // if windows.h is already included simply create aliases to the MW_ types
@@ -68,9 +68,12 @@ typedef CONTEXT MW_CONTEXT;
 #define MW_CONTEXT_FULL (CONTEXT_FULL)
 
 
+#define MW_FIBER_FLAG_FLOAT_SWITCH (FIBER_FLAG_FLOAT_SWITCH)
+
+
 #else
 
-// windows.h is not included declare types
+// windows.h is not included, so declare types
 
 //
 // define types
@@ -93,7 +96,15 @@ typedef unsigned __int64 MW_DWORD64;
 // define thread function
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-typedef MW_DWORD ( __stdcall *TThreadStartFunc )(void* lpThreadParameter);
+typedef MW_DWORD ( MW_WINAPI *TThreadStartFunc )(void* lpThreadParameter);
+
+//
+// define fiber function
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef void ( MW_WINAPI *TFiberStartFunc)(void* lpFiberParameter);
+
+
 
 
 //
@@ -139,7 +150,6 @@ struct __declspec(align(16)) MW_CONTEXT
 #define MW_STACK_STACK_LIMIT_OFFSET (16)
 #define MW_CONTEXT_FULL (0x10000B)
 
-
 #else
 
 //
@@ -184,6 +194,7 @@ struct MW_CONTEXT
 #define MW_PAGE_READWRITE (0x04)
 #define MW_PAGE_NOACCESS (0x01)
 #define MW_MEM_RELEASE (0x8000)
+#define MW_FIBER_FLAG_FLOAT_SWITCH (0x1)
 
 
 #endif
@@ -230,6 +241,16 @@ MW_WINBASEAPI void* MW_WINAPI VirtualAlloc( void* lpAddress, size_t dwSize, MW_D
 MW_WINBASEAPI MW_BOOL MW_WINAPI VirtualProtect( void* lpAddress, size_t dwSize, MW_DWORD flNewProtect, MW_DWORD* lpflOldProtect );
 MW_WINBASEAPI MW_BOOL MW_WINAPI VirtualFree( void* lpAddress, size_t dwSize, MW_DWORD dwFreeType );
 
+
+MW_WINBASEAPI void MW_WINAPI DeleteFiber( void* lpFiber );
+MW_WINBASEAPI void* MW_WINAPI ConvertThreadToFiberEx( void* lpParameter, MW_DWORD dwFlags );
+MW_WINBASEAPI void* MW_WINAPI CreateFiber( size_t dwStackSize, TFiberStartFunc lpStartAddress, void* lpParameter );
+MW_WINBASEAPI void MW_WINAPI SwitchToFiber( void* lpFiber );
+
+ 
+
 }
 
 #endif
+
+
