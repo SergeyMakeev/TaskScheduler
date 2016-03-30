@@ -22,20 +22,32 @@
 
 #include <MTAllocator.h>
 #include <MTTools.h>
-#include <xmmintrin.h>
 
+#if MT_SSE_INTRINSICS
+#include <xmmintrin.h>
+#else
+#include <malloc.h>
+#endif
 
 namespace MT
 {
 
 	void* Memory::Alloc(size_t size, size_t align)
 	{
+#if MT_SSE_INTRINSICS
 		return _mm_malloc(size, align);
+#else
+		return memalign(size, align);
+#endif
 	}
 
 	void Memory::Free(void* p)
 	{
+#if MT_SSE_INTRINSICS
 		_mm_free(p);
+#else
+		free(p);
+#endif
 	}
 
 	Memory::StackDesc Memory::AllocStack(size_t size)

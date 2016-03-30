@@ -26,7 +26,12 @@
 #define __MT_ATOMIC__
 
 #include <type_traits>
+
+#if MT_SSE_INTRINSICS
 #include <xmmintrin.h>
+#else
+#include <unistd.h>
+#endif
 
 
 namespace MT
@@ -47,7 +52,11 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void YieldCpu()
 	{
+#if MT_SSE_INTRINSICS
 		_mm_pause();
+#else
+		usleep(0);
+#endif
 	}
 
 	//
@@ -147,9 +156,6 @@ namespace MT
 		}
 
 	};
-
-
-
 
 }
 
