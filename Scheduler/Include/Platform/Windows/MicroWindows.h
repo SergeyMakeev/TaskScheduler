@@ -146,6 +146,8 @@ struct __declspec(align(16)) MW_CONTEXT
 	uint8 _unused_04[976];
 };
 
+static_assert(__alignof(MW_CONTEXT) == 16, "MW_CONTEXT align requirements must be 16 bytes");
+
 #define MW_STACK_BASE_OFFSET (8)
 #define MW_STACK_STACK_LIMIT_OFFSET (16)
 #define MW_CONTEXT_FULL (0x10000B)

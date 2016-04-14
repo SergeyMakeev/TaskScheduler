@@ -53,7 +53,9 @@ SUITE(FiberTests)
 
 	void TestThread(void* userData)
 	{
-		fiberMain = new MT::Fiber();
+		MT::Fiber fiber;
+
+		fiberMain = &fiber;
 
 		counter.Store(0);
 
@@ -74,7 +76,6 @@ SUITE(FiberTests)
 
 		CHECK_EQUAL(3, counter.Load());
 
-		delete fiberMain;
 		fiberMain = nullptr;
 	}
 

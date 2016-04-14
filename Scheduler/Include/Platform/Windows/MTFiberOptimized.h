@@ -54,12 +54,13 @@ namespace MT
 	//
 	class Fiber
 	{
+		MW_CONTEXT fiberContext;
+
 		void* funcData;
 		TThreadEntryPoint func;
 
 		Memory::StackDesc stackDesc;
 
-		MW_CONTEXT fiberContext;
 		bool isInitialized;
 
 #if defined(_M_X64)
@@ -94,6 +95,11 @@ namespace MT
 			, func(nullptr)
 			, isInitialized(false)
 		{
+#if defined(_M_X64)
+			MT_ASSERT(IsPointerAligned( this, 16 ), "Fiber must be aligned by 16 bytes");
+			MT_ASSERT(IsPointerAligned( &fiberContext, 16 ), "MW_CONTEXT must be aligned by 16 bytes");
+#endif
+
 			memset(&fiberContext, 0, sizeof(MW_CONTEXT));
 		}
 
