@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
-// 
+//
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
 // 	in the Software without restriction, including without limitation the rights
 // 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // 	copies of the Software, and to permit persons to whom the Software is
 // 	furnished to do so, subject to the following conditions:
-// 
+//
 //  The above copyright notice and this permission notice shall be included in
 // 	all copies or substantial portions of the Software.
-// 
+//
 // 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,88 +23,70 @@
 #pragma once
 
 
-namespace MT
-{
-	//Task group ID
-	class TaskGroup
-	{
-		int16 id;
+// Target Platform
+////////////////////////////////////////////////////////////////////////
+#if   _WIN32
 
-	public:
+#define MT_PLATFORM_WINDOWS (1)
 
-		static const int16 MT_MAX_GROUPS_COUNT = 256;
+#elif __APPLE_CC__
 
-		enum PredefinedValues
-		{
-			DEFAULT = 0,
-			INVALID = -1,
-			ASSIGN_FROM_CONTEXT = -2
-		};
+#define MT_PLATFORM_OSX (1)
+
+#else
+
+#define MT_PLATFORM_POSIX (1)
+
+#endif
 
 
-		TaskGroup()
-		{
-			id = INVALID;
-		}
+// Compiler support for SSE intrinsics
+////////////////////////////////////////////////////////////////////////
+#if (defined(__SSE__) || defined(_M_IX86) || defined(_M_X64))
 
-		explicit TaskGroup(PredefinedValues v)
-		{
-			id = (int16)v;
-		}
+#define MT_SSE_INTRINSICS_SUPPORTED (1)
 
-		explicit TaskGroup(int16 _id)
-		{
-			id = _id;
-		}
-
-		static TaskGroup Default()
-		{
-			return TaskGroup(DEFAULT);
-		}
-
-		TaskGroup & operator= (const PredefinedValues & v)
-		{
-			id = (int16)v;
-			return *this;
-		}
-
-		bool operator== (const PredefinedValues & v) const
-		{
-			return (id == v);
-		}
-
-		bool operator== (const TaskGroup & other) const
-		{
-			return (id == other.id);
-		}
-
-		bool operator!= (const TaskGroup & other) const
-		{
-			return (id != other.id);
-		}
-
-		int GetValidIndex() const
-		{
-			MT_ASSERT(IsValid(), "Try to get invalid index");
-
-			return id;
-		}
-
-		bool IsValid() const
-		{
-			if (id == INVALID)
-				return false;
-
-			if (id == ASSIGN_FROM_CONTEXT)
-				return false;
-
-			return (id >= 0 && id < MT_MAX_GROUPS_COUNT);
-		}
+#endif
 
 
+// Compiler support for C++11
+////////////////////////////////////////////////////////////////////////
 
-	};
+#if __STDC_VERSION__ >= 201112L
+
+#define MT_CPP11_SUPPORTED (1)
+
+#endif
 
 
+// Compiler family
+////////////////////////////////////////////////////////////////////////
 
-}
+#ifdef __clang__
+
+#define MT_CLANG_COMPILER_FAMILY (1)
+#define MT_GCC_COMPILER_FAMILY (1)
+
+#elif __GNUC__
+
+#define MT_GCC_COMPILER_FAMILY (1)
+
+#elif defined(_MSC_VER)
+
+#define MT_MSVC_COMPILER_FAMILY (1)
+
+#endif
+
+
+// Debug / Release
+////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG
+
+#define MT_DEBUG (1)
+
+#else
+
+#define MT_RELEASE (1)
+
+#endif

@@ -21,7 +21,7 @@
 // 	THE SOFTWARE.
 
 #pragma once
-
+#include <MTConfig.h>
 #include <MTTypes.h>
 #include <MTDebug.h>
 
@@ -42,15 +42,13 @@ namespace MT
 }
 
 
-inline bool IsPointerAligned( const volatile void* p, const uint32 align )
-{
-	return !((uintptr_t)p & (align - 1));
-}
 
-#ifdef _WIN32
+#if MT_PLATFORM_WINDOWS 
 	#include <Platform/Windows/MTCommon.h>
-#else
+#elif MT_PLATFORM_POSIX || MT_PLATFORM_OSX
 	#include <Platform/Posix/MTCommon.h>
+#else
+	#error Platfrom is not supported
 #endif
 
 #include <Platform/Common/MTAtomic.h>
@@ -112,29 +110,14 @@ namespace MT
 }
 
 
-#ifdef __GNUC__
-
-#define mt_thread_local __thread
-
-#elif __STDC_VERSION__ >= 201112L
-
+#if MT_CPP11_SUPPORTED
 #define mt_thread_local _Thread_local
-
-#elif defined(_MSC_VER)
-
+#elif MT_GCC_COMPILER_FAMILY
+#define mt_thread_local __thread
+#elif MT_MSVC_COMPILER_FAMILY
 #define mt_thread_local __declspec(thread)
-
 #else
-
 #error Can not define mt_thread_local. Unknown platform.
-
 #endif
 
 
-
-
-#if (defined(__SSE__) || defined(_M_IX86) || defined(_M_X64))
-
-#define MT_SSE_INTRINSICS (1)
-
-#endif

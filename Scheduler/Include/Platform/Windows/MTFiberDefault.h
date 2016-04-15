@@ -60,18 +60,16 @@ namespace MT
 		{
 			if (fiber)
 			{
-				// don't need to delete context on fibers created from thread.
-				if (func != nullptr)
+				if (func)
 				{
 					DeleteFiber(fiber);
 				}
-
 				fiber = nullptr;
 			}
 		}
 
 
-		void CreateFromThread(Thread & thread)
+		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_USED_IN_ASSERT(thread);
 			MT_ASSERT(fiber == nullptr, "Fiber already created");
@@ -82,6 +80,8 @@ namespace MT
 
 			fiber = ::ConvertThreadToFiberEx(nullptr, MW_FIBER_FLAG_FLOAT_SWITCH);
 			MT_ASSERT(fiber != nullptr, "Can't create fiber");
+
+			entryPoint(userData);
 		}
 
 

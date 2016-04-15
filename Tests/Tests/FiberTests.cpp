@@ -50,21 +50,12 @@ SUITE(FiberTests)
 		MT::Fiber::SwitchTo(*currentFiber, *fiberMain);
 	}
 
-
-	void TestThread(void* userData)
+	void FiberMain(void* userData)
 	{
-		MT::Fiber fiber;
-
-		fiberMain = &fiber;
-
-		counter.Store(0);
-
-		MT::Thread* thread = (MT::Thread*)userData;
-
-		fiberMain->CreateFromThread(*thread);
+		MT_UNUSED(userData);
 
 		MT::Fiber fiber1;
-        
+
 		fiber1.Create(SMALLEST_STACK_SIZE, FiberFunc, &fiber1);
 
 		MT::Fiber::SwitchTo(*fiberMain, fiber1);
@@ -78,6 +69,20 @@ SUITE(FiberTests)
 
 		fiberMain = nullptr;
 	}
+
+	void TestThread(void* userData)
+	{
+		MT::Fiber fiber;
+
+		fiberMain = &fiber;
+
+		counter.Store(0);
+
+		MT::Thread* thread = (MT::Thread*)userData;
+
+		fiberMain->CreateFromCurrentThreadAndRun(*thread, FiberMain, userData);
+	}
+
 
 
 TEST(FiberSimpleTest)

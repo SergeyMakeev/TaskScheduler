@@ -26,8 +26,7 @@
 #define __MT_FIBER_OPTIMIZED__
 
 
-#include <MTAllocator.h>
-#include "MTAtomic.h"
+#include <Platform/Common/MTAtomic.h>
 
 #if defined(_M_X64)
 
@@ -117,7 +116,7 @@ namespace MT
 			}
 		}
 
-		void CreateFromThread(Thread & thread)
+		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_USED_IN_ASSERT(thread);
 
@@ -137,6 +136,8 @@ namespace MT
 			stackDesc.stackBottom = (void*)ReadTeb( MW_STACK_STACK_LIMIT_OFFSET /*FIELD_OFFSET(NT_TIB, StackLimit)*/ );
 
 			isInitialized = true;
+
+			entryPoint(userData);
 		}
 
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void* userData)

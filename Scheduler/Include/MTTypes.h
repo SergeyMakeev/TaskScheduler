@@ -22,7 +22,7 @@
 
 #pragma once
 
-
+#include <MTConfig.h>
 #include <stdint.h>
 
 #define MT_USED_IN_ASSERT(x) (void)(x)
@@ -60,15 +60,19 @@ typedef int32_t int32;
 typedef uint32_t uint32;
 
 
-#if defined(_MSC_VER)
+#if MT_MSVC_COMPILER_FAMILY
 
 typedef __int64 int64;
 typedef unsigned __int64 uint64;
 
-#else
+#elif MT_GCC_COMPILER_FAMILY
 
 typedef long long int64;
 typedef unsigned long long uint64;
+
+#else
+
+#error Compiler is not supported
 
 #endif
 

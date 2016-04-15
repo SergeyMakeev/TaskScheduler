@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <MTConfig.h>
 #include <MTColorTable.h>
 #include <MTTools.h>
 #include <MTPlatform.h>
@@ -30,7 +31,7 @@
 #include <MTArrayView.h>
 #include <MTThreadContext.h>
 #include <MTFiberContext.h>
-#include <MTAllocator.h>
+#include <MTAppInterop.h>
 #include <MTTaskPool.h>
 #include <MTStackRequirements.h>
 #include <Scopes/MTScopes.h>
@@ -64,7 +65,7 @@ namespace MT
 
 }
 
-#if _MSC_VER
+#if MT_MSVC_COMPILER_FAMILY
 
 // Visual Studio compile time check
 #define MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
@@ -74,8 +75,7 @@ namespace MT
 		compileTypeTypesCheck; \
 	}
 
-#else
-
+#elif MT_GCC_COMPILER_FAMILY
 
 // GCC, Clang and other compilers compile time check
 #define MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
@@ -92,6 +92,10 @@ namespace MT
 		/* remove unused variable warning */ \
 		MT_UNUSED(compileTypeTypesCheck); \
 	}
+
+#else
+
+#error Platform is not supported.
 
 #endif
 
@@ -298,6 +302,7 @@ namespace MT
 		TaskGroupDescription & GetGroupDesc(TaskGroup group);
 
 		static void ThreadMain( void* userData );
+		static void ShedulerFiberMain( void* userData );
 		static void FiberMain( void* userData );
 		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount);
 

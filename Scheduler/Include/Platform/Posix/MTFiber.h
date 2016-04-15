@@ -98,7 +98,7 @@ namespace MT
 		}
 
 
-		void CreateFromThread(Thread & thread)
+		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
 			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
@@ -116,6 +116,8 @@ namespace MT
 			funcData = nullptr;
 
 			isInitialized = true;
+
+			entryPoint(userData);
 		}
 
 

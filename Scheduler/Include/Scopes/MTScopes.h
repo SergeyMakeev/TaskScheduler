@@ -606,6 +606,4 @@ namespace MT
 	(stackEntry -> GetParentId() == MT::invalidStackId) ? nullptr : stackPointer -> Get( stackEntry -> GetParentId() )
 
 
-
-
 #endif

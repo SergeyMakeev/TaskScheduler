@@ -21,36 +21,13 @@
 // 	THE SOFTWARE.
 
 #pragma once
-
-#include <stdio.h>
-
-#if defined(_MSC_VER)
-
-inline void ThrowException()
-{
-	__debugbreak();
-}
-
-#else
-
-#include<signal.h>
-inline void ThrowException()
-{
-	raise(SIGTRAP);
-
-	// force access violation error
-	char* pBadAddr = (char*)0x0;
-	*pBadAddr = 0;
-}
-
-#endif
+#include <MTConfig.h>
+#include <MTAppInterop.h>
 
 
+#if defined(MT_DEBUG) || defined(MT_INSTRUMENTED_BUILD)
 
-
-#if defined(_DEBUG) || defined(MT_INSTRUMENTED_BUILD)
-
-#define MT_REPORT_ASSERT_IMPL( condition, description, file, line ) printf("Assertion failed : %s. File %s, line %d. Condition %s\n", description, file, line, #condition); ThrowException();
+#define MT_REPORT_ASSERT_IMPL( condition, description, file, line ) MT::Diagnostic::ReportAssert(#condition, description, file, line);
 
 #ifndef MT_REPORT_ASSERT
 #define MT_REPORT_ASSERT( description ) { MT_REPORT_ASSERT_IMPL( "always", description, __FILE__, __LINE__ ) }

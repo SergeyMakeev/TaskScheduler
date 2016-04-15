@@ -254,5 +254,3 @@ MW_WINBASEAPI void MW_WINAPI SwitchToFiber( void* lpFiber );
 }
 
 #endif
-
-

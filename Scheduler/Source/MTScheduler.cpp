@@ -310,7 +310,16 @@ namespace MT
 		return false;
 	}
 
+
 	void TaskScheduler::ThreadMain( void* userData )
+	{
+		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
+		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
+		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, ShedulerFiberMain, userData);
+	}
+
+
+	void TaskScheduler::ShedulerFiberMain( void* userData )
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
@@ -319,7 +328,6 @@ namespace MT
 		context.NotifyThreadCreate(context.workerIndex);
 #endif
 
-		context.schedulerFiber.CreateFromThread(context.thread);
 
 		uint32 workersCount = context.taskScheduler->GetWorkersCount();
 
@@ -592,5 +600,6 @@ namespace MT
 		MT_ASSERT(groupDesc.GetDebugIsFree() == false, "Invalid group");
 		return groupDesc;
 	}
-
 }
+
+

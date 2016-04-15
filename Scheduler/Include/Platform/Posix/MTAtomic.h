@@ -25,9 +25,11 @@
 #ifndef __MT_ATOMIC__
 #define __MT_ATOMIC__
 
+#include <MTConfig.h>
+
 #include <type_traits>
 
-#if MT_SSE_INTRINSICS
+#if MT_SSE_INTRINSICS_SUPPORTED
 #include <xmmintrin.h>
 #else
 #include <unistd.h>
@@ -52,7 +54,7 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void YieldCpu()
 	{
-#if MT_SSE_INTRINSICS
+#if MT_SSE_INTRINSICS_SUPPORTED
 		_mm_pause();
 #else
 		usleep(0);

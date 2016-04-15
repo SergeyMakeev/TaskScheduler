@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <MTConfig.h>
 
 
 namespace MT
@@ -74,7 +75,15 @@ namespace MT
 			: PoolElementHeader(_id)
 			, task( std::move(_task) )
 		{
-			MT_ASSERT( offsetof(PoolElement<T>, task) == sizeof(PoolElementHeader), "Invalid offset for task in PoolElement");
+
+#if MT_CLANG_COMPILER_FAMILY
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+#endif
+			static_assert( offsetof(PoolElement<T>, task) == sizeof(PoolElementHeader), "Invalid offset for task in PoolElement");
+#if MT_CLANG_COMPILER_FAMILY
+#pragma clang diagnostic pop
+#endif
 			
 			desc.poolDestroyFunc = T::PoolTaskDestroy;
 			desc.taskFunc = T::TaskEntryPoint;

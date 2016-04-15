@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // 	Copyright (c) 2015 Sergey Makeev, Vadim Slyusarev
-// 
+//
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
 // 	in the Software without restriction, including without limitation the rights
 // 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // 	copies of the Software, and to permit persons to whom the Software is
 // 	furnished to do so, subject to the following conditions:
-// 
+//
 //  The above copyright notice and this permission notice shall be included in
 // 	all copies or substantial portions of the Software.
-// 
+//
 // 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,89 +22,64 @@
 
 #pragma once
 
+#include <MTConfig.h>
+
+#if MT_MSVC_COMPILER_FAMILY
+#include <crtdefs.h>
+#elif MT_GCC_COMPILER_FAMILY
+#include <sys/types.h>
+#include <stddef.h>
+#else
+#error Compiler is not supported
+#endif
+
+
+#define MT_DEFAULT_ALIGN (16)
 
 namespace MT
 {
-	//Task group ID
-	class TaskGroup
+	// Memory allocator interface.
+	//////////////////////////////////////////////////////////////////////////
+	struct Memory
 	{
-		int16 id;
-
-	public:
-
-		static const int16 MT_MAX_GROUPS_COUNT = 256;
-
-		enum PredefinedValues
+		struct StackDesc
 		{
-			DEFAULT = 0,
-			INVALID = -1,
-			ASSIGN_FROM_CONTEXT = -2
+			void* stackBottom;
+			void* stackTop;
+
+			char* stackMemory;
+			size_t stackMemoryBytesCount;
+
+
+			StackDesc()
+				: stackBottom(nullptr)
+				, stackTop(nullptr)
+				, stackMemory(nullptr)
+				, stackMemoryBytesCount(0)
+
+			{
+			}
+
+			size_t GetStackSize()
+			{
+				return (char*)stackTop - (char*)stackBottom;
+			}
 		};
 
 
-		TaskGroup()
-		{
-			id = INVALID;
-		}
+		static void* Alloc(size_t size, size_t align = MT_DEFAULT_ALIGN);
+		static void Free(void* p);
 
-		explicit TaskGroup(PredefinedValues v)
-		{
-			id = (int16)v;
-		}
-
-		explicit TaskGroup(int16 _id)
-		{
-			id = _id;
-		}
-
-		static TaskGroup Default()
-		{
-			return TaskGroup(DEFAULT);
-		}
-
-		TaskGroup & operator= (const PredefinedValues & v)
-		{
-			id = (int16)v;
-			return *this;
-		}
-
-		bool operator== (const PredefinedValues & v) const
-		{
-			return (id == v);
-		}
-
-		bool operator== (const TaskGroup & other) const
-		{
-			return (id == other.id);
-		}
-
-		bool operator!= (const TaskGroup & other) const
-		{
-			return (id != other.id);
-		}
-
-		int GetValidIndex() const
-		{
-			MT_ASSERT(IsValid(), "Try to get invalid index");
-
-			return id;
-		}
-
-		bool IsValid() const
-		{
-			if (id == INVALID)
-				return false;
-
-			if (id == ASSIGN_FROM_CONTEXT)
-				return false;
-
-			return (id >= 0 && id < MT_MAX_GROUPS_COUNT);
-		}
-
-
-
+		static StackDesc AllocStack(size_t size);
+		static void FreeStack(const StackDesc & desc);
 	};
 
+
+
+	struct Diagnostic
+	{
+		static void ReportAssert(const char* condition, const char* description, const char* sourceFile, int sourceLine);
+	};
 
 
 }

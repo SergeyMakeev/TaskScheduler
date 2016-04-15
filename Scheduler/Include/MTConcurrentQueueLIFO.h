@@ -26,7 +26,7 @@
 
 #include <MTPlatform.h>
 #include <MTTools.h>
-#include <MTAllocator.h>
+#include <MTAppInterop.h>
 
 
 namespace MT
