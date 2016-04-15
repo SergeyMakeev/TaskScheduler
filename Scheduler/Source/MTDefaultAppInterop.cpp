@@ -43,6 +43,7 @@ inline void ThrowException()
 
 #elif MT_PLATFORM_POSIX || MT_PLATFORM_OSX
 
+#define _DARWIN_C_SOURCE
 #include<signal.h>
 inline void ThrowException()
 {
