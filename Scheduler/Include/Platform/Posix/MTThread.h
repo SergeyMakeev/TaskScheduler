@@ -48,7 +48,7 @@
 #endif
 
 #include <Platform/Common/MTThread.h>
-#include <MTAllocator.h>
+#include <MTAppInterop.h>
 
 namespace MT
 {

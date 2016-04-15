@@ -41,7 +41,7 @@
     #define MAP_STACK (0)
 #endif
 
-#include <MTAllocator.h>
+#include <MTAppInterop.h>
 #include "MTAtomic.h"
 
 namespace MT
