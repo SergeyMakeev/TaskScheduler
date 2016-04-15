@@ -41,9 +41,8 @@ inline void ThrowException()
 	__debugbreak();
 }
 
-#elif MT_PLATFORM_POSIX || MT_PLATFORM_OSX
+#elif MT_PLATFORM_POSIX
 
-#define _DARWIN_C_SOURCE
 #include<signal.h>
 inline void ThrowException()
 {
@@ -51,6 +50,13 @@ inline void ThrowException()
 	// force access violation error
 	char* pBadAddr = (char*)0x0;
 	*pBadAddr = 0;
+}
+
+#elif MT_PLATFORM_OSX
+
+inline void ThrowException()
+{
+	__builtin_trap();
 }
 
 #else
