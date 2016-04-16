@@ -67,8 +67,8 @@ typedef unsigned __int64 uint64;
 
 #elif MT_GCC_COMPILER_FAMILY
 
-typedef long long int64;
-typedef unsigned long long uint64;
+typedef int64_t int64;
+typedef uint64_t uint64;
 
 #else
 
