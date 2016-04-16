@@ -25,6 +25,7 @@
 #ifndef __MT_ATOMIC__
 #define __MT_ATOMIC__
 
+#include <MTConfig.h>
 #include <intrin.h>
 #include <cstdint>
 #include <type_traits>
@@ -134,7 +135,7 @@ namespace MT
 		// The function returns the initial value.
 		const void* Store(const void* val)
 		{
-#ifdef _M_IX86
+#ifndef MT_PTR64
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedExchange will fail");
 			return (void*)_InterlockedExchange((volatile long*)&_value, (long)val); 
 #else
@@ -145,7 +146,7 @@ namespace MT
 		// The function returns the initial value.
 		const void* CompareAndSwap(const void* compareValue, const void* newValue)
 		{
-#ifdef _M_IX86
+#ifndef MT_PTR64
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedCompareExchange will fail");
 			return (void*)_InterlockedCompareExchange((volatile long*)&_value, (long)newValue, (long)compareValue);
 #else

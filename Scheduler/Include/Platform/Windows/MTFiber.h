@@ -25,6 +25,7 @@
 #ifndef __MT_FIBER__
 #define __MT_FIBER__
 
+#include <MTConfig.h>
 
 	#include "MTFiberOptimized.h"
 

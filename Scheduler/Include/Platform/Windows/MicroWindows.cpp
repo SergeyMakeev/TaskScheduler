@@ -20,7 +20,10 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 
-#ifdef _WIN32
+
+#include <MTConfig.h>
+
+#if MT_PLATFORM_WINDOWS 
 
 #include <type_traits>
 
@@ -75,7 +78,7 @@ static_assert(FIELD_OFFSET(MW_SYSTEM_INFO, dwPageSize) == FIELD_OFFSET(SYSTEM_IN
 static_assert(FIELD_OFFSET(MW_SYSTEM_INFO, dwNumberOfProcessors) == FIELD_OFFSET(SYSTEM_INFO, dwNumberOfProcessors), "FIELD_OFFSET(MW_SYSTEM_INFO, dwNumberOfProcessors) != FIELD_OFFSET(SYSTEM_INFO, dwNumberOfProcessors)");
 static_assert(FIELD_OFFSET(MW_CONTEXT, ContextFlags) == FIELD_OFFSET(CONTEXT, ContextFlags), "FIELD_OFFSET(MW_CONTEXT, ContextFlags) != FIELD_OFFSET(CONTEXT, ContextFlags)");
 
-#if defined(_M_X64)
+#if MT_PTR64
 
 static_assert(FIELD_OFFSET(MW_CONTEXT, Rsp) == FIELD_OFFSET(CONTEXT, Rsp), "FIELD_OFFSET(MW_CONTEXT, Rsp) != FIELD_OFFSET(CONTEXT, Rsp)");
 static_assert(FIELD_OFFSET(MW_CONTEXT, Rip) == FIELD_OFFSET(CONTEXT, Rip), "FIELD_OFFSET(MW_CONTEXT, Rip) != FIELD_OFFSET(CONTEXT, Rip)");

@@ -25,6 +25,7 @@
 #ifndef __MT_STACK__
 #define __MT_STACK__
 
+#include <MTConfig.h>
 #include <array>
 #include <limits>
 
@@ -94,7 +95,7 @@ namespace MT
 		{
 		}
 
-#ifdef _DEBUG
+#if MT_DEBUG
 		~ScopeStackEntry()
 		{
 			parentIndex = std::numeric_limits<int32>::lowest();
@@ -474,7 +475,7 @@ namespace MT
 				pObject->~T();
 			}
 
-#ifdef _DEBUG
+#if MT_DEBUG
 			int32 stackIdCount = (int32)stackId.size();
 			for(int32 i = 0; i < stackIdCount; i++)
 			{

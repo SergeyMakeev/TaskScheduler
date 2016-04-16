@@ -25,14 +25,14 @@
 #ifndef __MT_THREAD__
 #define __MT_THREAD__
 
-
+#include <MTConfig.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
 #include <limits.h>
 #include <stdlib.h>
 
-#ifdef __APPLE_CC__
+#if MT_PLATFORM_OSX
 #include <thread>
 #endif
 
@@ -171,7 +171,7 @@ namespace MT
 
 		static int GetNumberOfHardwareThreads()
 		{
-#ifdef __APPLE_CC__
+#if MT_PLATFORM_OSX
             return std::thread::hardware_concurrency();
 #else
 			long numberOfProcessors = sysconf( _SC_NPROCESSORS_ONLN );

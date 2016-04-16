@@ -21,6 +21,7 @@
 // 	THE SOFTWARE.
 #pragma once
 
+#include <MTConfig.h>
 #include <MTTypes.h>
 
 //
@@ -120,7 +121,7 @@ struct MW_SYSTEM_INFO
 	uint8 _unused_03[12];
 };
 
-#if defined(_M_X64)
+#if MT_PTR64
 
 //
 // x64 critical section, only used members are declared

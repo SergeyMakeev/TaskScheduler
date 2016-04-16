@@ -25,14 +25,13 @@
 #ifndef __MT_FIBER_OPTIMIZED__
 #define __MT_FIBER_OPTIMIZED__
 
-
+#include <MTConfig.h>
 #include <Platform/Common/MTAtomic.h>
 
-#if defined(_M_X64)
+#if MT_PTR64
 
 #define ReadTeb(offset) __readgsqword(offset);
 #define WriteTeb(offset, v) __writegsqword(offset, v)
-
 
 #else
 
@@ -62,7 +61,7 @@ namespace MT
 
 		bool isInitialized;
 
-#if defined(_M_X64)
+#if MT_PTR64
 		// https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
 		// The Microsoft x64 calling convention is followed on Microsoft Windows.
 		// It uses registers RCX, RDX, R8, R9 for the first four integer or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 are used for floating point arguments.
@@ -94,11 +93,10 @@ namespace MT
 			, func(nullptr)
 			, isInitialized(false)
 		{
-#if defined(_M_X64)
+#if MT_PTR64
 			MT_ASSERT(IsPointerAligned( this, 16 ), "Fiber must be aligned by 16 bytes");
 			MT_ASSERT(IsPointerAligned( &fiberContext, 16 ), "MW_CONTEXT must be aligned by 16 bytes");
 #endif
-
 			memset(&fiberContext, 0, sizeof(MW_CONTEXT));
 		}
 
@@ -160,7 +158,7 @@ namespace MT
 			char * paramOnStack = nullptr;
 
 			// setup function address and stack pointer
-#if defined(_M_X64)
+#if MT_PTR64
 
 			// http://blogs.msdn.com/b/oldnewthing/archive/2004/01/14/58579.aspx
 			// Furthermore, space for the register parameters is reserved on the stack, in case the called function wants to spill them
