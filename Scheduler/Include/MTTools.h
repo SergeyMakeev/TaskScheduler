@@ -24,8 +24,6 @@
 #include <MTTypes.h>
 #include <MTPlatform.h>
 
-#define UNUSED(T)
-
 
 namespace MT
 {
