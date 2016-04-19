@@ -160,7 +160,7 @@ TEST(ArrayViewTest)
 	CHECK(emptyArrayView.IsEmpty() == true);
 
 	const int elementsCount = 128;
-	void * rawMemory = malloc(sizeof(int) * elementsCount);
+	void* rawMemory = MT::Memory::Alloc(sizeof(int) * elementsCount);
 
 	MT::ArrayView<int> arrayView(rawMemory, elementsCount);
 	CHECK(arrayView.IsEmpty() == false);
@@ -176,7 +176,7 @@ TEST(ArrayViewTest)
 		CHECK_EQUAL(buffer[i], arrayView[i]);
 	}
 
-	free(rawMemory);
+	MT::Memory::Free(rawMemory);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
