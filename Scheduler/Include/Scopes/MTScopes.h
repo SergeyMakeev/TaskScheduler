@@ -128,19 +128,26 @@ namespace MT
 	class PersistentScopeDescriptorStorage
 	{
 		MT::AtomicInt32 top;
-		byte rawMemory[ capacity * sizeof(T) ];
+		//16 bytes for alignment
+		byte rawMemory_[ capacity * sizeof(T)  + 16];
+
+
+		T* GetObjectMemory(int32 index)
+		{
+			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + 0x0F ) & ~0x0F );
+			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
+			return pObjectMemory;
+		}
+
 
 		T* AllocObject(int32 & id)
 		{
 			//new element index
 			int32 index = top.IncFetch() - 1;
 			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return nullptr);
-
 			//get memory for object
-			T* pObject = (T*)&rawMemory[index * sizeof(T)];
-
+			T* pObject = GetObjectMemory(index);
 			id = (index + 1);
-
 			return pObject;
 		}
 
@@ -158,7 +165,7 @@ namespace MT
 			int32 count = top.Store(0);
 			for (int32 i = 0; i < count; i++)
 			{
-				T* pObject = (T*)&rawMemory[i * sizeof(T)];
+				T* pObject = GetObjectMemory(i);
 				MT_UNUSED(pObject);
 				pObject->~T();
 			}
@@ -216,17 +223,12 @@ namespace MT
 			return id;
 		}
 
-
-
-
 		T* Get(int32 id)
 		{
 			MT_VERIFY(id > invalidStorageId, "Invalid ID", return nullptr );
 			MT_VERIFY(id <= top.Load(), "Invalid ID", return nullptr );
-
 			int32 index = ( id - 1);
-			T* pObject = (T*)&rawMemory[index * sizeof(T)];
-
+			T* pObject = GetObjectMemory(index);
 			return pObject;
 		}
 
