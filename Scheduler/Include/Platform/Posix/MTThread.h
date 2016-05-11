@@ -124,7 +124,7 @@ namespace MT
 			MT_ASSERT(err == 0, "pthread_create - error");
 		}
 
-		void Stop()
+		void Join()
 		{
 			MT_ASSERT(isStarted, "Thread is not started");
 

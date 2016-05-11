@@ -127,14 +127,17 @@ namespace MT
 	template<typename T, uint32 capacity>
 	class PersistentScopeDescriptorStorage
 	{
+		static const int32 ALIGNMENT = 16;
+		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
+
 		MT::AtomicInt32 top;
-		//16 bytes for alignment
-		byte rawMemory_[ capacity * sizeof(T)  + 16];
+		//additional bytes for alignment
+		byte rawMemory_[ capacity * sizeof(T)  + ALIGNMENT];
 
 
-		T* GetObjectMemory(int32 index)
+		T* IndexToObject(int32 index)
 		{
-			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + 0x0F ) & ~0x0F );
+			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
 			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
 			return pObjectMemory;
 		}
@@ -146,7 +149,7 @@ namespace MT
 			int32 index = top.IncFetch() - 1;
 			MT_VERIFY(index < (int32)capacity, "Area allocator is full. Can't allocate more memory.", return nullptr);
 			//get memory for object
-			T* pObject = GetObjectMemory(index);
+			T* pObject = IndexToObject(index);
 			id = (index + 1);
 			return pObject;
 		}
@@ -165,7 +168,7 @@ namespace MT
 			int32 count = top.Store(0);
 			for (int32 i = 0; i < count; i++)
 			{
-				T* pObject = GetObjectMemory(i);
+				T* pObject = IndexToObject(i);
 				MT_UNUSED(pObject);
 				pObject->~T();
 			}
@@ -228,7 +231,7 @@ namespace MT
 			MT_VERIFY(id > invalidStorageId, "Invalid ID", return nullptr );
 			MT_VERIFY(id <= top.Load(), "Invalid ID", return nullptr );
 			int32 index = ( id - 1);
-			T* pObject = GetObjectMemory(index);
+			T* pObject = IndexToObject(index);
 			return pObject;
 		}
 
@@ -247,13 +250,17 @@ namespace MT
 	template<typename T, uint32 capacity>
 	class WeakScopeStack
 	{
-		volatile int32 top;
-		byte rawMemory[ capacity * sizeof(T) ];
+		static const int32 ALIGNMENT = 16;
+		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
+
+		int32 top;
+		byte rawMemory_[ capacity * sizeof(T)  + ALIGNMENT];
 
 		T* IndexToObject(int32 index)
 		{
-			T* pObject = (T*)&rawMemory[ index * sizeof(T) ];
-			return pObject;
+			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
+			return pObjectMemory;
 		}
 
 
@@ -362,21 +369,25 @@ namespace MT
 	template<typename T, uint32 capacity>
 	class StrongScopeStack
 	{
-		volatile int32 count;
+		static const int32 ALIGNMENT = 16;
+		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
 
-		volatile int32 top;
+		int32 count;
+		int32 top;
 
 		//max stack deep
 		std::array<int32, 256> stackId;
 
-		byte rawMemory[ capacity * sizeof(T) ];
+		//additional bytes for alignment
+		byte rawMemory_[ capacity * sizeof(T) + ALIGNMENT ];
+
 
 		T* IndexToObject(int32 index)
 		{
-			T* pObject = (T*)&rawMemory[ index * sizeof(T) ];
-			return pObject;
+			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
+			return pObjectMemory;
 		}
-
 
 		T* AllocObject()
 		{

@@ -66,7 +66,7 @@ namespace MT
 			MT_ASSERT(thread != nullptr, "Can't create thread");
 		}
 
-		void Stop()
+		void Join()
 		{
 			if (thread == nullptr)
 			{

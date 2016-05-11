@@ -96,7 +96,7 @@ namespace MT
 
 		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
-			threadContext[i].thread.Stop();
+			threadContext[i].thread.Join();
 		}
 	}
 

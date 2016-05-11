@@ -231,6 +231,8 @@ namespace MT
 	template<typename T, size_t N>
 	class TaskPool
 	{
+		static const int32 ALIGNMENT = 16;
+
 		typedef PoolElement<T> PoolItem;
 
 		//
@@ -261,7 +263,7 @@ namespace MT
 			static_assert( MT::StaticIsPow2<N>::result, "Task pool capacity must be power of 2");
 
 			size_t bytesCount = sizeof(PoolItem) * N;
-			data = Memory::Alloc(bytesCount);
+			data = Memory::Alloc(bytesCount, ALIGNMENT);
 
 			for(size_t idx = 0; idx < N; idx++)
 			{

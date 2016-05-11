@@ -40,6 +40,8 @@ namespace MT
 	template<typename T, size_t numElements>
 	class ConcurrentRingBuffer
 	{
+		static const int32 ALIGNMENT = 16;
+
 		MT::Mutex mutex;
 
 		void* data;
@@ -80,7 +82,7 @@ namespace MT
 			, readIndex(0)
 			, size(0)
 		{
-			data = Memory::Alloc(sizeof(T) * numElements);
+			data = Memory::Alloc(sizeof(T) * numElements, ALIGNMENT);
 
 			static_assert(is_power_of_two<numElements>::value == true, "NumElements used in MT::ConcurrentRingBuffer must be power of two");
 		}

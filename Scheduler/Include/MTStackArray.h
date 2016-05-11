@@ -31,12 +31,18 @@ namespace MT
 	template<class T, size_t capacity>
 	class StackArray
 	{
-		uint32 count;
-		byte data[sizeof(T) * capacity];
+		static const int32 ALIGNMENT = 16;
+		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
 
-		inline T* Buffer()
+		uint32 count;
+
+		byte rawMemory_[sizeof(T) * capacity + ALIGNMENT];
+
+		inline T* IndexToObject(int32 index)
 		{
-			return (T*)(data);
+			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
+			return pObjectMemory;
 		}
 
 		inline void CopyCtor(T* element, const T & val)
@@ -85,21 +91,21 @@ namespace MT
 		inline const T &operator[]( uint32 i ) const
 		{
 			MT_ASSERT( i < Size(), "bad index" );
-			return Buffer()[i];
+			return *IndexToObject(i);
 		}
 
 		inline T &operator[]( uint32 i )
 		{
 			MT_ASSERT( i < Size(), "bad index" );
-			return Buffer()[i];
+			return *IndexToObject(i);
 		}
 
 		inline void PushBack(T && val)
 		{
 			MT_ASSERT(count < capacity, "Can't add element");
-			size_t lastElementIndex = count;
+			uint32 lastElementIndex = count;
 			count++;
-			MoveCtor( Buffer() + lastElementIndex, std::move(val) );
+			MoveCtor( IndexToObject(lastElementIndex), std::move(val) );
 		}
 
 		inline size_t Size() const
@@ -114,7 +120,7 @@ namespace MT
 
 		inline T* Begin()
 		{
-			return Buffer();
+			return IndexToObject(0);
 		}
 	};
 

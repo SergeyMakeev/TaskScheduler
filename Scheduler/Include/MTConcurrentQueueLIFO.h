@@ -40,6 +40,8 @@ namespace MT
 	template<typename T>
 	class ConcurrentQueueLIFO
 	{
+		static const int32 ALIGNMENT = 16;
+
 		static const unsigned int MAX_JOBS_COUNT = 4096u;
 		static const unsigned int MASK = MAX_JOBS_COUNT - 1u;
 
@@ -112,7 +114,7 @@ namespace MT
 			, end(0)
 		{
 			size_t bytesCount = sizeof(T) * MAX_JOBS_COUNT;
-			data = Memory::Alloc(bytesCount);
+			data = Memory::Alloc(bytesCount, ALIGNMENT);
 		}
 
 		~ConcurrentQueueLIFO()

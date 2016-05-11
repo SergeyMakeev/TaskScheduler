@@ -24,7 +24,6 @@
 #include <MTTypes.h>
 #include <MTPlatform.h>
 
-
 namespace MT
 {
 	template<class T>

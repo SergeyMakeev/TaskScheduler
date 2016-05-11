@@ -45,7 +45,7 @@ SUITE(PlatformTests)
 
 		MT::Thread thread;
 		thread.Start(32768, MyThreadFunc, (void*)data);
-		thread.Stop();
+		thread.Join();
 
 		CHECK(g_Variable == DATA_VALUE);
 	}
@@ -74,7 +74,7 @@ SUITE(PlatformTests)
 		CHECK(!res0);
 		CHECK(res1);
 
-		thread.Stop();
+		thread.Join();
 
 	}
 
