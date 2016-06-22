@@ -117,3 +117,11 @@ https://software.intel.com/en-us/articles/do-it-yourself-game-task-scheduling
 Acquire and Release Semantics
 
 http://preshing.com/20120913/acquire-and-release-semantics/
+
+Lockless Programming Considerations for Xbox 360 and Microsoft Windows
+
+https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
+
+C/C++11 mappings to processors
+
+https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html
