@@ -122,6 +122,12 @@ Lockless Programming Considerations for Xbox 360 and Microsoft Windows
 
 https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx
 
-C/C++11 mappings to processors
+C/C++11 mappings to processors by Peter Sewell
 
-https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html
+https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html 
+
+Memory Ordering in Modern Microprocessors, Part I by Paul E. McKenney
+http://www.linuxjournal.com/node/8211/print
+
+Memory Ordering in Modern Microprocessors, Part II by Paul E. McKenney
+http://www.linuxjournal.com/node/8212/print
