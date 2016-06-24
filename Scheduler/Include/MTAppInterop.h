@@ -33,6 +33,15 @@
 #error Compiler is not supported
 #endif
 
+#if MT_MSVC_COMPILER_FAMILY
+#define MT_NORETURN __declspec(noreturn)
+#elif MT_GCC_COMPILER_FAMILY
+#define MT_NORETURN [[ noreturn ]] 
+#else
+#error Can not define MT_NORETURN. Unknown platform.
+#endif
+
+
 
 #define MT_DEFAULT_ALIGN (16)
 
@@ -75,10 +84,9 @@ namespace MT
 	};
 
 
-
 	struct Diagnostic
 	{
-		static void ReportAssert(const char* condition, const char* description, const char* sourceFile, int sourceLine);
+		MT_NORETURN static void ReportAssert(const char* condition, const char* description, const char* sourceFile, int sourceLine);
 	};
 
 

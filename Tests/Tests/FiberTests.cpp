@@ -33,7 +33,7 @@
 
 SUITE(FiberTests)
 {
-	MT::AtomicInt32 counter(0);
+	MT::Atomic32<int32> counter(0);
 	MT::Fiber* fiberMain = nullptr;
 
 	void FiberFunc( void* userData )

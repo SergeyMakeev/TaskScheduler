@@ -40,7 +40,7 @@ namespace MT
 
 		inline T* IndexToObject(int32 index)
 		{
-			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			byte* alignedMemory = (byte*)( ( (uintptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~(uintptr_t)ALIGNMENT_MASK );
 			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
 			return pObjectMemory;
 		}
@@ -74,7 +74,7 @@ namespace MT
 			: count(_count)
 		{
 			MT_ASSERT(count <= capacity, "Too big size");
-			for (size_t i = 0; i < count; i++)
+			for (uint32 i = 0; i < count; i++)
 			{
 				CopyCtor(Begin() + i, defaultElement);
 			}
@@ -82,7 +82,7 @@ namespace MT
 
 		inline ~StackArray()
 		{
-			for (size_t i = 0; i < count; i++)
+			for (uint32 i = 0; i < count; i++)
 			{
 				Dtor(Begin() + i);
 			}

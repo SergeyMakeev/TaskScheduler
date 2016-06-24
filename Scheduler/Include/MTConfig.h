@@ -99,3 +99,28 @@
 #define MT_PTR64 (1)
 
 #endif
+
+//
+// x86-64 CPU has strong memory model, so we don't need to define acquire/release fences here
+// 
+
+//
+// Acquire semantics is a property which can only apply to operations which read from shared memory,
+// whether they are read-modify-write operations or plain loads. The operation is then considered a read-acquire.
+// Acquire semantics prevent memory reordering of the read-acquire with any read or write operation which follows it in program order.
+//
+// Acquire fence is a fence which does not permit subsequent memory operations to be advanced before it.
+//
+#define mt_acquire_fence()
+
+
+	
+//
+// Release semantics is a property which can only apply to operations which write to shared memory,
+// whether they are read-modify-write operations or plain stores. The operation is then considered a write-release.
+// Release semantics prevent memory reordering of the write-release with any read or write operation which precedes it in program order.
+//
+// Release fence is a fence which does not permit preceding memory operations to be delayed past it.
+//
+#define mt_release_fence()
+

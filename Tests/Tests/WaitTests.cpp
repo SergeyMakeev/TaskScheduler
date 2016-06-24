@@ -29,8 +29,8 @@ SUITE(WaitTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace SimpleWaitFromSubtask
 {
-	MT::AtomicInt32 subTaskCount;
-	MT::AtomicInt32 taskCount;
+	MT::Atomic32<int32> subTaskCount;
+	MT::Atomic32<int32> taskCount;
 
 	MT::TaskGroup testGroup;
 

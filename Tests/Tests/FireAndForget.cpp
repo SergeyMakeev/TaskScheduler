@@ -37,8 +37,8 @@ struct SimpleTask
 {
 	MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
-	MT::AtomicInt32* doCounter;
-	MT::AtomicInt32* dtorCounter;
+	MT::Atomic32<int32>* doCounter;
+	MT::Atomic32<int32>* dtorCounter;
 	TestPoolType* taskPool;
 
 	SimpleTask()
@@ -48,7 +48,7 @@ struct SimpleTask
 	{
 	}
 
-	SimpleTask(MT::AtomicInt32* _doCounter, MT::AtomicInt32* _dtorCounter, TestPoolType * _taskPool)
+	SimpleTask(MT::Atomic32<int32>* _doCounter, MT::Atomic32<int32>* _dtorCounter, TestPoolType * _taskPool)
 		: doCounter(_doCounter)
 		, dtorCounter(_dtorCounter)
 		, taskPool(_taskPool)
@@ -192,8 +192,8 @@ TEST(MultiThreadPoolTest)
 //
 TEST(FireAndForgetSimple)
 {
-	MT::AtomicInt32 doCounter(0);
-	MT::AtomicInt32 dtorCounter(0);
+	MT::Atomic32<int32> doCounter(0);
+	MT::Atomic32<int32> dtorCounter(0);
 
 	MT::TaskScheduler scheduler;
 	TestPoolType taskPool;

@@ -31,6 +31,17 @@
 #include <type_traits>
 #include <xmmintrin.h>
 
+
+
+#define MT_ATOMIC_COMPILE_TIME_CHECK \
+	static_assert(std::is_pod< Atomic32Base<T> >::value == true, "Atomic32Base must be a POD (plain old data type)"); \
+	static_assert(sizeof(T) == sizeof(int32), "Atomic32Base, type T must be equal size as int32"); \
+	static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail.");
+
+#define MT_ATOMICPTR_COMPILE_TIME_CHECK \
+	static_assert(std::is_pod< AtomicPtrBase<T> >::value == true, "AtomicPtrBase must be a POD (plain old data type)");
+
+
 namespace MT
 {
 	//
@@ -54,66 +65,98 @@ namespace MT
 
 	//
 	// Atomic int (pod type)
+	// The operation is ordered in a sequentially consistent manner except for functions marked as relaxed.
 	//
-	// You must use this type when you need to declare static variable instead of AtomicInt32
+	// Note: You must use this type when you need to declare static variable instead of Atomic32
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct AtomicInt32Base
+	template<typename T>
+	struct Atomic32Base
 	{
-		volatile int32 _value;
+		volatile T _value;
 
 		// The function returns the resulting added value.
-		int32 AddFetch(int32 sum)
-		{
-			return _InterlockedExchangeAdd((volatile long*)&_value, sum) + sum;
+		T AddFetch(T sum)
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			T tmp = _InterlockedExchangeAdd((volatile long*)&_value, sum) + sum;
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// The function returns the resulting incremented value.
-		int32 IncFetch()
-		{
-			return _InterlockedIncrement((volatile long*)&_value);
+		T IncFetch()
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			T tmp = _InterlockedIncrement((volatile long*)&_value);
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// The function returns the resulting decremented value.
-		int32 DecFetch()
-		{
-			return _InterlockedDecrement((volatile long*)&_value);
+		T DecFetch()
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			T tmp = _InterlockedDecrement((volatile long*)&_value);
+			mt_acquire_fence();
+			return tmp;
 		}
 
-		int32 Load() const
-		{
-			return _value;
+		T Load() const
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			T tmp = LoadRelaxed();
+			mt_acquire_fence();
+			return tmp;
+		}
+
+		void Store(int32 val)
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			StoreRelaxed(val);
 		}
 
 		// The function returns the initial value.
-		int32 Store(int32 val)
-		{
-			return _InterlockedExchange((volatile long*)&_value, val); 
+		T Exchange(T val)
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			T tmp = _InterlockedExchange((volatile long*)&_value, val); 
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// The function returns the initial value.
-		int32 CompareAndSwap(int32 compareValue, int32 newValue)
-		{
-			return _InterlockedCompareExchange((volatile long*)&_value, newValue, compareValue);
+		T CompareAndSwap(T compareValue, T newValue)
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			T tmp = _InterlockedCompareExchange((volatile long*)&_value, newValue, compareValue);
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		int32 LoadRelaxed() const
-		{
+		T LoadRelaxed() const
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
 			return _value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
 		void StoreRelaxed(int32 val)
-		{
+		{ MT_ATOMIC_COMPILE_TIME_CHECK
+
 			_value = val;
 		}
 
 	};
 
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	static_assert(sizeof(int32) == sizeof(long), "Incompatible types, Interlocked* will fail.");
 
 
 
@@ -123,47 +166,68 @@ namespace MT
 	// You must use this type when you need to declare static variable instead of AtomicInt32
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	template<typename T>
 	struct AtomicPtrBase
 	{
-		volatile const void* _value;
+		T* volatile _value;
 	
-		void* Load() const
-		{
-			return (void*)_value;
+		T* Load() const
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			T* tmp = LoadRelaxed();
+			mt_acquire_fence();
+			return tmp;
+		}
+
+		void Store(const T* val)
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			mt_release_fence();
+			StoreRelaxed(val);
 		}
 
 		// The function returns the initial value.
-		const void* Store(const void* val)
-		{
+		T* Exchange(const T* val)
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			mt_release_fence();
 #ifndef MT_PTR64
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedExchange will fail");
-			return (void*)_InterlockedExchange((volatile long*)&_value, (long)val); 
+			T* tmp = (T*)_InterlockedExchange((volatile long*)&_value, (long)val); 
 #else
-			return _InterlockedExchangePointer((void* volatile*)&_value, (void*)val); 
+			T* tmp = (T*)_InterlockedExchangePointer((void* volatile*)&_value, (void*)val); 
 #endif
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// The function returns the initial value.
-		const void* CompareAndSwap(const void* compareValue, const void* newValue)
-		{
+		T* CompareAndSwap(const T* compareValue, const T* newValue)
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			mt_release_fence();
 #ifndef MT_PTR64
 			static_assert(sizeof(long) == sizeof(void*), "Incompatible types, _InterlockedCompareExchange will fail");
-			return (void*)_InterlockedCompareExchange((volatile long*)&_value, (long)newValue, (long)compareValue);
+			T* tmp = (T*)_InterlockedCompareExchange((volatile long*)&_value, (long)newValue, (long)compareValue);
 #else
-			return _InterlockedCompareExchangePointer((void* volatile*)&_value, (void*)newValue, (void*)compareValue);
+			T* tmp = (T*)_InterlockedCompareExchangePointer((void* volatile*)&_value, (void*)newValue, (void*)compareValue);
 #endif
+			mt_acquire_fence();
+			return tmp;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		const void* LoadRelaxed() const
-		{
-			return (const void*)_value;
+		T* LoadRelaxed() const
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			return _value;
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(const void* val)
-		{
-			_value = val;
+		void StoreRelaxed(const T* val)
+		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
+
+			_value = (T*)val;
 		}
 
 	};
@@ -171,6 +235,9 @@ namespace MT
 
 
 }
+
+
+#undef MT_ATOMIC_COMPILE_TIME_CHECK
 
 
 #endif

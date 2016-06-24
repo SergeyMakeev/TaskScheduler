@@ -29,6 +29,7 @@ namespace MT
 		, taskStatus(FiberTaskStatus::UNKNOWN)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
+		, stackRequirements(StackRequirements::INVALID)
 	{
 	}
 
@@ -71,6 +72,7 @@ namespace MT
 	void FiberContext::WaitGroupAndYield(TaskGroup group)
 	{
 		MT_ASSERT(threadContext, "Sanity check failed!");
+		MT_ASSERT(threadContext->taskScheduler, "Sanity check failed!");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use WaitGroupAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");
 		MT_ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
@@ -103,6 +105,7 @@ namespace MT
 	void FiberContext::RunSubtasksAndYieldImpl(ArrayView<internal::TaskBucket>& buckets)
 	{
 		MT_ASSERT(threadContext, "Sanity check failed!");
+		MT_ASSERT(threadContext->taskScheduler, "Sanity check failed!");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunSubtasksAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");
 		MT_ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
 
@@ -132,6 +135,7 @@ namespace MT
 	void FiberContext::RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
+		MT_ASSERT(threadContext->taskScheduler, "Sanity check failed!");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
@@ -149,6 +153,8 @@ namespace MT
 	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
+		MT_ASSERT(threadContext->taskScheduler, "TaskScheduler is nullptr");
+
 		MT_ASSERT(taskHandleCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);

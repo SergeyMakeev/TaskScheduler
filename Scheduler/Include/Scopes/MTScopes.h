@@ -130,14 +130,14 @@ namespace MT
 		static const int32 ALIGNMENT = 16;
 		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
 
-		MT::AtomicInt32 top;
+		MT::Atomic32<int32> top;
 		//additional bytes for alignment
 		byte rawMemory_[ capacity * sizeof(T)  + ALIGNMENT];
 
 
 		T* IndexToObject(int32 index)
 		{
-			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			byte* alignedMemory = (byte*)( ( (uintptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~(uintptr_t)ALIGNMENT_MASK );
 			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
 			return pObjectMemory;
 		}
@@ -165,7 +165,7 @@ namespace MT
 
 		~PersistentScopeDescriptorStorage()
 		{
-			int32 count = top.Store(0);
+			int32 count = top.Exchange(0);
 			for (int32 i = 0; i < count; i++)
 			{
 				T* pObject = IndexToObject(i);
@@ -258,7 +258,7 @@ namespace MT
 
 		T* IndexToObject(int32 index)
 		{
-			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			byte* alignedMemory = (byte*)( ( (uintptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~(uintptr_t)ALIGNMENT_MASK );
 			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
 			return pObjectMemory;
 		}
@@ -384,7 +384,7 @@ namespace MT
 
 		T* IndexToObject(int32 index)
 		{
-			byte* alignedMemory = (byte*)( ( (intptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~ALIGNMENT_MASK );
+			byte* alignedMemory = (byte*)( ( (uintptr_t)&rawMemory_[0] + ALIGNMENT_MASK ) & ~(uintptr_t)ALIGNMENT_MASK );
 			T* pObjectMemory = (T*)(alignedMemory + index * sizeof(T));
 			return pObjectMemory;
 		}
@@ -511,8 +511,8 @@ namespace MT
 	const int32 scope_notInitialized = 0; \
 	const int32 scope_notYetInitialized = -1; \
 	\
-	static MT::AtomicInt32Base SCOPE_CONCAT(scope_descriptorIndex_, line) = { scope_notInitialized }; \
-	static_assert(std::is_pod<MT::AtomicInt32Base>::value == true, "AtomicInt32Base type should be POD, to be placed in bss/data section"); \
+	static MT::Atomic32Base<int32> SCOPE_CONCAT(scope_descriptorIndex_, line) = { scope_notInitialized }; \
+	static_assert(std::is_pod< MT::Atomic32Base<int32> >::value == true, "AtomicInt32Base type should be POD, to be placed in bss/data section"); \
 	\
 	int32 SCOPE_CONCAT(scope_descId_, line) = scope_notInitialized; \
 	\

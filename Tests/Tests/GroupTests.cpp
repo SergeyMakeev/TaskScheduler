@@ -30,9 +30,9 @@ SUITE(GroupTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace SimpleWaitFromSubtask
 {
-	MT::AtomicInt32 subtaskCount(0);
-	MT::AtomicInt32 animTaskCount(0);
-	MT::AtomicInt32 physTaskCount(0);
+	MT::Atomic32<int32> subtaskCount(0);
+	MT::Atomic32<int32> animTaskCount(0);
+	MT::Atomic32<int32> physTaskCount(0);
 
 
 	struct DummySubTask

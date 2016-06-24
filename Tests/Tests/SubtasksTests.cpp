@@ -199,7 +199,7 @@ struct TaskSubtaskCombo_Sum1
 {
 	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
-	MT::AtomicInt32* data;
+	MT::Atomic32<int32>* data;
 
 	void Do(MT::FiberContext&)
 	{
@@ -211,7 +211,7 @@ struct TaskSubtaskCombo_Sum4
 {
 	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
-	MT::AtomicInt32* data;
+	MT::Atomic32<int32>* data;
 
 	TaskSubtaskCombo_Sum1 tasks[2];
 
@@ -229,7 +229,7 @@ struct TaskSubtaskCombo_Sum16
 {
 	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
-	MT::AtomicInt32* data;
+	MT::Atomic32<int32>* data;
 
 	TaskSubtaskCombo_Sum4 tasks[2];
 
@@ -243,7 +243,7 @@ struct TaskSubtaskCombo_Sum16
 	}
 };
 
-MT::AtomicInt32 sum;
+MT::Atomic32<int32> sum;
 
 //
 TEST(TaskSubtaskCombo)

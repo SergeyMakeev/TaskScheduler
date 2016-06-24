@@ -41,39 +41,32 @@ namespace MT
 	}
 
 
-	//compile time POD type check
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	static_assert(std::is_pod<AtomicInt32Base>::value == true, "AtomicInt32Base must be a POD (plain old data type)");
-
-
 	//
 	// Atomic int (type with constructor)
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	class AtomicInt32 : public AtomicInt32Base
+	template<typename T>
+	class Atomic32 : public Atomic32Base<T>
 	{
 
 	public:
 
-		AtomicInt32()
+		Atomic32()
 		{
-			_value = 0;
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			MT_ASSERT(IsPointerAligned(&_value, 4), "Invalid atomic int alignment");
+			static_assert(sizeof(Atomic32<T>) == sizeof(T), "Invalid atomic type size");
+			MT_ASSERT(IsPointerAligned(this, __alignof(T)), "Invalid atomic alignment");
+
+			Atomic32Base<T>::Store(0);
 		}
 
-		explicit AtomicInt32(int v)
+		explicit Atomic32(T v)
 		{
-			_value = v;
-			static_assert(sizeof(AtomicInt32) == 4, "Invalid type size");
-			MT_ASSERT(IsPointerAligned(&_value, 4), "Invalid atomic int alignment");
+			static_assert(sizeof(Atomic32<T>) == sizeof(T), "Invalid atomic type size");
+			MT_ASSERT(IsPointerAligned(this, __alignof(T)), "Invalid atomic alignment");
+
+			Atomic32Base<T>::Store(v);
 		}
 	};
-
-
-	//compile time POD type check
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	static_assert(std::is_pod<AtomicPtrBase>::value == true, "AtomicPtrBase must be a POD (plain old data type)");
 
 
 	//
@@ -81,45 +74,24 @@ namespace MT
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	template<typename T>
-	class AtomicPtr : protected AtomicPtrBase
+	class AtomicPtr : public AtomicPtrBase<T>
 	{
 	public:
 		AtomicPtr()			
 		{
-			_value = nullptr;
-			MT_ASSERT(IsPointerAligned(&_value, sizeof(void*)), "Invalid atomic ptr alignment");
+			static_assert(sizeof(AtomicPtr<T>) == sizeof(T*), "Invalid atomic type size");
+			MT_ASSERT(IsPointerAligned(this, sizeof(T*)), "Invalid atomic ptr alignment");
+
+			AtomicPtrBase<T>::Store(nullptr);
 		}
 
 		explicit AtomicPtr(T* v)
 		{
-			_value = v;
-			MT_ASSERT(IsPointerAligned(&_value, sizeof(void*)), "Invalid atomic ptr alignment");
+			static_assert(sizeof(AtomicPtr<T>) == sizeof(T*), "Invalid atomic type size");
+			MT_ASSERT(IsPointerAligned(this, sizeof(T*)), "Invalid atomic ptr alignment");
+
+			AtomicPtrBase<T>::Store(v);
 		}
 
-		T* Load() const
-		{
-			return (T*)AtomicPtrBase::Load();
-		}
-
-		T* Store(T* val)
-		{
-			return (T*)AtomicPtrBase::Store(val);
-		}
-
-
-		T* CompareAndSwap(T* compareValue, T* newValue)
-		{
-			return (T*)AtomicPtrBase::CompareAndSwap(compareValue, newValue);
-		}
-
-		T* LoadRelaxed() const
-		{
-			return (T*)AtomicPtrBase::LoadRelaxed();
-		}
-
-		void StoreRelaxed(T* val)
-		{
-			AtomicPtrBase::StoreRelaxed(val);
-		}
 	};
 }

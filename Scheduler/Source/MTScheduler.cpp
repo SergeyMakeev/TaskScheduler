@@ -147,7 +147,7 @@ namespace MT
 
 	void TaskScheduler::ReleaseFiberContext(FiberContext* fiberContext)
 	{
-		MT_ASSERT(fiberContext != nullptr, "Can't release nullptr Fiber");
+		MT_ASSERT(fiberContext, "Can't release nullptr Fiber. fiberContext is nullptr");
 
 		MT::StackRequirements::Type stackRequirements = fiberContext->stackRequirements;
 		fiberContext->Reset();

@@ -45,7 +45,7 @@ namespace MT
 	struct PoolElementHeader
 	{
 		//Task id (timestamp)
-		AtomicInt32 id;
+		Atomic32<int32> id;
 
 		internal::TaskDesc desc;
 
@@ -239,8 +239,8 @@ namespace MT
 		static const size_t MASK = (N - 1);
 
 		void* data;
-		AtomicInt32 idGenerator;
-		AtomicInt32 index;
+		Atomic32<int32> idGenerator;
+		Atomic32<int32> index;
 
 		inline PoolItem* Buffer()
 		{
@@ -281,7 +281,7 @@ namespace MT
 				{
 					PoolItem* pElement = Buffer() + idx;
 
-					int preValue = pElement->id.Store(TaskID::UNUSED);
+					int preValue = pElement->id.Exchange(TaskID::UNUSED);
 					if (preValue != TaskID::UNUSED)
 					{
 						pElement->task.~T();

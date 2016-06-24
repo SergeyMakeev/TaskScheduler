@@ -45,8 +45,8 @@ SUITE(AtomicTests)
 		//   Constant initialization (3.6.2) of a block-scope entity with static storage duration, if applicable,
 		//   is performed before its block is first entered.
 		//
-		static MT::AtomicInt32Base test = { 0 };
-		static MT::AtomicPtrBase pTest = { nullptr };
+		static MT::Atomic32Base<int32> test = { 0 };
+		static MT::AtomicPtrBase<void> pTest = { nullptr };
 
 		test.Store(13);
 		pTest.Store(nullptr);
@@ -59,15 +59,15 @@ TEST(AtomicSimpleTest)
 {
 	TestStatics();
 
-	MT::AtomicInt32 test_relaxed;
+	MT::Atomic32<int32> test_relaxed;
 	test_relaxed.StoreRelaxed(RELAXED_VALUE);
 	CHECK(test_relaxed.Load() == RELAXED_VALUE);
 
-	MT::AtomicInt32 test;
+	MT::Atomic32<int32> test;
 	test.Store(OLD_VALUE);
 	CHECK(test.Load() == OLD_VALUE);
 
-	int prevValue = test.Store(VALUE);
+	int prevValue = test.Exchange(VALUE);
 	CHECK(test.Load() == VALUE);
 	CHECK(prevValue == OLD_VALUE);
 
@@ -80,7 +80,7 @@ TEST(AtomicSimpleTest)
 	nowValue = test.AddFetch(VALUE);
 	CHECK(nowValue == (VALUE+VALUE));
 
-	MT::AtomicInt32 test2(VALUE);
+	MT::Atomic32<int32> test2(VALUE);
 	CHECK(test2.Load() == VALUE);
 
 	int prevResult = test2.CompareAndSwap(NEW_VALUE, OLD_VALUE);
@@ -90,6 +90,16 @@ TEST(AtomicSimpleTest)
 	prevResult = test2.CompareAndSwap(VALUE, NEW_VALUE);
 	CHECK(prevResult == VALUE);
 	CHECK(test2.Load() == NEW_VALUE);
+
+	MT::Atomic32<uint32> test3(UINT32_MAX);
+	CHECK_EQUAL(UINT32_MAX, test3.Load());
+
+	//check for wraps
+	uint32 uNowValue = test3.IncFetch();
+	CHECK(uNowValue == 0);
+
+	uNowValue = test3.DecFetch();
+	CHECK(uNowValue == UINT32_MAX);
 
 
 	char tempObject;
@@ -115,8 +125,9 @@ TEST(AtomicSimpleTest)
 	CHECK(prevPtr == testPtr);
 	CHECK(atomicPtr.Load() == testPtrNew);
 
-
-
+	char* prevPtr2 = atomicPtr.Exchange(nullptr);
+	CHECK(prevPtr2 == testPtrNew);
+	CHECK(atomicPtr.Load() == nullptr);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

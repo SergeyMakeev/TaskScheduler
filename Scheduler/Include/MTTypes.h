@@ -31,8 +31,8 @@
 
 #define MT_NOCOPYABLE(TYPE) \
 	private: \
-		TYPE (const TYPE &) {} \
-		void operator= (const TYPE &) {} \
+		TYPE (const TYPE &); \
+		void operator= (const TYPE &); \
 	public: \
 
 

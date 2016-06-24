@@ -65,7 +65,7 @@ struct ALotOfTasks
 {
 	MT_DECLARE_TASK(ALotOfTasks, MT::StackRequirements::STANDARD, MT::Color::Blue);
 
-	MT::AtomicInt32* counter;
+	MT::Atomic32<int32>* counter;
 
 	void Do(MT::FiberContext&)
 	{
@@ -80,7 +80,7 @@ TEST(ALotOfTasks)
 
 	MT::TaskScheduler scheduler;
 
-	MT::AtomicInt32 counter;
+	MT::Atomic32<int32> counter;
 
 	static const int TASK_COUNT = 1000;
 

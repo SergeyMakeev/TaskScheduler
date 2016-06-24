@@ -27,6 +27,7 @@
 
 #include <MTConfig.h>
 #include <Platform/Common/MTAtomic.h>
+#include <string>
 
 #if MT_PTR64
 
@@ -152,7 +153,7 @@ namespace MT
 
 			stackDesc = Memory::AllocStack(stackSize);
 
-			void (*func)() = (void(*)())&FiberFuncInternal;
+			void (*pFunc)() = (void(*)())&FiberFuncInternal;
 
 			char* sp  = (char *)stackDesc.stackTop;
 			char * paramOnStack = nullptr;
@@ -168,7 +169,7 @@ namespace MT
 			sp -= 40; // reserve for register params
 			fiberContext.Rsp = (unsigned long long)sp;
 			MT_ASSERT(((unsigned long long)paramOnStack & 0xF) == 0, "Params on X64 stack must be alligned to 16 bytes");
-			fiberContext.Rip = (unsigned long long) func;
+			fiberContext.Rip = (unsigned long long) pFunc;
 
 #else
 
@@ -176,7 +177,7 @@ namespace MT
 			paramOnStack  = sp;
 			sp -= sizeof(void*);
 			fiberContext.Esp = (unsigned long long)sp;
-			fiberContext.Eip = (unsigned long long) func;
+			fiberContext.Eip = (unsigned long long) pFunc;
 
 #endif
 

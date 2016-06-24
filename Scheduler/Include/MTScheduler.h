@@ -192,7 +192,7 @@ namespace MT
 		// Application can assign task group to task and later wait until group was finished.
 		class TaskGroupDescription
 		{
-			AtomicInt32 inProgressTaskCount;
+			Atomic32<int32> inProgressTaskCount;
 			Event allDoneEvent;
 
 			//Tasks awaiting group through FiberContext::WaitGroupAndYield call
@@ -264,13 +264,13 @@ namespace MT
 
 
 		// Thread index for new task
-		AtomicInt32 roundRobinThreadIndex;
+		Atomic32<int32> roundRobinThreadIndex;
 
 		// Started threads count
-		AtomicInt32 startedThreadsCount;
+		Atomic32<int32> startedThreadsCount;
 
 		// Threads created by task manager
-		AtomicInt32 threadsCount;
+		Atomic32<int32> threadsCount;
 		internal::ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// All groups task statistic

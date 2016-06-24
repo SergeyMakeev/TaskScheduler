@@ -103,7 +103,7 @@ namespace MT
 		StackRequirements::Type stackRequirements;
 
 		// Number of children fibers
-		AtomicInt32 childrenFibersCount;
+		Atomic32<int32> childrenFibersCount;
 
 		// Parent fiber
 		FiberContext* parentFiber;
