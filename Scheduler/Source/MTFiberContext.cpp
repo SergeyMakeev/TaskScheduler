@@ -27,9 +27,9 @@ namespace MT
 	FiberContext::FiberContext()
 		: threadContext(nullptr)
 		, taskStatus(FiberTaskStatus::UNKNOWN)
+		, stackRequirements(StackRequirements::INVALID)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
-		, stackRequirements(StackRequirements::INVALID)
 	{
 	}
 
