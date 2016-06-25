@@ -120,7 +120,7 @@ namespace MT
 			return tmp;
 		}
 
-		void Store(int32 val)
+		void Store(T val)
 		{ MT_ATOMIC_COMPILE_TIME_CHECK
 
 			mt_release_fence();
@@ -155,7 +155,7 @@ namespace MT
 		}
 
 		// Relaxed operation: there are no synchronization or ordering constraints
-		void StoreRelaxed(int32 val)
+		void StoreRelaxed(T val)
 		{ MT_ATOMIC_COMPILE_TIME_CHECK
 
 			_value = val;
