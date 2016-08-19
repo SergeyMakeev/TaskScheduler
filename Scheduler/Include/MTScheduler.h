@@ -51,6 +51,7 @@ namespace MT
 		template <typename T>
 		static T QueryThisType(T thisPtr)
 		{
+			MT_UNUSED(thisPtr);
 			return (T)nullptr;
 		}
 	};

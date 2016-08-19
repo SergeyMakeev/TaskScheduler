@@ -115,7 +115,7 @@ SUITE(PlatformTests)
 		while (needExitWait.Load() == 0)
 		{
 			MT::Event * pEvent = pStressEvent.Load();
-			bool res = pEvent->Wait(100);
+			bool res = pEvent->Wait(1000);
 			CHECK(res == true);
 		}
 	}
@@ -151,7 +151,7 @@ SUITE(PlatformTests)
 		const int iterationsCount = 5000;
 		for(int i = 0; i < iterationsCount; i++)
 		{
-			bool res = stressEvent.Wait(100);
+			bool res = stressEvent.Wait(1000);
 			CHECK(res == true);
 		}
 
