@@ -41,13 +41,15 @@ namespace MT
 		static const int NOT_SIGNALED = 0;
 		static const int SIGNALED = 1;
 
-		uint32 numOfWaitingThreads;
 
 		pthread_mutex_t	mutex;
 		pthread_cond_t	condition;
-		Atomic32Base<int32> val;
+
 		EventReset::Type resetType;
-		bool isInitialized;
+
+		volatile uint32 numOfWaitingThreads;
+		volatile int32 value;
+		volatile bool isInitialized;
 
 	private:
 
@@ -57,7 +59,7 @@ namespace MT
 			{
 				return;
 			}
-			Reset();
+			value = NOT_SIGNALED;
 		}
 
 	public:
@@ -95,8 +97,8 @@ namespace MT
 
 			pthread_mutex_init( &mutex, nullptr );
 			pthread_cond_init( &condition, nullptr );
-			val.Store(initialState ? SIGNALED : NOT_SIGNALED);
 
+			value = initialState ? SIGNALED : NOT_SIGNALED;
 			isInitialized = true;
 			numOfWaitingThreads = 0;
 		}
@@ -106,10 +108,11 @@ namespace MT
 			MT_ASSERT (isInitialized, "Event not initialized");
 
 			pthread_mutex_lock( &mutex );
+			value = SIGNALED;
+			uint32 _numOfWaitingThreads = numOfWaitingThreads;
+			pthread_mutex_unlock( &mutex );
 
-			val.Store(SIGNALED);
-
-			if (numOfWaitingThreads)
+			if (_numOfWaitingThreads > 0)
 			{
 				if (resetType == EventReset::MANUAL)
 				{
@@ -119,14 +122,16 @@ namespace MT
 					pthread_cond_signal( &condition );
 				}
 			}
-
-			pthread_mutex_unlock( &mutex );
+			
 		}
 
 		void Reset()
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
-			val.Store(NOT_SIGNALED);
+
+			pthread_mutex_lock( &mutex );
+			value = NOT_SIGNALED;
+			pthread_mutex_unlock( &mutex );
 		}
 
 		bool Wait(uint32 milliseconds)
@@ -136,7 +141,7 @@ namespace MT
 			pthread_mutex_lock( &mutex );
 
 			// early exit if event already signaled
-			if ( val.Load() != NOT_SIGNALED )
+			if ( value != NOT_SIGNALED )
 			{
 				AutoResetIfNeed();
 				pthread_mutex_unlock( &mutex );
@@ -145,40 +150,49 @@ namespace MT
 
 			numOfWaitingThreads++;
 
-			//convert milliseconds to posix time
+			//convert milliseconds to global posix time
+			struct timespec ts;
+
 			struct timeval tv;
-			gettimeofday( &tv, nullptr );
-			struct timespec tm;
-			tm.tv_sec = tv.tv_sec + milliseconds / 1000;
-			uint64 nanosec = (uint64)tv.tv_usec * 1000 + (uint64)milliseconds * 1000000;
-			if (nanosec >= 1000000000)
-			{
-				tm.tv_sec += (long)(nanosec / 1000000000);
-				nanosec = nanosec % 1000000000;
-			}
-			tm.tv_nsec = (long)nanosec;
+			gettimeofday(&tv, NULL);
+
+			uint64_t nanoseconds = ((uint64_t) tv.tv_sec) * 1000 * 1000 * 1000 + milliseconds * 1000 * 1000 + ((uint64_t) tv.tv_usec) * 1000;
+
+			ts.tv_sec = nanoseconds / 1000 / 1000 / 1000;
+			ts.tv_nsec = (nanoseconds - ((uint64_t) ts.tv_sec) * 1000 * 1000 * 1000);
 
 			int ret = 0;
 			while(true)
 			{
-				ret = pthread_cond_timedwait( &condition, &mutex, &tm );
+				ret = pthread_cond_timedwait( &condition, &mutex, &ts );
 
 				MT_ASSERT(ret == 0 || ret == ETIMEDOUT || ret == EINTR, "Unexpected return value");
 
-				if (ret != EINTR)
+				/*
+				
+				http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_cond_timedwait.html
+
+				It is important to note that when pthread_cond_wait() and pthread_cond_timedwait() return without error, the associated predicate may still be false.
+				Similarly, when pthread_cond_timedwait() returns with the timeout error, the associated predicate may be true due to an unavoidable race between
+				the expiration of the timeout and the predicate state change.
+				
+				*/
+				if (value == SIGNALED || ret == ETIMEDOUT)
 				{
 					break;
 				}
 			}
 
 			numOfWaitingThreads--;
-
-			AutoResetIfNeed();
+			bool isSignaled = (value == SIGNALED);
+			if (ret == 0 && isSignaled)
+			{
+				AutoResetIfNeed();
+			}
 
 			pthread_mutex_unlock( &mutex );
 
-			//return true if val in SIGNALED state instead of ret == 0 ?
-			return ret == 0;
+			return isSignaled;
 		}
 
 	};

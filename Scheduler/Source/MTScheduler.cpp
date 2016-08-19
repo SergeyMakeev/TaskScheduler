@@ -519,7 +519,8 @@ namespace MT
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitGroup inside Task. Use FiberContext.WaitGroupAndYield() instead.", return false);
 
-		TaskScheduler::TaskGroupDescription  & groupDesc = GetGroupDesc(group);
+		TaskScheduler::TaskGroupDescription & groupDesc = GetGroupDesc(group);
+
 		return groupDesc.Wait(milliseconds);
 	}
 

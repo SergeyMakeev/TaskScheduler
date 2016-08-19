@@ -42,8 +42,10 @@ namespace MT
 	{
 		static const int32 ALIGNMENT = 16;
 
-		static const unsigned int MAX_JOBS_COUNT = 4096u;
-		static const unsigned int MASK = MAX_JOBS_COUNT - 1u;
+	public:
+		static const unsigned int CAPACITY = 4096u;
+	private:
+		static const unsigned int MASK = CAPACITY - 1u;
 
 		MT::Mutex mutex;
 		
@@ -85,7 +87,7 @@ namespace MT
 				return 0;
 			}
 
-			size_t count = (end & MASK) - (begin & MASK);
+			size_t count = ((end & MASK) - (begin & MASK)) & MASK;
 			return count;
 		}
 
@@ -113,7 +115,7 @@ namespace MT
 			: begin(0)
 			, end(0)
 		{
-			size_t bytesCount = sizeof(T) * MAX_JOBS_COUNT;
+			size_t bytesCount = sizeof(T) * CAPACITY;
 			data = Memory::Alloc(bytesCount, ALIGNMENT);
 		}
 
@@ -132,7 +134,7 @@ namespace MT
 		{
 			MT::ScopedGuard guard(mutex);
 
-			if ((Size() + 1) >= MAX_JOBS_COUNT)
+			if ((Size() + 1) >= CAPACITY)
 			{
 				MT_REPORT_ASSERT("Queue overflow");
 				return;
@@ -151,7 +153,7 @@ namespace MT
 		{
 			MT::ScopedGuard guard(mutex);
 
-			if ((Size() + count) >= MAX_JOBS_COUNT)
+			if ((Size() + count) >= CAPACITY)
 			{
 				MT_REPORT_ASSERT("Queue overflow");
 				return;

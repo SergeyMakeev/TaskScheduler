@@ -163,7 +163,7 @@ namespace MT
 	//
 	// Atomic pointer (pod type)
 	//
-	// You must use this type when you need to declare static variable instead of AtomicInt32
+	// You must use this type when you need to declare static variable instead of AtomicPtr
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	template<typename T>

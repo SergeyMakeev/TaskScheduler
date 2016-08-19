@@ -34,9 +34,9 @@
 #endif
 
 #if MT_MSVC_COMPILER_FAMILY
-#define MT_NORETURN __declspec(noreturn)
+#define MT_NORETURN 
 #elif MT_GCC_COMPILER_FAMILY
-#define MT_NORETURN [[ noreturn ]] 
+#define MT_NORETURN // [[ noreturn ]] 
 #else
 #error Can not define MT_NORETURN. Unknown platform.
 #endif

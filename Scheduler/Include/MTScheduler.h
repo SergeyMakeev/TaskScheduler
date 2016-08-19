@@ -326,8 +326,10 @@ namespace MT
 
 		void RunAsync(TaskGroup group, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 
-
+		/// \brief Wait while no more tasks in specific group.
+		/// \return true - if no more tasks in specific group. false - if timeout in milliseconds has reached and group still has some tasks.
 		bool WaitGroup(TaskGroup group, uint32 milliseconds);
+
 		bool WaitAll(uint32 milliseconds);
 
 		TaskGroup CreateGroup();

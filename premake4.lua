@@ -130,14 +130,14 @@ project "UnitTest++"
 	kind "StaticLib"
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	files {
-		"TestFramework/UnitTest++/**.cpp",
-                "TestFramework/UnitTest++/**.h", 
+		"ThirdParty/UnitTest++/UnitTest++/**.cpp",
+                "ThirdParty/UnitTest++/UnitTest++/**.h", 
 	}
 
 if isPosix or isOSX then
-	excludes { "TestFramework/UnitTest++/Win32/**.*" }
+	excludes { "ThirdParty/UnitTest++/UnitTest++/Win32/**.*" }
 else
-	excludes { "TestFramework/UnitTest++/Posix/**.*" }
+	excludes { "ThirdParty/UnitTest++/UnitTest++/Posix/**.*" }
 end
 
 
@@ -145,12 +145,12 @@ project "Squish"
 	kind "StaticLib"
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	files {
-		"Squish/**.*", 
+		"ThirdParty/Squish/**.*", 
 	}
 
 	includedirs
 	{
-		"Squish"
+		"ThirdParty/Squish"
 	}
 
 
@@ -163,7 +163,7 @@ project "TaskScheduler"
 
 	includedirs
 	{
-		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
+		"ThirdParty/Squish", "Scheduler/Include", "ThirdParty/UnitTest++/UnitTest++"
 	}
 	
 	if isPosix or isOSX then
@@ -172,16 +172,16 @@ project "TaskScheduler"
 	excludes { "Src/Platform/Posix/**.*" }
 	end
 
-project "Tests"
+project "TaskSchedulerTests"
  	flags {"NoPCH"}
  	kind "ConsoleApp"
  	files {
- 		"Tests/**.*", 
+ 		"SchedulerTests/**.*", 
  	}
 
 	includedirs
 	{
-		"Squish", "Scheduler/Include", "TestFramework/UnitTest++"
+		"ThirdParty/Squish", "Scheduler/Include", "ThirdParty/UnitTest++/UnitTest++"
 	}
 	
 	if isPosix or isOSX then
