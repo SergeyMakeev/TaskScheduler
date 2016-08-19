@@ -28,6 +28,13 @@ namespace MT
 			int64 desiredTime = GetTimeMilliSeconds() + milliseconds;
 			while(GetTimeMilliSeconds() <= desiredTime) {}
 		}
+
+		// obsolete 
+		static void SpinSleep(uint32 milliseconds)
+		{
+			SpinSleepMilliSeconds(milliseconds);
+		}
+
 	};
 }
 

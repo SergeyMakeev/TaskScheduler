@@ -71,7 +71,7 @@ SUITE(ConcurrentQueueTests)
 		const int primeNumber = 13;
 		int buffer[primeNumber];
 
-		for(int j = 0; j < MT_ARRAY_SIZE(buffer); j++)
+		for(uint32 j = 0; j < MT_ARRAY_SIZE(buffer); j++)
 		{
 			buffer[j] = 0;
 		}
@@ -79,7 +79,7 @@ SUITE(ConcurrentQueueTests)
 		for(int i = 1; i < elementsCount; i++)
 		{
 			//fill buffer
-			for(int j = 0; j < MT_ARRAY_SIZE(buffer); j++)
+			for(uint32 j = 0; j < MT_ARRAY_SIZE(buffer); j++)
 			{
 				buffer[j] = i;
 			}
@@ -87,7 +87,7 @@ SUITE(ConcurrentQueueTests)
 			queue.PushRange(buffer, MT_ARRAY_SIZE(buffer));
 
 			//pop from queue
-			for(int j = 0; j < MT_ARRAY_SIZE(buffer); j++)
+			for(uint32 j = 0; j < MT_ARRAY_SIZE(buffer); j++)
 			{
 				int v = -1;
 				bool res = queue.TryPopFront(v);
@@ -111,7 +111,7 @@ SUITE(ConcurrentQueueTests)
 		CHECK_EQUAL(false, res);
 		CHECK_EQUAL(-1, vv);
 
-		for(int j = 0; j < MT_ARRAY_SIZE(buffer); j++)
+		for(uint32 j = 0; j < MT_ARRAY_SIZE(buffer); j++)
 		{
 			CHECK_EQUAL( (elementsCount - 1), results[j] );
 		}

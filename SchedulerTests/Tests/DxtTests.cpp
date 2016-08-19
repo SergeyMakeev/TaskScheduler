@@ -26,6 +26,7 @@
 
 #include <squish.h>
 #include <string.h>
+#include <math.h>
 
 /*
 #ifdef _WIN32
@@ -34,7 +35,6 @@
 
 #else
 
-#include <math.h>
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
