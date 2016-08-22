@@ -109,10 +109,7 @@ namespace MT
 
 			pthread_mutex_lock( &mutex );
 			value = SIGNALED;
-			uint32 _numOfWaitingThreads = numOfWaitingThreads;
-			pthread_mutex_unlock( &mutex );
-
-			if (_numOfWaitingThreads > 0)
+			if (numOfWaitingThreads > 0)
 			{
 				if (resetType == EventReset::MANUAL)
 				{
@@ -122,12 +119,14 @@ namespace MT
 					pthread_cond_signal( &condition );
 				}
 			}
-			
+
+			pthread_mutex_unlock( &mutex );
 		}
 
 		void Reset()
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
+			MT_ASSERT(resetType == EventReset::MANUAL, "Can't reset, auto reset event");
 
 			pthread_mutex_lock( &mutex );
 			value = NOT_SIGNALED;
@@ -184,8 +183,9 @@ namespace MT
 			}
 
 			numOfWaitingThreads--;
-			bool isSignaled = (value == SIGNALED);
-			if (ret == 0 && isSignaled)
+			bool isSignaled = (value == SIGNALED && ret == 0);
+			
+			if (isSignaled)
 			{
 				AutoResetIfNeed();
 			}

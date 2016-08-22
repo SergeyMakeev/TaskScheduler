@@ -81,7 +81,7 @@ namespace MT
 		{
 			threadContext[i].SetThreadIndex(i);
 			threadContext[i].taskScheduler = this;
-			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, ThreadMain, &threadContext[i] );
+			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, WorkerThreadMain, &threadContext[i] );
 		}
 	}
 
@@ -311,10 +311,20 @@ namespace MT
 	}
 
 
-	void TaskScheduler::ThreadMain( void* userData )
+	void TaskScheduler::WorkerThreadMain( void* userData )
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
+
+		const char* threadNames[] = {"worker0","worker1","worker2","worker3","worker4","worker5","worker6","worker7","worker8","worker9","worker10","worker11","worker12"};
+		if (context.workerIndex < MT_ARRAY_SIZE(threadNames))
+		{
+			Thread::SetCurrentThreadName(threadNames[context.workerIndex]);
+		} else
+		{
+			Thread::SetCurrentThreadName("worker_thread");
+		}
+
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, ShedulerFiberMain, userData);
 	}
 

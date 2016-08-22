@@ -302,7 +302,7 @@ namespace MT
 		void RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
 		TaskGroupDescription & GetGroupDesc(TaskGroup group);
 
-		static void ThreadMain( void* userData );
+		static void WorkerThreadMain( void* userData );
 		static void ShedulerFiberMain( void* userData );
 		static void FiberMain( void* userData );
 		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount);

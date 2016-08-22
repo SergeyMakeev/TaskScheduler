@@ -47,6 +47,7 @@ typedef HANDLE MW_HANDLE;
 typedef DWORD MW_DWORD;
 typedef WORD MW_WORD;
 typedef DWORD64 MW_DWORD64;
+typedef ULONG_PTR MW_ULONG_PTR;
 
 typedef LPTHREAD_START_ROUTINE TThreadStartFunc;
 
@@ -92,6 +93,12 @@ typedef void* MW_HANDLE;
 typedef unsigned long MW_DWORD;
 typedef unsigned short MW_WORD;
 typedef unsigned __int64 MW_DWORD64;
+
+#if MT_PTR64
+typedef unsigned __int64 MW_ULONG_PTR;
+#else
+typedef unsigned __int32 MW_ULONG_PTR;
+#endif
 
 //
 // define thread function
@@ -250,6 +257,7 @@ MW_WINBASEAPI void* MW_WINAPI ConvertThreadToFiberEx( void* lpParameter, MW_DWOR
 MW_WINBASEAPI void* MW_WINAPI CreateFiber( size_t dwStackSize, TFiberStartFunc lpStartAddress, void* lpParameter );
 MW_WINBASEAPI void MW_WINAPI SwitchToFiber( void* lpFiber );
 
+MW_WINBASEAPI void MW_WINAPI RaiseException(MW_DWORD dwExceptionCode, MW_DWORD dwExceptionFlags, MW_DWORD nNumberOfArguments, const MW_ULONG_PTR* lpArguments );
  
 
 }

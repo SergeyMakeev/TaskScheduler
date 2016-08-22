@@ -179,6 +179,17 @@ namespace MT
 #endif
 		}
 
+		static void SetCurrentThreadName(const char* threadName)
+		{
+			MT_UNUSED(threadName);
+
+#ifdef MT_INSTRUMENTED_BUILD
+			pthread_t callThread = pthread_self();
+			pthread_setname_np(callThread, threadName);
+#endif
+		}
+
+
 		static void Sleep(uint32 milliseconds)
 		{
 			struct timespec req;

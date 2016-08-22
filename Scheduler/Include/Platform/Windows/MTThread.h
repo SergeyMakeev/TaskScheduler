@@ -86,6 +86,42 @@ namespace MT
 			return (threadId == id);
 		}
 
+		static void SetCurrentThreadName(const char* threadName)
+		{
+			MT_UNUSED(threadName);
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+			const int MW_EXCEPTION_EXECUTE_HANDLER = 1;
+			const MW_DWORD MW_MSVC_EXCEPTION = 0x406D1388;
+
+#pragma pack(push,8)
+			typedef struct tagTHREADNAME_INFO
+			{
+				MW_DWORD dwType; // Must be 0x1000.
+				const char* szName; // Pointer to name (in user addr space).
+				MW_DWORD dwThreadID; // Thread ID (-1=caller thread).
+				MW_DWORD dwFlags; // Reserved for future use, must be zero.
+			} THREADNAME_INFO;
+#pragma pack(pop)
+
+			THREADNAME_INFO info;
+			info.dwType = 0x1000;
+			info.szName = threadName;
+			info.dwThreadID = GetCurrentThreadId();
+			info.dwFlags = 0;
+
+			__try
+			{
+				RaiseException(MW_MSVC_EXCEPTION, 0, sizeof(info) / sizeof(void*), (MW_ULONG_PTR*)&info);
+			}
+			__except (MW_EXCEPTION_EXECUTE_HANDLER)
+			{
+			}
+#endif
+		}
+
+
 		static int GetNumberOfHardwareThreads()
 		{
 			MW_SYSTEM_INFO sysinfo;
