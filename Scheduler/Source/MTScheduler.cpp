@@ -325,11 +325,11 @@ namespace MT
 			Thread::SetCurrentThreadName("worker_thread");
 		}
 
-		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, ShedulerFiberMain, userData);
+		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, SchedulerFiberMain, userData);
 	}
 
 
-	void TaskScheduler::ShedulerFiberMain( void* userData )
+	void TaskScheduler::SchedulerFiberMain( void* userData )
 	{
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
@@ -338,9 +338,7 @@ namespace MT
 		context.NotifyThreadCreate(context.workerIndex);
 #endif
 
-
 		uint32 workersCount = context.taskScheduler->GetWorkersCount();
-
 		int32 totalThreadsCount = context.taskScheduler->threadsCount.LoadRelaxed();
 
 		context.taskScheduler->startedThreadsCount.IncFetch();

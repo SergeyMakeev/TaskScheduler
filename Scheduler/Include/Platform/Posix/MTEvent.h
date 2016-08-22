@@ -84,8 +84,13 @@ namespace MT
 		{
 			if (isInitialized)
 			{
-				pthread_cond_destroy( &condition );
-				pthread_mutex_destroy( &mutex );
+				int res = pthread_cond_destroy( &condition );
+				MT_USED_IN_ASSERT(res);
+				MT_ASSERT(res == 0, "pthread_cond_destroy - failed");
+
+				int res = pthread_mutex_destroy( &mutex );
+				MT_USED_IN_ASSERT(res);
+				MT_ASSERT(res == 0, "pthread_mutex_destroy - failed");
 			}
 		}
 
@@ -95,8 +100,13 @@ namespace MT
 
 			resetType = _resetType;
 
-			pthread_mutex_init( &mutex, nullptr );
-			pthread_cond_init( &condition, nullptr );
+			int res = pthread_mutex_init( &mutex, nullptr );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_init - failed");
+
+			res = pthread_cond_init( &condition, nullptr );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_cond_init - failed");
 
 			value = initialState ? SIGNALED : NOT_SIGNALED;
 			isInitialized = true;
@@ -107,20 +117,29 @@ namespace MT
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
 
-			pthread_mutex_lock( &mutex );
+			int res = pthread_mutex_lock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_lock - failed");
+
 			value = SIGNALED;
 			if (numOfWaitingThreads > 0)
 			{
 				if (resetType == EventReset::MANUAL)
 				{
-					pthread_cond_broadcast( &condition );
+					res = pthread_cond_broadcast( &condition );
+					MT_USED_IN_ASSERT(res);
+					MT_ASSERT(res == 0, "pthread_cond_broadcast - failed");
 				} else
 				{
-					pthread_cond_signal( &condition );
+					res = pthread_cond_signal( &condition );
+					MT_USED_IN_ASSERT(res);
+					MT_ASSERT(res == 0, "pthread_cond_signal - failed");
 				}
 			}
 
-			pthread_mutex_unlock( &mutex );
+			res = pthread_mutex_unlock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_unlock - failed");
 		}
 
 		void Reset()
@@ -128,22 +147,33 @@ namespace MT
 			MT_ASSERT (isInitialized, "Event not initialized");
 			MT_ASSERT(resetType == EventReset::MANUAL, "Can't reset, auto reset event");
 
-			pthread_mutex_lock( &mutex );
+			int res = pthread_mutex_lock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_lock - failed");
+
 			value = NOT_SIGNALED;
-			pthread_mutex_unlock( &mutex );
+
+			res = pthread_mutex_unlock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_unlock - failed");
+
 		}
 
 		bool Wait(uint32 milliseconds)
 		{
 			MT_ASSERT (isInitialized, "Event not initialized");
 
-			pthread_mutex_lock( &mutex );
+			int res = pthread_mutex_lock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_lock - failed");
 
 			// early exit if event already signaled
 			if ( value != NOT_SIGNALED )
 			{
 				AutoResetIfNeed();
-				pthread_mutex_unlock( &mutex );
+				res = pthread_mutex_unlock( &mutex );
+				MT_USED_IN_ASSERT(res);
+				MT_ASSERT(res == 0, "pthread_mutex_unlock - failed");
 				return true;
 			}
 
@@ -164,7 +194,6 @@ namespace MT
 			while(true)
 			{
 				ret = pthread_cond_timedwait( &condition, &mutex, &ts );
-
 				MT_ASSERT(ret == 0 || ret == ETIMEDOUT || ret == EINTR, "Unexpected return value");
 
 				/*
@@ -183,14 +212,16 @@ namespace MT
 			}
 
 			numOfWaitingThreads--;
-			bool isSignaled = (value == SIGNALED && ret == 0);
+			bool isSignaled = (value == SIGNALED);
 			
 			if (isSignaled)
 			{
 				AutoResetIfNeed();
 			}
 
-			pthread_mutex_unlock( &mutex );
+			res = pthread_mutex_unlock( &mutex );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_mutex_unlock - failed");
 
 			return isSignaled;
 		}
