@@ -88,7 +88,7 @@ namespace MT
 				MT_USED_IN_ASSERT(res);
 				MT_ASSERT(res == 0, "pthread_cond_destroy - failed");
 
-				int res = pthread_mutex_destroy( &mutex );
+				res = pthread_mutex_destroy( &mutex );
 				MT_USED_IN_ASSERT(res);
 				MT_ASSERT(res == 0, "pthread_mutex_destroy - failed");
 			}
