@@ -55,7 +55,7 @@ struct ExtendedStackSizeTask
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(RunStandartTasks)
 {
-	MT::TaskScheduler scheduler(8);
+	MT::TaskScheduler scheduler;
 
 	StandartStackSizeTask tasks[100];
 	scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
@@ -65,7 +65,7 @@ TEST(RunStandartTasks)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(RunExtendedTasks)
 {
-	MT::TaskScheduler scheduler(8);
+	MT::TaskScheduler scheduler;
 
 	ExtendedStackSizeTask tasks[100];
 	scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
@@ -75,7 +75,7 @@ TEST(RunExtendedTasks)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(RunMixedTasks)
 {
-	MT::TaskScheduler scheduler(8);
+	MT::TaskScheduler scheduler;
 
 	MT::TaskPool<ExtendedStackSizeTask, 64> extendedTaskPool;
 	MT::TaskPool<StandartStackSizeTask, 64> standardTaskPool;

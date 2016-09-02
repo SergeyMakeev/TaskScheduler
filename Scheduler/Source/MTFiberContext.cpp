@@ -79,7 +79,7 @@ namespace MT
 		MT_VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
 		MT_VERIFY(group.IsValid(), "Invalid group!", return);
 
-		TaskScheduler::TaskGroupDescription  & groupDesc = threadContext->taskScheduler->GetGroupDesc(group);
+		TaskScheduler::TaskGroupDescription & groupDesc = threadContext->taskScheduler->GetGroupDesc(group);
 
 		ConcurrentQueueLIFO<FiberContext*> & groupQueue = groupDesc.GetWaitQueue();
 

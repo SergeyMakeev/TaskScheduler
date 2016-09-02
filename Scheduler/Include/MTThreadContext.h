@@ -25,6 +25,7 @@
 #include <MTTools.h>
 #include <MTPlatform.h>
 #include <MTConcurrentQueueLIFO.h>
+#include <MTTaskQueue.h>
 #include <MTConcurrentRingBuffer.h>
 #include <MTGroupedTask.h>
 
@@ -63,12 +64,12 @@ namespace MT
 			Fiber schedulerFiber;
 
 			// task queue awaiting execution
-			ConcurrentQueueLIFO<internal::GroupedTask> queue;
+			TaskQueue<internal::GroupedTask> queue;
 
-			// new task was arrived to queue event
+			// new task has arrived to queue event
 			Event hasNewTasksEvent;
 
-			// whether thread is alive
+			// thread is alive or not
 			Atomic32<int32> state;
 
 			// Temporary buffer, fixed size = TASK_BUFFER_CAPACITY
@@ -80,7 +81,7 @@ namespace MT
 			// Thread random number generator
 			LcgRandom random;
 
-			// prevent false sharing between threads
+			// prevent false cache sharing between threads
 			uint8 cacheline[64];
 
 			ThreadContext();

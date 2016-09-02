@@ -177,6 +177,18 @@ namespace MT
 		struct ThreadContext;
 	}
 
+	struct WorkerThreadParams
+	{
+		uint32 core;
+		ThreadPriority::Type priority;
+
+		WorkerThreadParams()
+			: core(MT_CPUCORE_ANY)
+			, priority(ThreadPriority::DEFAULT)
+		{
+		}
+	};
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Task scheduler
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -314,9 +326,9 @@ namespace MT
 		/// \brief Initializes a new instance of the TaskScheduler class.
 		/// \param workerThreadsCount Worker threads count. Automatically determines the required number of threads if workerThreadsCount set to 0
 #ifdef MT_INSTRUMENTED_BUILD
-		TaskScheduler(uint32 workerThreadsCount = 0, IProfilerEventListener* listener = nullptr);
+		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr, IProfilerEventListener* listener = nullptr);
 #else
-		TaskScheduler(uint32 workerThreadsCount = 0);
+		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr);
 #endif
 
 

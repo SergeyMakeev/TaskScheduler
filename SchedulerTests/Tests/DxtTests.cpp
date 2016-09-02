@@ -253,9 +253,12 @@ SUITE(DxtTests)
 
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dxtBlocks;
+		MT::Atomic32<uint32>* pIsFinished;
 
-		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, const MT::ArrayView<uint8> & _srcPixels )
+
+		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, const MT::ArrayView<uint8> & _srcPixels, MT::Atomic32<uint32>* _pIsFinished = nullptr)
 			: srcPixels(_srcPixels)
+			, pIsFinished(_pIsFinished)
 		{
 			width = _width;
 			height = _height;
@@ -265,7 +268,7 @@ SUITE(DxtTests)
 			blkHeight = height >> 2;
 
 			int dxtBlocksTotalSizeInBytes = blkWidth * blkHeight * 8; // 8 bytes = 64 bits per block (dxt1)
-			dxtBlocks = MT::ArrayView<uint8>( malloc( dxtBlocksTotalSizeInBytes ), dxtBlocksTotalSizeInBytes);
+			dxtBlocks = MT::ArrayView<uint8>( MT::Memory::Alloc( dxtBlocksTotalSizeInBytes ), dxtBlocksTotalSizeInBytes);
 		}
 
 		~CompressDxt()
@@ -273,7 +276,7 @@ SUITE(DxtTests)
 			void* pDxtBlocks = dxtBlocks.GetRawData();
 			if (pDxtBlocks)
 			{
-				free(pDxtBlocks);
+				MT::Memory::Free(pDxtBlocks);
 			}
 		}
 
@@ -293,6 +296,11 @@ SUITE(DxtTests)
 			}
 
 			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
+
+			if (pIsFinished != nullptr)
+			{
+				pIsFinished->Store(1);
+			}
 		}
 	};
 
@@ -395,7 +403,7 @@ SUITE(DxtTests)
 
 			// dxt1 block = 16 rgb pixels = 48 bytes
 			uint32 bytesCount = blkWidth * blkHeight * 48;
-			decompressedImage = MT::ArrayView<uint8>( malloc(bytesCount), bytesCount);
+			decompressedImage = MT::ArrayView<uint8>( MT::Memory::Alloc(bytesCount), bytesCount);
 		}
 
 		~DecompressDxt()
@@ -403,13 +411,13 @@ SUITE(DxtTests)
 			void* pDxtBlocks = dxtBlocks.GetRawData();
 			if (pDxtBlocks)
 			{
-				free(pDxtBlocks);
+				MT::Memory::Free(pDxtBlocks);
 			}
 
 			void* pDecompressedImage = decompressedImage.GetRawData();
 			if (pDecompressedImage)
 			{
-				free(pDecompressedImage);
+				MT::Memory::Free(pDecompressedImage);
 			}
 
 		}
@@ -451,6 +459,57 @@ SUITE(DxtTests)
 	}
 
 
+/*
+	// dxt compressor Hiload test (for profiling purposes)
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	TEST(HiloadDxtTest)
+	{
+		MT::Atomic32<uint32> isFinished1;
+		MT::Atomic32<uint32> isFinished2;
+
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
+
+		int stride = 384;
+
+		MT::ArrayView<uint8> srcImage((void*)&EmbeddedImage::lenaColor[0], MT_ARRAY_SIZE(EmbeddedImage::lenaColor));
+
+		CompressDxt compressTask1(128, 128, stride, srcImage, &isFinished1);
+		MT_ASSERT ((compressTask1.width & 3) == 0 && (compressTask1.height & 3) == 0, "Image size must be a multiple of 4");
+
+		CompressDxt compressTask2(128, 128, stride, srcImage, &isFinished2);
+		MT_ASSERT ((compressTask2.width & 3) == 0 && (compressTask2.height & 3) == 0, "Image size must be a multiple of 4");
+
+		MT::TaskScheduler scheduler;
+
+		int workersCount = (int)scheduler.GetWorkersCount();
+		printf("Scheduler started, %d workers\n", workersCount);
+
+		isFinished1.Store(0);
+		isFinished2.Store(0);
+
+		printf("HiloadDxtTest\n");
+		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask1, 1);
+		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask2, 1);
+
+		for(;;)
+		{
+			if (isFinished1.Load() != 0)
+			{
+				isFinished1.Store(0);
+				scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask1, 1);
+			}
+
+			if (isFinished2.Load() != 0)
+			{
+				isFinished2.Store(0);
+				scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask2, 1);
+			}
+
+			MT::Thread::Sleep(1);
+		}
+	}
+*/
+
 	// dxt compressor complex test
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	TEST(RunComplexDxtTest)
@@ -466,7 +525,7 @@ SUITE(DxtTests)
 
 #ifdef MT_INSTRUMENTED_BUILD
 		Microprofile profiler;
-		MT::TaskScheduler scheduler(0, &profiler);
+		MT::TaskScheduler scheduler(0, nullptr, &profiler);
 #else
 		MT::TaskScheduler scheduler;
 #endif

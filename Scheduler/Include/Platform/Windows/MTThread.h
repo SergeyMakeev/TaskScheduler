@@ -24,7 +24,6 @@
 #ifndef __MT_THREAD__
 #define __MT_THREAD__
 
-
 #include <Platform/Common/MTThread.h>
 
 namespace MT
@@ -43,6 +42,27 @@ namespace MT
 			self->func(self->funcData);
 			return 0;
 		}
+
+
+
+		static int GetPriority(ThreadPriority::Type priority)
+		{
+			switch(priority)
+			{
+			case ThreadPriority::DEFAULT:
+				return MW_THREAD_PRIORITY_HIGHEST;
+			case ThreadPriority::HIGH:
+				return MW_THREAD_PRIORITY_NORMAL;
+			case ThreadPriority::LOW:
+				return MW_THREAD_PRIORITY_LOWEST;
+			default:
+				MT_REPORT_ASSERT("Invalid thread priority");
+			}
+
+			return MW_THREAD_PRIORITY_NORMAL;
+		}
+
+
 	public:
 
 		Thread()
@@ -56,14 +76,33 @@ namespace MT
 			MT_ASSERT(thread == nullptr, "Thread is not stopped!");
 		}
 
-		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData)
+		void Start(size_t stackSize, TThreadEntryPoint entryPoint, void *userData, uint32 cpuCore = MT_CPUCORE_ANY, ThreadPriority::Type priority = ThreadPriority::DEFAULT)
 		{
 			MT_ASSERT(thread == nullptr, "Thread already started");
 
 			func = entryPoint;
 			funcData = userData;
-			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, 0, nullptr );
+			thread = ::CreateThread( nullptr, stackSize, ThreadFuncInternal, this, MW_CREATE_SUSPENDED, nullptr );
 			MT_ASSERT(thread != nullptr, "Can't create thread");
+
+			if (cpuCore == MT_CPUCORE_ANY)
+			{
+				cpuCore = MW_MAXIMUM_PROCESSORS;
+			}
+			MT_VERIFY((cpuCore >= 0 && cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
+			MW_DWORD res = ::SetThreadIdealProcessor(thread, cpuCore);
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res != (MW_DWORD)-1, "SetThreadIdealProcessor failed!");
+
+			int sched_priority = GetPriority(priority);
+
+			MW_BOOL result = ::SetThreadPriority(thread, sched_priority);
+			MT_USED_IN_ASSERT(result);
+			MT_ASSERT(result != 0, "SetThreadPriority failed!");
+
+			res = ::ResumeThread(thread);
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res != (MW_DWORD)-1, "ResumeThread failed!");
 		}
 
 		void Join()
@@ -86,12 +125,9 @@ namespace MT
 			return (threadId == id);
 		}
 
-		static void SetCurrentThreadName(const char* threadName)
-		{
-			MT_UNUSED(threadName);
-
 #ifdef MT_INSTRUMENTED_BUILD
-
+		static void SetThreadName(const char* threadName)
+		{
 			const int MW_EXCEPTION_EXECUTE_HANDLER = 1;
 			const MW_DWORD MW_MSVC_EXCEPTION = 0x406D1388;
 
@@ -118,9 +154,26 @@ namespace MT
 			__except (MW_EXCEPTION_EXECUTE_HANDLER)
 			{
 			}
-#endif
 		}
+#endif
 
+		static void SetThreadSchedulingPolicy(uint32 cpuCore, ThreadPriority::Type priority = ThreadPriority::DEFAULT)
+		{
+			if (cpuCore == MT_CPUCORE_ANY)
+			{
+				cpuCore = MW_MAXIMUM_PROCESSORS;
+			}
+			MT_VERIFY((cpuCore >= 0 && cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
+			MW_DWORD res = ::SetThreadIdealProcessor( ::GetCurrentThread(), cpuCore);
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res != (MW_DWORD)-1, "SetThreadIdealProcessor failed!");
+
+			int sched_priority = GetPriority(priority);
+
+			MW_BOOL result = ::SetThreadPriority( ::GetCurrentThread(), sched_priority );
+			MT_USED_IN_ASSERT(result);
+			MT_ASSERT(result != 0, "SetThreadPriority failed!");
+		}
 
 		static int GetNumberOfHardwareThreads()
 		{

@@ -83,6 +83,7 @@ void PosixSignalHandler(int signum)
 
 int main(int argc, char ** argv)
 {
+	MT::Thread::SetThreadSchedulingPolicy(6, MT::ThreadPriority::DEFAULT);
 
 #if defined(_WIN32)
 	timeBeginPeriod(1);

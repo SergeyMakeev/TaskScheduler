@@ -27,9 +27,9 @@ namespace MT
 {
 
 #ifdef MT_INSTRUMENTED_BUILD
-	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, IProfilerEventListener* listener)
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters, IProfilerEventListener* listener)
 #else
-	TaskScheduler::TaskScheduler(uint32 workerThreadsCount)
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters)
 #endif
 		: roundRobinThreadIndex(0)
 		, startedThreadsCount(0)
@@ -45,7 +45,7 @@ namespace MT
 		} else
 		{
 			//query number of processor
-			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads(), 1, (int)MT_MAX_THREAD_COUNT) );
+			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 1, 1, (int)MT_MAX_THREAD_COUNT) );
 		}
 
 		// create fiber pool (fibers with standard stack size)
@@ -81,9 +81,21 @@ namespace MT
 		{
 			threadContext[i].SetThreadIndex(i);
 			threadContext[i].taskScheduler = this;
-			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, WorkerThreadMain, &threadContext[i] );
+
+			uint32 threadCore = i;
+			ThreadPriority::Type priority = ThreadPriority::DEFAULT;
+			if (workerParameters != nullptr)
+			{
+				const WorkerThreadParams& params = workerParameters[i];
+
+				threadCore = params.core;
+				priority = params.priority;
+			}
+
+			threadContext[i].thread.Start( MT_SCHEDULER_STACK_SIZE, WorkerThreadMain, &threadContext[i], threadCore, priority);
 		}
 	}
+
 
 	TaskScheduler::~TaskScheduler()
 	{
@@ -272,6 +284,7 @@ namespace MT
 			fiberContext.SetStatus(FiberTaskStatus::FINISHED);
 
 #ifdef MT_INSTRUMENTED_BUILD
+			fiberContext.fiber.SetName("_idle");
 			fiberContext.GetThreadContext()->NotifyTaskFinished(fiberContext.currentTask);
 #endif
 
@@ -300,7 +313,7 @@ namespace MT
 			}
 
 			internal::ThreadContext& victimContext = threadContext.taskScheduler->threadContext[index];
-			if (victimContext.queue.TryPopFront(task))
+			if (victimContext.queue.TryPopNewest(task))
 			{
 				return true;
 			}
@@ -316,14 +329,16 @@ namespace MT
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 
+#ifdef MT_INSTRUMENTED_BUILD
 		const char* threadNames[] = {"worker0","worker1","worker2","worker3","worker4","worker5","worker6","worker7","worker8","worker9","worker10","worker11","worker12"};
 		if (context.workerIndex < MT_ARRAY_SIZE(threadNames))
 		{
-			Thread::SetCurrentThreadName(threadNames[context.workerIndex]);
+			Thread::SetThreadName(threadNames[context.workerIndex]);
 		} else
 		{
-			Thread::SetCurrentThreadName("worker_thread");
+			Thread::SetThreadName("worker_thread");
 		}
+#endif
 
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, SchedulerFiberMain, userData);
 	}
@@ -351,9 +366,10 @@ namespace MT
 			{
 				break;
 			}
+
+			// sleep some time until all other thread initialized
 			Thread::Sleep(1);
 		}
-
 
 		HardwareFullMemoryBarrier();
 
@@ -364,13 +380,17 @@ namespace MT
 		while(context.state.Load() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
-			if (context.queue.TryPopBack(task) || TryStealTask(context, task, workersCount) )
+			if (context.queue.TryPopOldest(task) || TryStealTask(context, task, workersCount) )
 			{
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
 				MT_ASSERT(fiberContext, "Can't get execution context from pool");
 				MT_ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
 				MT_ASSERT(fiberContext->stackRequirements == task.desc.stackRequirements, "Sanity check failed");
+
+#ifdef MT_INSTRUMENTED_BUILD
+				fiberContext->fiber.SetName(task.desc.debugID);
+#endif
 
 				while(fiberContext)
 				{
@@ -505,7 +525,19 @@ namespace MT
 
 			internal::TaskBucket& bucket = buckets[i];
 
-			context.queue.PushRange(bucket.tasks, bucket.count);
+			for(;;)
+			{
+				bool res = context.queue.Add(bucket.tasks, bucket.count);
+				if (res == true)
+				{
+					break;
+				}
+
+				//Can't add new tasks onto the queue. Look like the job system is overloaded. Wait some time and try again.
+				//TODO: implement waiting until workers done using events.
+				Thread::Sleep(10);
+			}
+			
 			context.hasNewTasksEvent.Signal();
 		}
 	}

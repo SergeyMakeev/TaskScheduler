@@ -145,6 +145,13 @@ namespace MT
 			isInitialized = true;
 		}
 
+#ifdef MT_INSTRUMENTED_BUILD
+		void SetName(const char* fiberName)
+		{
+			MT_UNUSED(fiberName);
+		}
+#endif
+
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
 			HardwareFullMemoryBarrier();

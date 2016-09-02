@@ -61,7 +61,7 @@ namespace MT
 
 		Memory::StackDesc stackDesc;
 
-    size_t stackSize;
+		size_t stackSize;
 
 		bool isStarted;
 
@@ -71,6 +71,46 @@ namespace MT
 			self->func(self->funcData);
 			return nullptr;
 		}
+
+		static void GetAffinityMask(cpu_set_t & cpu_mask, uint32 cpuCore)
+		{
+			cpu_set_t cpu_mask;
+			CPU_ZERO(&cpu_mask);
+
+			if (cpuCore == MT_CPUCORE_ANY)
+			{
+				uint32 threadsCount = (uint32)GetNumberOfHardwareThreads();
+				for(uint32 i = 0; i < threadsCount; i++)
+				{
+					CPU_SET(i, &cpu_mask);
+				}
+			} else
+			{
+				CPU_SET(cpuCore, &cpu_mask);
+			}
+		}
+
+		static int GetPriority(ThreadPriority::Type priority)
+		{
+			int min_prio = sched_get_priority_min (SCHED_FIFO);
+			int max_prio = sched_get_priority_max (SCHED_FIFO);
+			int default_prio = (max_prio - min_prio) / 2;
+
+			switch(priority)
+			{
+			case ThreadPriority::DEFAULT:
+				return default_prio;
+			case ThreadPriority::HIGH:
+				return max_prio;
+			case ThreadPriority::LOW:
+				return min_prio;
+			default:
+				MT_REPORT_ASSERT("Invalid thread priority");
+			}
+
+			return default_prio;
+		}
+
 
 	public:
 
@@ -91,7 +131,7 @@ namespace MT
 		}
 
 
-		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void* userData)
+		void Start(size_t _stackSize, TThreadEntryPoint entryPoint, void* userData, uint32 cpuCore = MT_CPUCORE_ANY, ThreadPriority::Type priority = ThreadPriority::DEFAULT)
 		{
 			MT_ASSERT(!isStarted, "Thread already stared");
 
@@ -116,6 +156,29 @@ namespace MT
 			err = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
 			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_setdetachstate - error");
+
+#if MT_PLATFORM_OSX
+			MT_UNUSED(cpuCore);
+			MT_UNUSED(priority);
+
+			//TODO: support OSX priority and bind to processors
+#else
+			err = pthread_attr_setinheritsched(&threadAttr, PTHREAD_EXPLICIT_SCHED);
+			MT_USED_IN_ASSERT(err);
+			MT_ASSERT(err == 0, "pthread_attr_setinheritsched - error");
+
+			cpu_set_t cpu_mask;
+			GetAffinityMask(cpu_mask, cpuCore);
+			err = pthread_attr_setaffinity_np(&threadAttr, sizeof(cpu_mask), cpu_mask);
+			MT_USED_IN_ASSERT(err);
+			MT_ASSERT(err == 0, "pthread_attr_setaffinity_np - error");
+
+			struct sched_param params;
+			params.sched_priority = GetPriority(priority);
+			err = pthread_attr_setschedparam(&threadAttr, &params);
+			MT_USED_IN_ASSERT(err);
+			MT_ASSERT(err == 0, "pthread_attr_setschedparam - error");
+#endif
 
 			isStarted = true;
 
@@ -179,13 +242,34 @@ namespace MT
 #endif
 		}
 
-		static void SetCurrentThreadName(const char* threadName)
-		{
-			MT_UNUSED(threadName);
-
 #ifdef MT_INSTRUMENTED_BUILD
+		static void SetThreadName(const char* threadName)
+		{
 			pthread_t callThread = pthread_self();
 			pthread_setname_np(callThread, threadName);
+		}
+#endif
+
+		static void SetThreadSchedulingPolicy(uint32 cpuCore, ThreadPriority::Type priority = ThreadPriority::DEFAULT)
+		{
+#if MT_PLATFORM_OSX
+			MT_UNUSED(cpuCore);
+			MT_UNUSED(priority);
+
+			//TODO: support OSX priority and bind to processors
+#else
+			pthread_t callThread = pthread_self();
+
+			int sched_priority = GetPriority(priority);
+			int err = setschedprio(callThread, sched_priority);
+			MT_USED_IN_ASSERT(err);
+			MT_ASSERT(err == 0, "pthread_attr_destroy - error");
+
+			cpu_set_t cpu_mask;
+			GetAffinityMask(cpu_mask, cpuCore);
+			err = pthread_setaffinity_np(callThread, sizeof(cpu_mask), cpu_mask);
+			MT_USED_IN_ASSERT(err);
+			MT_ASSERT(err == 0, "pthread_setaffinity_np - error");
 #endif
 		}
 

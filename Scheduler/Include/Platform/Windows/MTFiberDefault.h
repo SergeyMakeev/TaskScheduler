@@ -95,6 +95,13 @@ namespace MT
 			MT_ASSERT(fiber != nullptr, "Can't create fiber");
 		}
 
+#ifdef MT_INSTRUMENTED_BUILD
+		void SetName(const char* fiberName)
+		{
+			MT_UNUSED(fiberName);
+		}
+#endif
+
 		static void SwitchTo(Fiber & from, Fiber & to)
 		{
 			MT_USED_IN_ASSERT(from);

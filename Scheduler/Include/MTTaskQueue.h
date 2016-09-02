@@ -31,19 +31,16 @@
 
 namespace MT
 {
-	/// \class ConcurrentQueueLIFO
-	/// \brief Naive locking implementation of thread safe last in, first out (LIFO) queue
-	///
-	/// for lock-free implementation read Molecule Engine blog by Stefan Reinalter
-	/// http://blog.molecular-matters.com/2015/09/25/job-system-2-0-lock-free-work-stealing-part-3-going-lock-free/
+	/// \class TaskQueue
+	/// \brief thread safe task queue
 	///
 	template<typename T>
-	class ConcurrentQueueLIFO
+	class TaskQueue
 	{
 		static const int32 ALIGNMENT = 16;
 
 	public:
-		static const unsigned int CAPACITY = 512u;
+		static const unsigned int CAPACITY = 4096u;
 	private:
 		static const unsigned int MASK = CAPACITY - 1u;
 
@@ -107,11 +104,11 @@ namespace MT
 
 	public:
 
-		MT_NOCOPYABLE(ConcurrentQueueLIFO);
+		MT_NOCOPYABLE(TaskQueue);
 
-		/// \name Initializes a new instance of the ConcurrentQueueLIFO class.
+		/// \name Initializes a new instance of the TaskQueue class.
 		/// \brief  
-		ConcurrentQueueLIFO()
+		TaskQueue()
 			: begin(0)
 			, end(0)
 		{
@@ -119,7 +116,7 @@ namespace MT
 			data = Memory::Alloc(bytesCount, ALIGNMENT);
 		}
 
-		~ConcurrentQueueLIFO()
+		~TaskQueue()
 		{
 			if (data != nullptr)
 			{
@@ -128,28 +125,54 @@ namespace MT
 			}
 		}
 
-		/// \brief Push an item onto the top of queue.
-		/// \param item item to push
-		void Push(const T & item)
+		/// \brief Add multiple tasks onto queue.
+		/// \param itemArray A pointer to first item. Must not be nullptr
+		/// \param count Items count.
+		bool Add(const T* itemArray, size_t count)
 		{
 			MT::ScopedGuard guard(mutex);
 
-			if ((Size() + 1) >= CAPACITY)
+			if ((Size() + count) >= CAPACITY)
 			{
-				MT_REPORT_ASSERT("Queue overflow");
-				return;
+				return false;
 			}
 
+			for (size_t i = 0; i < count; ++i)
+			{
+				size_t index = (end & MASK);
+				T* pElement = Buffer() + index;
+				CopyCtor( pElement, itemArray[i] );
+				end++;
+			}
 
-			T* pElement = Buffer() + (end & MASK);
-			CopyCtor(pElement, item );
-			end++;
+			return true;
 		}
 
-		/// \brief Try pop item from the top of queue.
+
+		/// \brief Try pop oldest item from queue.
 		/// \param item Resultant item
 		/// \return true on success or false if the queue is empty.
-		bool TryPopBack(T & item)
+		bool TryPopOldest(T & item)
+		{
+			MT::ScopedGuard guard(mutex);
+
+			if (_IsEmpty())
+			{
+				return false;
+			}
+
+			size_t index = (begin & MASK);
+			T* pElement = Buffer() + index;
+			begin++;
+			item = *pElement;
+			Dtor(pElement);
+			return true;
+		}
+
+		/// \brief Try pop a newest item (recently added) from queue.
+		/// \param item Resultant item
+		/// \return true on success or false if the queue is empty.
+		bool TryPopNewest(T & item)
 		{
 			MT::ScopedGuard guard(mutex);
 
@@ -159,29 +182,11 @@ namespace MT
 			}
 
 			end--;
-			T* pElement = Buffer() + (end & MASK);
+			size_t index = (end & MASK);
+			T* pElement = Buffer() + index;
 			item = *pElement;
 			Dtor(pElement);
 			return true;
-		}
-
-		/// \brief Pop all items from the queue.
-		/// \param dstBuffer A pointer to the buffer to receive queue items.
-		/// \param dstBufferSize This variable specifies the size of the dstBuffer buffer.
-		/// \return The return value is the number of items written to the buffer.
-		size_t PopAll(T * dstBuffer, size_t dstBufferSize)
-		{
-			MT::ScopedGuard guard(mutex);
-
-			size_t elementsCount = MT::Min(Size(), dstBufferSize);
-			for (size_t i = 0; i < elementsCount; i++)
-			{
-				T* pElement = Buffer() + ((begin + i) & MASK);
-				dstBuffer[i] = std::move(*pElement);
-			}
-
-			Clear();
-			return elementsCount;
 		}
 
 		/// \brief Check if queue is empty.
