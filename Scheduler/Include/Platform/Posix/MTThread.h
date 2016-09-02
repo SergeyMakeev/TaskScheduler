@@ -260,13 +260,13 @@ namespace MT
 			pthread_t callThread = pthread_self();
 
 			int sched_priority = GetPriority(priority);
-			int err = setschedprio(callThread, sched_priority);
+			int err = pthread_setschedprio(callThread, sched_priority);
 			MT_USED_IN_ASSERT(err);
-			MT_ASSERT(err == 0, "pthread_attr_destroy - error");
+			MT_ASSERT(err == 0, "pthread_setschedprio - error");
 
 			cpu_set_t cpu_mask;
 			GetAffinityMask(cpu_mask, cpuCore);
-			err = pthread_setaffinity_np(callThread, sizeof(cpu_mask), cpu_mask);
+			err = pthread_setaffinity_np(callThread, sizeof(cpu_mask), &cpu_mask);
 			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_setaffinity_np - error");
 #endif
