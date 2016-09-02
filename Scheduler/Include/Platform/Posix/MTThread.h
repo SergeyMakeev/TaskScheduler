@@ -74,7 +74,6 @@ namespace MT
 
 		static void GetAffinityMask(cpu_set_t & cpu_mask, uint32 cpuCore)
 		{
-			cpu_set_t cpu_mask;
 			CPU_ZERO(&cpu_mask);
 
 			if (cpuCore == MT_CPUCORE_ANY)
