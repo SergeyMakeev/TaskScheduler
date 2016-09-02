@@ -168,7 +168,7 @@ namespace MT
 
 			cpu_set_t cpu_mask;
 			GetAffinityMask(cpu_mask, cpuCore);
-			err = pthread_attr_setaffinity_np(&threadAttr, sizeof(cpu_mask), cpu_mask);
+			err = pthread_attr_setaffinity_np(&threadAttr, sizeof(cpu_mask), &cpu_mask);
 			MT_USED_IN_ASSERT(err);
 			MT_ASSERT(err == 0, "pthread_attr_setaffinity_np - error");
 
