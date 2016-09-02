@@ -72,6 +72,9 @@ namespace MT
 			return nullptr;
 		}
 
+#if MT_PLATFORM_OSX
+		//TODO: support OSX priority and bind to processors
+#else
 		static void GetAffinityMask(cpu_set_t & cpu_mask, uint32 cpuCore)
 		{
 			CPU_ZERO(&cpu_mask);
@@ -88,6 +91,7 @@ namespace MT
 				CPU_SET(cpuCore, &cpu_mask);
 			}
 		}
+
 
 		static int GetPriority(ThreadPriority::Type priority)
 		{
@@ -109,6 +113,7 @@ namespace MT
 
 			return default_prio;
 		}
+#endif
 
 
 	public:
