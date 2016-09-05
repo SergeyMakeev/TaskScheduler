@@ -69,39 +69,6 @@ namespace MT
 		stackRequirements = StackRequirements::INVALID;
 	}
 
-	void FiberContext::WaitGroupAndYield(TaskGroup group)
-	{
-		MT_ASSERT(threadContext, "Sanity check failed!");
-		MT_ASSERT(threadContext->taskScheduler, "Sanity check failed!");
-		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use WaitGroupAndYield outside Task. Use TaskScheduler.WaitGroup() instead.");
-		MT_ASSERT(threadContext->thread.IsCurrentThread(), "Thread context sanity check failed");
-
-		MT_VERIFY(group != currentGroup, "Can't wait the same group. Deadlock detected!", return);
-		MT_VERIFY(group.IsValid(), "Invalid group!", return);
-
-		TaskScheduler::TaskGroupDescription & groupDesc = threadContext->taskScheduler->GetGroupDesc(group);
-
-		ConcurrentQueueLIFO<FiberContext*> & groupQueue = groupDesc.GetWaitQueue();
-
-		// Change status
-		taskStatus = FiberTaskStatus::AWAITING_GROUP;
-
-		// Add current fiber to awaiting queue
-		groupQueue.Push(this);
-
-		Fiber & schedulerFiber = threadContext->schedulerFiber;
-
-#ifdef MT_INSTRUMENTED_BUILD
-		threadContext->NotifyTaskYielded(currentTask);
-#endif
-
-		// Yielding, so reset thread context
-		threadContext = nullptr;
-
-		//switch to scheduler
-		Fiber::SwitchTo(fiber, schedulerFiber);
-	}
-
 	void FiberContext::RunSubtasksAndYieldImpl(ArrayView<internal::TaskBucket>& buckets)
 	{
 		MT_ASSERT(threadContext, "Sanity check failed!");

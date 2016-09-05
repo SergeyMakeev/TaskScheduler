@@ -165,33 +165,5 @@ namespace MT
 			return true;
 		}
 
-		/// \brief Pop all items from the queue.
-		/// \param dstBuffer A pointer to the buffer to receive queue items.
-		/// \param dstBufferSize This variable specifies the size of the dstBuffer buffer.
-		/// \return The return value is the number of items written to the buffer.
-		size_t PopAll(T * dstBuffer, size_t dstBufferSize)
-		{
-			MT::ScopedGuard guard(mutex);
-
-			size_t elementsCount = MT::Min(Size(), dstBufferSize);
-			for (size_t i = 0; i < elementsCount; i++)
-			{
-				T* pElement = Buffer() + ((begin + i) & MASK);
-				dstBuffer[i] = std::move(*pElement);
-			}
-
-			Clear();
-			return elementsCount;
-		}
-
-		/// \brief Check if queue is empty.
-		/// \return true - if queue is empty.
-		bool IsEmpty()
-		{
-			MT::ScopedGuard guard(mutex);
-
-			return _IsEmpty();
-		}
-
 	};
 }

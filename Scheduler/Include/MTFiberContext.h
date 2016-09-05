@@ -73,8 +73,6 @@ namespace MT
 		void RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 		void RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 
-		void WaitGroupAndYield(TaskGroup group);
-
 		void Reset();
 
 		void SetThreadContext(internal::ThreadContext * _threadContext);

@@ -67,8 +67,7 @@ namespace SimpleWaitFromSubtask
 			}
 
 			DummySubTask subtasks[16];
-			ctx.RunAsync(MT::TaskGroup::Default(), &subtasks[0], MT_ARRAY_SIZE(subtasks));
-			ctx.WaitGroupAndYield(MT::TaskGroup::Default());
+			ctx.RunSubtasksAndYield(MT::TaskGroup::Default(), &subtasks[0], MT_ARRAY_SIZE(subtasks));
 
 			animTaskCount.IncFetch();
 		}

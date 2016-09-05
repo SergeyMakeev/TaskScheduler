@@ -159,6 +159,10 @@ namespace MT
 
 
 
+#if defined(MT_DEBUG) || defined(MT_INSTRUMENTED_BUILD)
+#define MT_GROUP_DEBUG (1)
+#endif
+
 
 
 namespace MT
@@ -208,10 +212,9 @@ namespace MT
 			Atomic32<int32> inProgressTaskCount;
 			Event allDoneEvent;
 
-			//Tasks awaiting group through FiberContext::WaitGroupAndYield call
-			ConcurrentQueueLIFO<FiberContext*> waitTasksQueue;
-
+#if MT_GROUP_DEBUG
 			bool debugIsFree;
+#endif
 
 		public:
 
@@ -221,17 +224,15 @@ namespace MT
 			{
 				inProgressTaskCount.Store(0);
 				allDoneEvent.Create( EventReset::MANUAL, true );
+
+#if MT_GROUP_DEBUG
 				debugIsFree = true;
+#endif
 			}
 
 			int GetTaskCount() const
 			{
 				return inProgressTaskCount.Load();
-			}
-
-			ConcurrentQueueLIFO<FiberContext*> & GetWaitQueue()
-			{
-				return waitTasksQueue;
 			}
 
 			int Dec()
@@ -264,6 +265,7 @@ namespace MT
 				return allDoneEvent.Wait(milliseconds);
 			}
 
+#if MT_GROUP_DEBUG
 			void SetDebugIsFree(bool _debugIsFree)
 			{
 				debugIsFree = _debugIsFree;
@@ -273,6 +275,7 @@ namespace MT
 			{
 				return debugIsFree;
 			}
+#endif
 		};
 
 

@@ -87,8 +87,6 @@ namespace MT
 			ThreadContext();
 			~ThreadContext();
 
-			void RestoreAwaitingTasks(TaskGroup taskGroup);
-
 			void SetThreadIndex(uint32 threadIndex);
 
 #ifdef MT_INSTRUMENTED_BUILD

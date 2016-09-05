@@ -63,34 +63,6 @@ namespace MT
 			random.SetSeed( GetPrimeNumber(threadIndex) );
 		}
 
-		void ThreadContext::RestoreAwaitingTasks(TaskGroup taskGroup)
-		{
-			MT_ASSERT(taskScheduler, "Invalid Task Scheduler");
-			MT_ASSERT(taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
-
-			TaskScheduler::TaskGroupDescription  & groupDesc = taskScheduler->GetGroupDesc(taskGroup);
-			ConcurrentQueueLIFO<FiberContext*> & groupQueue = groupDesc.GetWaitQueue();
-
-			if (groupQueue.IsEmpty())
-			{
-				return;
-			}
-
-			//copy awaiting tasks list to stack
-			const int maximumFibersCount = MT_MAX_STANDART_FIBERS_COUNT + MT_MAX_EXTENDED_FIBERS_COUNT;
-			StackArray<FiberContext*, maximumFibersCount> groupQueueCopy(maximumFibersCount, nullptr);
-			size_t taskCount = groupQueue.PopAll(groupQueueCopy.Begin(), groupQueueCopy.Size());
-
-			ArrayView<internal::GroupedTask> buffer(descBuffer, taskCount);
-
-			TaskScheduler & scheduler = *(taskScheduler);
-			size_t bucketCount = MT::Min((size_t)scheduler.GetWorkersCount(), taskCount);
-			ArrayView<internal::TaskBucket>	buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
-
-			internal::DistibuteDescriptions( TaskGroup(TaskGroup::ASSIGN_FROM_CONTEXT), groupQueueCopy.Begin(), buffer, buckets);
-			scheduler.RunTasksImpl(buckets, nullptr, true);
-		}
-
 #ifdef MT_INSTRUMENTED_BUILD
 
 		void ThreadContext::NotifyTaskFinished(const internal::TaskDesc & desc)

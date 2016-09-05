@@ -73,7 +73,9 @@ namespace MT
 			}
 		}
 
+#if MT_GROUP_DEBUG
 		groupStats[TaskGroup::DEFAULT].SetDebugIsFree(false);
+#endif
 
 		// create worker thread pool
 		int32 totalThreadsCount = GetWorkersCount();
@@ -210,12 +212,6 @@ namespace MT
 			MT_ASSERT(groupTaskCount >= 0, "Sanity check failed!");
 			if (groupTaskCount == 0)
 			{
-				// Restore awaiting tasks
-				threadContext.RestoreAwaitingTasks(taskGroup);
-
-				// All restored tasks can be already finished on this line.
-				// That's why you can't release groups from worker threads, if worker thread release group, than you can't Signal to released group.
-
 				// Signal pending threads that group work is finished. Group can be destroyed after this call.
 				groupDesc.Signal();
 
@@ -613,7 +609,9 @@ namespace MT
 		int idx = group.GetValidIndex();
 
 		MT_ASSERT(groupStats[idx].GetDebugIsFree() == true, "Bad logic!");
+#if MT_GROUP_DEBUG
 		groupStats[idx].SetDebugIsFree(false);
+#endif
 
 		return group;
 	}
@@ -626,7 +624,9 @@ namespace MT
 		int idx = group.GetValidIndex();
 
 		MT_ASSERT(groupStats[idx].GetDebugIsFree() == false, "Group already released");
+#if MT_GROUP_DEBUG
 		groupStats[idx].SetDebugIsFree(true);
+#endif
 
 		availableGroups.Push(group);
 	}

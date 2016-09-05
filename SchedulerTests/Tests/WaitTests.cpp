@@ -53,8 +53,7 @@ namespace SimpleWaitFromSubtask
 		void Do(MT::FiberContext& ctx)
 		{
 			Subtask tasks[2];
-			ctx.RunAsync(testGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
-			ctx.WaitGroupAndYield(testGroup);
+			ctx.RunSubtasksAndYield(testGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 			taskCount.IncFetch();
 
