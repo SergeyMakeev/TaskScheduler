@@ -33,7 +33,7 @@ struct StandartStackSizeTask
 
 	void Do(MT::FiberContext&)
 	{
-		byte stackData[26000];
+		byte stackData[20000];
 		memset(stackData, 0x0D, MT_ARRAY_SIZE(stackData));
 	}
 };
