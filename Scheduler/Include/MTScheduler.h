@@ -291,7 +291,7 @@ namespace MT
 		TaskGroupDescription allGroups;
 
 		// Groups pool
-		LockFreeQueueMPMC<TaskGroup, TaskGroup::MT_MAX_GROUPS_COUNT> availableGroups;
+		LockFreeQueueMPMC<TaskGroup, TaskGroup::MT_MAX_GROUPS_COUNT * 2> availableGroups;
 
 		//
 		TaskGroupDescription groupStats[TaskGroup::MT_MAX_GROUPS_COUNT];
@@ -301,11 +301,8 @@ namespace MT
 		FiberContext extendedFiberContexts[MT_MAX_EXTENDED_FIBERS_COUNT];
 
 		// Fibers pool
-		LockFreeQueueMPMC<FiberContext*, MT_MAX_STANDART_FIBERS_COUNT> standartFibersAvailable;
-		LockFreeQueueMPMC<FiberContext*, MT_MAX_EXTENDED_FIBERS_COUNT> extendedFibersAvailable;
-
-		FiberContext* GetFiberFromStorage(MT::StackRequirements::Type stackRequirements);
-		bool PutFiberToStorage(MT::StackRequirements::Type stackRequirements, FiberContext*&& fiberContext);
+		LockFreeQueueMPMC<FiberContext*, MT_MAX_STANDART_FIBERS_COUNT * 2> standartFibersAvailable;
+		LockFreeQueueMPMC<FiberContext*, MT_MAX_EXTENDED_FIBERS_COUNT * 2> extendedFibersAvailable;
 
 #ifdef MT_INSTRUMENTED_BUILD
 		IProfilerEventListener * profilerEventListener;

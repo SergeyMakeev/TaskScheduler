@@ -120,13 +120,20 @@ namespace MT
 		}
 	}
 
-	FiberContext* TaskScheduler::GetFiberFromStorage(MT::StackRequirements::Type stackRequirements)
+	FiberContext* TaskScheduler::RequestFiberContext(internal::GroupedTask& task)
 	{
-		FiberContext* fiberContext = nullptr;
+		FiberContext *fiberContext = task.awaitingFiber;
+		if (fiberContext)
+		{
+			task.awaitingFiber = nullptr;
+			return fiberContext;
+		}
 
+		MT::StackRequirements::Type stackRequirements = task.desc.stackRequirements;
+
+		fiberContext = nullptr;
 		bool res = false;
 		MT_USED_IN_ASSERT(res);
-
 		switch(stackRequirements)
 		{
 		case MT::StackRequirements::STANDARD:
@@ -142,39 +149,6 @@ namespace MT
 		}
 
 		MT_ASSERT(fiberContext != nullptr, "Can't get more fibers. Too many tasks in flight simultaneously?");
-		return fiberContext;
-	}
-
-	bool TaskScheduler::PutFiberToStorage(MT::StackRequirements::Type stackRequirements, FiberContext*&& fiberContext)
-	{
-		MT_ASSERT(fiberContext != nullptr, "Fiber context can't be nullptr");
-
-		switch(stackRequirements)
-		{
-		case MT::StackRequirements::STANDARD:
-			return standartFibersAvailable.TryPush(std::move(fiberContext));
-		case MT::StackRequirements::EXTENDED:
-			return extendedFibersAvailable.TryPush(std::move(fiberContext));
-		default:
-			MT_REPORT_ASSERT("Unknown stack requrements");
-		}
-		return false;
-	}
-
-
-	FiberContext* TaskScheduler::RequestFiberContext(internal::GroupedTask& task)
-	{
-		FiberContext *fiberContext = task.awaitingFiber;
-		if (fiberContext)
-		{
-			task.awaitingFiber = nullptr;
-			return fiberContext;
-		}
-
-		MT::StackRequirements::Type stackRequirements = task.desc.stackRequirements;
-
-		fiberContext = GetFiberFromStorage(stackRequirements);
-		MT_ASSERT(fiberContext != nullptr, "Fibers pool is empty. Too many fibers running simultaneously.");
 
 		fiberContext->currentTask = task.desc;
 		fiberContext->currentGroup = task.group;
@@ -190,7 +164,22 @@ namespace MT
 		MT::StackRequirements::Type stackRequirements = fiberContext->stackRequirements;
 		fiberContext->Reset();
 
-		bool res = PutFiberToStorage(stackRequirements, std::move(fiberContext));
+		MT_ASSERT(fiberContext != nullptr, "Fiber context can't be nullptr");
+
+		bool res = false;
+		MT_USED_IN_ASSERT(res);
+		switch(stackRequirements)
+		{
+		case MT::StackRequirements::STANDARD:
+			res = standartFibersAvailable.TryPush(std::move(fiberContext));
+			break;
+		case MT::StackRequirements::EXTENDED:
+			res = extendedFibersAvailable.TryPush(std::move(fiberContext));
+			break;
+		default:
+			MT_REPORT_ASSERT("Unknown stack requrements");
+		}
+
 		MT_USED_IN_ASSERT(res);
 		MT_ASSERT(res != false, "Can't return fiber to storage");
 	}
@@ -647,7 +636,7 @@ namespace MT
 		}
 
 		int idx = group.GetValidIndex();
-
+		MT_USED_IN_ASSERT(idx);
 		MT_ASSERT(groupStats[idx].GetDebugIsFree() == true, "Bad logic!");
 #if MT_GROUP_DEBUG
 		groupStats[idx].SetDebugIsFree(false);
@@ -662,7 +651,7 @@ namespace MT
 		MT_ASSERT(group.IsValid(), "Invalid group ID");
 
 		int idx = group.GetValidIndex();
-
+		MT_USED_IN_ASSERT(idx);
 		MT_ASSERT(groupStats[idx].GetDebugIsFree() == false, "Group already released");
 #if MT_GROUP_DEBUG
 		groupStats[idx].SetDebugIsFree(true);
