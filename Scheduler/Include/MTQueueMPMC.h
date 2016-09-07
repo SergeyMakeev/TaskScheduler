@@ -23,6 +23,7 @@
 #pragma once
 
 #include <MTTools.h>
+#include <utility>
 
 namespace MT
 {
