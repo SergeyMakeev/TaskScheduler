@@ -28,6 +28,7 @@
 #include <string.h>
 #include <math.h>
 
+
 /*
 #ifdef _WIN32
 
@@ -98,19 +99,13 @@ class Microprofile : public MT::IProfilerEventListener
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnTaskFinished(MT::Color::Type debugColor, const mt_char* debugID)
+	void OnTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID)
 	{
 		MT_UNUSED(debugColor);
 		MT_UNUSED(debugID);
 	}
 
-	void OnTaskResumed(MT::Color::Type debugColor, const mt_char* debugID)
-	{
-		MT_UNUSED(debugColor);
-		MT_UNUSED(debugID);
-	}
-
-	void OnTaskYielded(MT::Color::Type debugColor, const mt_char* debugID)
+	void OnTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID)
 	{
 		MT_UNUSED(debugColor);
 		MT_UNUSED(debugID);
@@ -459,7 +454,7 @@ SUITE(DxtTests)
 	}
 
 
-/*
+
 	// dxt compressor Hiload test (for profiling purposes)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	TEST(HiloadDxtTest)
@@ -508,7 +503,7 @@ SUITE(DxtTests)
 			MT::Thread::Sleep(1);
 		}
 	}
-*/
+
 
 	// dxt compressor complex test
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

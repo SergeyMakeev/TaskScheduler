@@ -53,7 +53,9 @@ namespace MT
 		{
 			FiberContext& context = standartFiberContexts[i];
 			context.fiber.Create(MT_STANDART_FIBER_STACK_SIZE, FiberMain, &context);
-			standartFibersAvailable.Push( &context );
+			bool res = standartFibersAvailable.TryPush( &context );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == true, "Can't add fiber to storage");
 		}
 
 		// create fiber pool (fibers with extended stack size)
@@ -61,7 +63,9 @@ namespace MT
 		{
 			FiberContext& context = extendedFiberContexts[i];
 			context.fiber.Create(MT_EXTENDED_FIBER_STACK_SIZE, FiberMain, &context);
-			extendedFibersAvailable.Push( &context );
+			bool res = extendedFibersAvailable.TryPush( &context );
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == true, "Can't add fiber to storage");
 		}
 
 
@@ -69,7 +73,9 @@ namespace MT
 		{
 			if (i != TaskGroup::DEFAULT)
 			{
-				availableGroups.Push( TaskGroup(i) );
+				bool res = availableGroups.TryPush( TaskGroup(i) );
+				MT_USED_IN_ASSERT(res);
+				MT_ASSERT(res == true, "Can't add group to storage");
 			}
 		}
 
@@ -114,23 +120,47 @@ namespace MT
 		}
 	}
 
-	ConcurrentQueueLIFO<FiberContext*>* TaskScheduler::GetFibersStorage(MT::StackRequirements::Type stackRequirements)
+	FiberContext* TaskScheduler::GetFiberFromStorage(MT::StackRequirements::Type stackRequirements)
 	{
-		ConcurrentQueueLIFO<FiberContext*>* availableFibers = nullptr;
+		FiberContext* fiberContext = nullptr;
+
+		bool res = false;
+		MT_USED_IN_ASSERT(res);
+
 		switch(stackRequirements)
 		{
 		case MT::StackRequirements::STANDARD:
-			availableFibers = &standartFibersAvailable;
+			res = standartFibersAvailable.TryPop(fiberContext);
+			MT_ASSERT(res, "Can't get more standard fibers!");
 			break;
 		case MT::StackRequirements::EXTENDED:
-			availableFibers = &extendedFibersAvailable;
+			res = extendedFibersAvailable.TryPop(fiberContext);
+			MT_ASSERT(res, "Can't get more extended fibers!");
 			break;
 		default:
 			MT_REPORT_ASSERT("Unknown stack requrements");
 		}
 
-		return availableFibers;
+		MT_ASSERT(fiberContext != nullptr, "Can't get more fibers. Too many tasks in flight simultaneously?");
+		return fiberContext;
 	}
+
+	bool TaskScheduler::PutFiberToStorage(MT::StackRequirements::Type stackRequirements, FiberContext*&& fiberContext)
+	{
+		MT_ASSERT(fiberContext != nullptr, "Fiber context can't be nullptr");
+
+		switch(stackRequirements)
+		{
+		case MT::StackRequirements::STANDARD:
+			return standartFibersAvailable.TryPush(std::move(fiberContext));
+		case MT::StackRequirements::EXTENDED:
+			return extendedFibersAvailable.TryPush(std::move(fiberContext));
+		default:
+			MT_REPORT_ASSERT("Unknown stack requrements");
+		}
+		return false;
+	}
+
 
 	FiberContext* TaskScheduler::RequestFiberContext(internal::GroupedTask& task)
 	{
@@ -141,16 +171,10 @@ namespace MT
 			return fiberContext;
 		}
 
-
 		MT::StackRequirements::Type stackRequirements = task.desc.stackRequirements;
 
-		ConcurrentQueueLIFO<FiberContext*>* availableFibers = GetFibersStorage(stackRequirements);
-		MT_VERIFY(availableFibers != nullptr, "Can't find fiber storage", return nullptr;);
-
-		if (!availableFibers->TryPopBack(fiberContext))
-		{
-			MT_REPORT_ASSERT("Fibers pool is empty. Too many fibers running simultaneously.");
-		}
+		fiberContext = GetFiberFromStorage(stackRequirements);
+		MT_ASSERT(fiberContext != nullptr, "Fibers pool is empty. Too many fibers running simultaneously.");
 
 		fiberContext->currentTask = task.desc;
 		fiberContext->currentGroup = task.group;
@@ -159,17 +183,16 @@ namespace MT
 		return fiberContext;
 	}
 
-	void TaskScheduler::ReleaseFiberContext(FiberContext* fiberContext)
+	void TaskScheduler::ReleaseFiberContext(FiberContext*&& fiberContext)
 	{
 		MT_ASSERT(fiberContext, "Can't release nullptr Fiber. fiberContext is nullptr");
 
 		MT::StackRequirements::Type stackRequirements = fiberContext->stackRequirements;
 		fiberContext->Reset();
 
-		ConcurrentQueueLIFO<FiberContext*>* availableFibers = GetFibersStorage(stackRequirements);
-		MT_VERIFY(availableFibers != nullptr, "Can't find fiber storage", return;);
-
-		availableFibers->Push(fiberContext);
+		bool res = PutFiberToStorage(stackRequirements, std::move(fiberContext));
+		MT_USED_IN_ASSERT(res);
+		MT_ASSERT(res != false, "Can't return fiber to storage");
 	}
 
 	FiberContext* TaskScheduler::ExecuteTask(internal::ThreadContext& threadContext, FiberContext* fiberContext)
@@ -190,8 +213,16 @@ namespace MT
 		const void* poolUserData = fiberContext->currentTask.userData;
 		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
 
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext.NotifyTaskEndExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
+#endif
+
 		// Run current task code
 		Fiber::SwitchTo(threadContext.schedulerFiber, fiberContext->fiber);
+
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext.NotifyTaskBeginExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
+#endif
 
 		// If task was done
 		FiberTaskStatus::Type taskStatus = fiberContext->GetStatus();
@@ -275,13 +306,17 @@ namespace MT
 			MT_ASSERT(fiberContext.GetThreadContext(), "Invalid thread context");
 			MT_ASSERT(fiberContext.GetThreadContext()->thread.IsCurrentThread(), "Thread context sanity check failed");
 
-			fiberContext.currentTask.taskFunc( fiberContext, fiberContext.currentTask.userData );
+#ifdef MT_INSTRUMENTED_BUILD
+			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
+			fiberContext.GetThreadContext()->NotifyTaskBeginExecute( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID );
+#endif
 
+			fiberContext.currentTask.taskFunc( fiberContext, fiberContext.currentTask.userData );
 			fiberContext.SetStatus(FiberTaskStatus::FINISHED);
 
 #ifdef MT_INSTRUMENTED_BUILD
-			fiberContext.fiber.SetName("_idle");
-			fiberContext.GetThreadContext()->NotifyTaskFinished(fiberContext.currentTask);
+			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
+			fiberContext.GetThreadContext()->NotifyTaskEndExecute( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID );
 #endif
 
 			Fiber::SwitchTo(fiberContext.fiber, fiberContext.GetThreadContext()->schedulerFiber);
@@ -371,6 +406,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 		context.NotifyThreadStart(context.workerIndex);
+		context.NotifyTaskBeginExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
 #endif
 
 		while(context.state.Load() != internal::ThreadState::EXIT)
@@ -378,20 +414,24 @@ namespace MT
 			internal::GroupedTask task;
 			if (context.queue.TryPopOldest(task) || TryStealTask(context, task, workersCount) )
 			{
+#ifdef MT_INSTRUMENTED_BUILD
+				bool isNewTask = (task.awaitingFiber == nullptr);
+#endif
+
 				// There is a new task
 				FiberContext* fiberContext = context.taskScheduler->RequestFiberContext(task);
 				MT_ASSERT(fiberContext, "Can't get execution context from pool");
 				MT_ASSERT(fiberContext->currentTask.IsValid(), "Sanity check failed");
 				MT_ASSERT(fiberContext->stackRequirements == task.desc.stackRequirements, "Sanity check failed");
 
-#ifdef MT_INSTRUMENTED_BUILD
-				fiberContext->fiber.SetName(task.desc.debugID);
-#endif
-
 				while(fiberContext)
 				{
 #ifdef MT_INSTRUMENTED_BUILD
-					context.NotifyTaskResumed(fiberContext->currentTask);
+					if (isNewTask)
+					{
+						//TODO:
+						isNewTask = false;
+					}
 #endif
 					// prevent invalid fiber resume from child tasks, before ExecuteTask is done
 					fiberContext->childrenFibersCount.IncFetch();
@@ -407,7 +447,7 @@ namespace MT
 					if (taskStatus == FiberTaskStatus::FINISHED)
 					{
 						MT_ASSERT( childrenFibersCount == 0, "Sanity check failed");
-						context.taskScheduler->ReleaseFiberContext(fiberContext);
+						context.taskScheduler->ReleaseFiberContext(std::move(fiberContext));
 
 						// If parent fiber is exist transfer flow control to parent fiber, if parent fiber is null, exit
 						fiberContext = parentFiber;
@@ -439,8 +479,8 @@ namespace MT
 				context.NotifyThreadIdleBegin(context.workerIndex);
 #endif
 
-				// Queue is empty and stealing attempt failed
-				// Wait new events
+				// Queue if empty and stealing attempt failed
+				// Wait for new events
 				context.hasNewTasksEvent.Wait(2000);
 
 #ifdef MT_INSTRUMENTED_BUILD
@@ -601,7 +641,7 @@ namespace MT
 		MT_ASSERT(IsWorkerThread() == false, "Can't use CreateGroup inside Task.");
 
 		TaskGroup group;
-		if (!availableGroups.TryPopBack(group))
+		if (!availableGroups.TryPop(group))
 		{
 			MT_REPORT_ASSERT("Group pool is empty");
 		}
@@ -628,7 +668,9 @@ namespace MT
 		groupStats[idx].SetDebugIsFree(true);
 #endif
 
-		availableGroups.Push(group);
+		bool res = availableGroups.TryPush(std::move(group));
+		MT_USED_IN_ASSERT(res);
+		MT_ASSERT(res, "Can't return group to pool");
 	}
 
 	TaskScheduler::TaskGroupDescription & TaskScheduler::GetGroupDesc(TaskGroup group)

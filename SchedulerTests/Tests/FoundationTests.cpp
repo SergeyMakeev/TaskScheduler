@@ -23,7 +23,7 @@
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
-#include <MTConcurrentQueueLIFO.h>
+#include <MTQueueMPMC.h>
 #include <MTConcurrentRingBuffer.h>
 #include <MTArrayView.h>
 #include <MTStackArray.h>
@@ -90,6 +90,71 @@ TEST(StackArrayTest)
 	}
 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+TEST(QueueMPMC_BasicTest)
+{
+	MT::LockFreeQueueMPMC<int, 32> queue;
+
+	for(int i = 0; i < 64; i++)
+	{
+		bool res = queue.TryPush( std::move(77 + i) );
+		if (i < 32)
+		{
+			CHECK_EQUAL(true, res);
+		} else
+		{
+			CHECK_EQUAL(false, res);
+		}
+	}
+
+	for(int i = 0; i < 64; i++)
+	{
+		int val;
+		bool res = queue.TryPop(val);
+		if (i < 32)
+		{
+			CHECK_EQUAL(true, res);
+			CHECK_EQUAL(77 + i, val);
+		} else
+		{
+			CHECK_EQUAL(false, res);
+		}
+	}
+
+
+	CHECK_EQUAL(true, queue.TryPush( 113 ));
+	CHECK_EQUAL(true, queue.TryPush( 114 ));
+	CHECK_EQUAL(true, queue.TryPush( 115 ));
+
+	int v;
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(113, v);
+
+	CHECK_EQUAL(true, queue.TryPush( 116 ));
+	CHECK_EQUAL(true, queue.TryPush( 117 ));
+	CHECK_EQUAL(true, queue.TryPush( 118 ));
+
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(114, v);
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(115, v);
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(116, v);
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(117, v);
+	CHECK_EQUAL(true, queue.TryPop(v));
+	CHECK_EQUAL(118, v);
+
+	v = -133;
+	CHECK_EQUAL(false, queue.TryPop(v));
+	CHECK_EQUAL(-133, v);
+
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(ArrayViewTest)
 {

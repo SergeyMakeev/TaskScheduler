@@ -22,7 +22,6 @@
 
 #include <MTScheduler.h>
 
-
 namespace MT
 {
 	namespace internal
@@ -65,28 +64,19 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 
-		void ThreadContext::NotifyTaskFinished(const internal::TaskDesc & desc)
+		void ThreadContext::NotifyTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->OnTaskFinished(desc.debugColor, desc.debugID);
+				eventListener->OnTaskBeginExecute(debugColor, debugID);
 			}
 		}
 
-		void ThreadContext::NotifyTaskResumed(const internal::TaskDesc & desc)
+		void ThreadContext::NotifyTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->OnTaskResumed(desc.debugColor, desc.debugID);
-			}
-
-		}
-
-		void ThreadContext::NotifyTaskYielded(const internal::TaskDesc & desc)
-		{
-			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
-			{
-				eventListener->OnTaskYielded(desc.debugColor, desc.debugID);
+				eventListener->OnTaskEndExecute(debugColor, debugID);
 			}
 		}
 
@@ -113,7 +103,6 @@ namespace MT
 				eventListener->OnThreadStoped(threadIndex);
 			}
 		}
-
 
 		void ThreadContext::NotifyThreadIdleBegin(uint32 threadIndex)
 		{

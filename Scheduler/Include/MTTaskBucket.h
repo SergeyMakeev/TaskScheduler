@@ -24,7 +24,6 @@
 
 #include <MTTools.h>
 #include <MTPlatform.h>
-#include <MTConcurrentQueueLIFO.h>
 #include <MTStackArray.h>
 #include <MTArrayView.h>
 

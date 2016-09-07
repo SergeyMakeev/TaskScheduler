@@ -52,14 +52,11 @@ namespace MT
 		// Called from worker thread context when worker thread return to work
 		virtual void OnThreadIdleEnd(uint32 workerIndex) = 0;
 
-		// Called from the worker thread that has finished to execute the task
-		virtual void OnTaskFinished(MT::Color::Type debugColor, const mt_char* debugID) = 0;
-
 		// Called from the worker thread that has began to execute the task (new task or after old task was yielded)
-		virtual void OnTaskResumed(MT::Color::Type debugColor, const mt_char* debugID) = 0;
+		virtual void OnTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID) = 0;
 
-		// Called from the worker thread that has yield the current task
-		virtual void OnTaskYielded(MT::Color::Type debugColor, const mt_char* debugID) = 0;
+		// Called from the worker thread that has end execute task
+		virtual void OnTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID) = 0;
 	};
 
 }

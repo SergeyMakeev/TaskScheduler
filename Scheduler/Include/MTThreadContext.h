@@ -24,10 +24,20 @@
 
 #include <MTTools.h>
 #include <MTPlatform.h>
-#include <MTConcurrentQueueLIFO.h>
 #include <MTTaskQueue.h>
 #include <MTConcurrentRingBuffer.h>
 #include <MTGroupedTask.h>
+
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+#define MT_SYSTEM_TASK_COLOR (MT::Color::Yellow)
+#define MT_SYSTEM_TASK_NAME "SchedulerTask"
+#define MT_SYSTEM_TASK_FIBER_NAME "IdleFiber"
+
+
+#endif
+
 
 namespace MT
 {
@@ -95,9 +105,8 @@ namespace MT
 			void NotifyThreadStart(uint32 threadIndex);
 			void NotifyThreadStop(uint32 threadIndex);
 
-			void NotifyTaskFinished(const internal::TaskDesc & desc);
-			void NotifyTaskResumed(const internal::TaskDesc & desc);
-			void NotifyTaskYielded(const internal::TaskDesc & desc);
+			void NotifyTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID);
+			void NotifyTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID);
 
 			void NotifyThreadIdleBegin(uint32 threadIndex);
 			void NotifyThreadIdleEnd(uint32 threadIndex);

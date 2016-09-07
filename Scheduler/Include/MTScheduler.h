@@ -26,7 +26,7 @@
 #include <MTColorTable.h>
 #include <MTTools.h>
 #include <MTPlatform.h>
-#include <MTConcurrentQueueLIFO.h>
+#include <MTQueueMPMC.h>
 #include <MTStackArray.h>
 #include <MTArrayView.h>
 #include <MTThreadContext.h>
@@ -99,8 +99,6 @@ namespace MT
 #error Platform is not supported.
 
 #endif
-
-
 
 
 #define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS) \
@@ -293,7 +291,7 @@ namespace MT
 		TaskGroupDescription allGroups;
 
 		// Groups pool
-		ConcurrentQueueLIFO<TaskGroup> availableGroups;
+		LockFreeQueueMPMC<TaskGroup, TaskGroup::MT_MAX_GROUPS_COUNT> availableGroups;
 
 		//
 		TaskGroupDescription groupStats[TaskGroup::MT_MAX_GROUPS_COUNT];
@@ -303,17 +301,18 @@ namespace MT
 		FiberContext extendedFiberContexts[MT_MAX_EXTENDED_FIBERS_COUNT];
 
 		// Fibers pool
-		ConcurrentQueueLIFO<FiberContext*> standartFibersAvailable;
-		ConcurrentQueueLIFO<FiberContext*> extendedFibersAvailable;
+		LockFreeQueueMPMC<FiberContext*, MT_MAX_STANDART_FIBERS_COUNT> standartFibersAvailable;
+		LockFreeQueueMPMC<FiberContext*, MT_MAX_EXTENDED_FIBERS_COUNT> extendedFibersAvailable;
 
-		ConcurrentQueueLIFO<FiberContext*>* GetFibersStorage(MT::StackRequirements::Type stackRequirements);
+		FiberContext* GetFiberFromStorage(MT::StackRequirements::Type stackRequirements);
+		bool PutFiberToStorage(MT::StackRequirements::Type stackRequirements, FiberContext*&& fiberContext);
 
 #ifdef MT_INSTRUMENTED_BUILD
 		IProfilerEventListener * profilerEventListener;
 #endif
 
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
-		void ReleaseFiberContext(FiberContext* fiberExecutionContext);
+		void ReleaseFiberContext(FiberContext*&& fiberExecutionContext);
 		void RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
 		TaskGroupDescription & GetGroupDesc(TaskGroup group);
 
