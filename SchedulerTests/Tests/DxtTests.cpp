@@ -454,7 +454,7 @@ SUITE(DxtTests)
 	}
 
 
-
+/*
 	// dxt compressor Hiload test (for profiling purposes)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	TEST(HiloadDxtTest)
@@ -503,6 +503,7 @@ SUITE(DxtTests)
 			MT::Thread::Sleep(1);
 		}
 	}
+*/
 
 
 	// dxt compressor complex test
