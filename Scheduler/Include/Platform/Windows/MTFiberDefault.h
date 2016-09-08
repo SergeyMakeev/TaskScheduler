@@ -69,11 +69,9 @@ namespace MT
 		}
 
 
-		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
+		void CreateFromCurrentThreadAndRun(TThreadEntryPoint entryPoint, void *userData)
 		{
-			MT_USED_IN_ASSERT(thread);
 			MT_ASSERT(fiber == nullptr, "Fiber already created");
-			MT_ASSERT(thread.IsCurrentThread(), "Can't create fiber from this thread");
 
 			func = nullptr;
 			funcData = nullptr;

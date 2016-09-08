@@ -360,7 +360,7 @@ namespace MT
 		}
 #endif
 
-		context.schedulerFiber.CreateFromCurrentThreadAndRun(context.thread, SchedulerFiberMain, userData);
+		context.schedulerFiber.CreateFromCurrentThreadAndRun(SchedulerFiberMain, userData);
 	}
 
 

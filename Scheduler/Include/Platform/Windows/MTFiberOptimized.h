@@ -115,12 +115,9 @@ namespace MT
 			}
 		}
 
-		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
+		void CreateFromCurrentThreadAndRun(TThreadEntryPoint entryPoint, void *userData)
 		{
-			MT_USED_IN_ASSERT(thread);
-
 			MT_ASSERT(!isInitialized, "Already initialized");
-			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
 
 			fiberContext.ContextFlags = MW_CONTEXT_FULL;
 			MW_BOOL res = GetThreadContext( GetCurrentThread(), &fiberContext );

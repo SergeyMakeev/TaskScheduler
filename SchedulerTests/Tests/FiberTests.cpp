@@ -70,27 +70,16 @@ SUITE(FiberTests)
 		fiberMain = nullptr;
 	}
 
-	void TestThread(void* userData)
-	{
-		MT::Fiber fiber;
-
-		fiberMain = &fiber;
-
-		counter.Store(0);
-
-		MT::Thread* thread = (MT::Thread*)userData;
-
-		fiberMain->CreateFromCurrentThreadAndRun(*thread, FiberMain, userData);
-	}
-
 
 
 TEST(FiberSimpleTest)
 {
-	MT::Thread thread;
-	thread.Start(SMALLEST_STACK_SIZE, TestThread, &thread);
+	MT::Fiber fiber;
+	fiberMain = &fiber;
 
-	thread.Join();
+	counter.Store(0);
+
+	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

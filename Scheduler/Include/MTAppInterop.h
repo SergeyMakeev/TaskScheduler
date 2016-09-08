@@ -65,7 +65,6 @@ namespace MT
 				, stackTop(nullptr)
 				, stackMemory(nullptr)
 				, stackMemoryBytesCount(0)
-
 			{
 			}
 

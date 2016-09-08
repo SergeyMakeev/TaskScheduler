@@ -101,15 +101,30 @@ namespace MT
 		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
-			MT_ASSERT(thread.IsCurrentThread(), "ERROR: Can create fiber only from current thread!");
 
+			// get current thread attributes
+			pthread_attr_t threadAttr;
+			pthread_t callThread = pthread_self();
+			int res = pthread_getattr_np(callThread, &threadAttr);
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_getattr_np - failed");
+
+			// get current thread stack
+			void* stackaddr = nullptr;
+			size_t stacksize = 0;
+			res = pthread_attr_getstack(&threadAttr, &stackaddr, &stacksize);
+			MT_USED_IN_ASSERT(res);
+			MT_ASSERT(res == 0, "pthread_attr_getstack - failed");
+
+			// get execution context
 			int res = getcontext(&fiberContext);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
+			// setup context
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = thread.GetStackBottom();
-			fiberContext.uc_stack.ss_size = thread.GetStackSize();
+			fiberContext.uc_stack.ss_sp = stackaddr;
+			fiberContext.uc_stack.ss_size = stacksize;
 			fiberContext.uc_stack.ss_flags = 0;
 
 			func = nullptr;
