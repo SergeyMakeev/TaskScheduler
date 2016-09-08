@@ -25,13 +25,12 @@
 #ifndef __MT_FIBER__
 #define __MT_FIBER__
 
+#define _DARWIN_C_SOURCE
 
 #include <ucontext.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
-#define _DARWIN_C_SOURCE
 #include <sys/mman.h>
 
 #ifndef MAP_ANONYMOUS

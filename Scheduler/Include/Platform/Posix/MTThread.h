@@ -25,6 +25,8 @@
 #ifndef __MT_THREAD__
 #define __MT_THREAD__
 
+#define _DARWIN_C_SOURCE
+
 #include <MTConfig.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -36,7 +38,6 @@
 #include <thread>
 #endif
 
-#define _DARWIN_C_SOURCE
 #include <sys/mman.h>
 
 #ifndef MAP_ANONYMOUS
