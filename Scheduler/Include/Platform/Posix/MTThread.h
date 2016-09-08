@@ -25,10 +25,6 @@
 #ifndef __MT_THREAD__
 #define __MT_THREAD__
 
-#ifndef _DARWIN_C_SOURCE
-#define _DARWIN_C_SOURCE (1)
-#endif
-
 #include <MTConfig.h>
 #include <pthread.h>
 #include <unistd.h>
