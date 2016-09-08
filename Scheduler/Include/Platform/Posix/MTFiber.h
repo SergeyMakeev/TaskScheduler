@@ -30,6 +30,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define _GNU_SOURCE
+#include <pthread.h>
+
 #define _DARWIN_C_SOURCE
 #include <sys/mman.h>
 
@@ -102,29 +105,42 @@ namespace MT
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
 
+
+			void* stackAddr = nullptr;
+			size_t stackSize = 0;
+			pthread_t callThread = pthread_self();
+
+#if MT_PLATFORM_OSX
+
+			stackAddr = pthread_get_stackaddr_np(callThread);
+			stackSize = pthread_get_stacksize_np(callThread);
+
+#else
 			// get current thread attributes
 			pthread_attr_t threadAttr;
-			pthread_t callThread = pthread_self();
+			
 			int res = pthread_getattr_np(callThread, &threadAttr);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "pthread_getattr_np - failed");
 
 			// get current thread stack
-			void* stackaddr = nullptr;
-			size_t stacksize = 0;
-			res = pthread_attr_getstack(&threadAttr, &stackaddr, &stacksize);
+			res = pthread_attr_getstack(&threadAttr, &stackAddr, &stackSize);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "pthread_attr_getstack - failed");
+#endif
+			MT_ASSERT(stackAddr != nullptr, "Invalid stack address");
+			MT_ASSERT(stackSize > 0, "Invalid stack size");
+
 
 			// get execution context
-			int res = getcontext(&fiberContext);
+			res = getcontext(&fiberContext);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "getcontext - failed");
 
 			// setup context
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = stackaddr;
-			fiberContext.uc_stack.ss_size = stacksize;
+			fiberContext.uc_stack.ss_sp = stackAddr;
+			fiberContext.uc_stack.ss_size = stackSize;
 			fiberContext.uc_stack.ss_flags = 0;
 
 			func = nullptr;
