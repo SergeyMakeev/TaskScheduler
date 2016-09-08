@@ -25,7 +25,9 @@
 #ifndef __MT_MUTEX__
 #define __MT_MUTEX__
 
-#define _DARWIN_C_SOURCE
+#ifndef _DARWIN_C_SOURCE
+#define _DARWIN_C_SOURCE (1)
+#endif
 
 #include <pthread.h>
 

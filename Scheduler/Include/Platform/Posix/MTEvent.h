@@ -25,7 +25,9 @@
 #ifndef __MT_EVENT__
 #define __MT_EVENT__
 
-#define _DARWIN_C_SOURCE
+#ifndef _DARWIN_C_SOURCE
+#define _DARWIN_C_SOURCE (1)
+#endif
 
 #include <sys/time.h>
 #include <sched.h>

@@ -25,7 +25,9 @@
 #ifndef __MT_FIBER__
 #define __MT_FIBER__
 
-#define _DARWIN_C_SOURCE
+#ifndef _DARWIN_C_SOURCE
+#define _DARWIN_C_SOURCE (1)
+#endif
 
 #include <ucontext.h>
 #include <stdlib.h>
