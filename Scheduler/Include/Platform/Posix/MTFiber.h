@@ -29,8 +29,6 @@
 #include <ucontext.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define _GNU_SOURCE
 #include <pthread.h>
 
 #define _DARWIN_C_SOURCE
@@ -101,11 +99,11 @@ namespace MT
 		}
 
 
-		void CreateFromCurrentThreadAndRun(Thread & thread, TThreadEntryPoint entryPoint, void *userData)
+		void CreateFromCurrentThreadAndRun(TThreadEntryPoint entryPoint, void *userData)
 		{
 			MT_ASSERT(!isInitialized, "Already initialized");
 
-
+			int res = 0;
 			void* stackAddr = nullptr;
 			size_t stackSize = 0;
 			pthread_t callThread = pthread_self();
@@ -119,7 +117,7 @@ namespace MT
 			// get current thread attributes
 			pthread_attr_t threadAttr;
 			
-			int res = pthread_getattr_np(callThread, &threadAttr);
+			res = pthread_getattr_np(callThread, &threadAttr);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "pthread_getattr_np - failed");
 
