@@ -35,6 +35,11 @@ if isPosix or isOSX then
 	defines { "_XOPEN_SOURCE=600" }
 end
 
+if isOSX then
+	defines { "_DARWIN_C_SOURCE=1" }
+end
+
+
 if isVisualStudio then
 	debugdir ("Bin")
 end
