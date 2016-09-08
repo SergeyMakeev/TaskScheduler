@@ -33,7 +33,10 @@ struct StandartStackSizeTask
 
 	void Do(MT::FiberContext&)
 	{
-		byte stackData[28000];
+		//byte stackData[28000];
+
+		// Looks like OSX ASAN took too many stack space
+		byte stackData[20000]; 
 		for (uint32 i = 0; i < MT_ARRAY_SIZE(stackData); i++)
 		{
 			stackData[i] = 0x0D;
