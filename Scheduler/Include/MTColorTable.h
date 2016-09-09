@@ -22,12 +22,14 @@
 
 #pragma once
 
+#include <MTTypes.h>
 
 namespace MT
 {
 
 	// Source: http://msdn.microsoft.com/en-us/library/system.windows.media.colors(v=vs.110).aspx
 	// Image:  http://i.msdn.microsoft.com/dynimg/IC24340.png
+	// Format: ARGB
 	namespace Color
 	{
 		enum Type
@@ -174,6 +176,21 @@ namespace MT
 			Yellow = 0xFFFFFF00,
 			YellowGreen = 0xFF9ACD32,
 		};
-	};
+
+		inline uint32 ConvertToABGR(Color::Type _color)
+		{
+			uint32 color = _color;
+
+			uint8 r = (color >> 16) & 0xFF;
+			uint8 b = (color) & 0xFF;
+
+			uint32 result = (color & 0xFF00FF00);
+			result |= r;
+			result |= (b << 16);
+
+			return result;
+		}
+
+	}
 
 }

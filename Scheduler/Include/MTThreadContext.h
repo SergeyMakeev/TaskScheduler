@@ -35,7 +35,6 @@
 #define MT_SYSTEM_TASK_NAME "SchedulerTask"
 #define MT_SYSTEM_TASK_FIBER_NAME "IdleFiber"
 
-
 #endif
 
 
@@ -45,6 +44,19 @@ namespace MT
 	class TaskScheduler;
 
 
+#ifdef MT_INSTRUMENTED_BUILD
+	namespace TaskExecuteState
+	{
+		enum Type
+		{
+			START = 0,
+			STOP = 1,
+			RESUME = 2,
+			SUSPEND = 3,
+		};
+	}
+
+#endif
 
 	namespace internal
 	{
@@ -105,8 +117,7 @@ namespace MT
 			void NotifyThreadStart(uint32 threadIndex);
 			void NotifyThreadStop(uint32 threadIndex);
 
-			void NotifyTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID);
-			void NotifyTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID);
+			void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type);
 
 			void NotifyThreadIdleBegin(uint32 threadIndex);
 			void NotifyThreadIdleEnd(uint32 threadIndex);

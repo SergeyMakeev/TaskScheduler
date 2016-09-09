@@ -88,7 +88,7 @@ namespace MT
 		Fiber & schedulerFiber = threadContext->schedulerFiber;
 
 #ifdef MT_INSTRUMENTED_BUILD
-		threadContext->NotifyTaskEndExecute( currentTask.debugColor, currentTask.debugID );
+		threadContext->NotifyTaskExecuteStateChanged( currentTask.debugColor, currentTask.debugID, TaskExecuteState::SUSPEND );
 #endif
 
 		// Yielding, so reset thread context
@@ -98,7 +98,7 @@ namespace MT
 		Fiber::SwitchTo(fiber, schedulerFiber);
 
 #ifdef MT_INSTRUMENTED_BUILD
-		threadContext->NotifyTaskBeginExecute( currentTask.debugColor, currentTask.debugID );
+		threadContext->NotifyTaskExecuteStateChanged( currentTask.debugColor, currentTask.debugID, TaskExecuteState::RESUME );
 #endif
 
 	}

@@ -72,44 +72,61 @@ int _kbhit(void)
 
 #ifdef MT_INSTRUMENTED_BUILD
 
+
+#ifdef MT_PLATFORM_ORBIS
+#include <perf.h>
+#endif
+
 class Microprofile : public MT::IProfilerEventListener
 {
-	void OnThreadCreated(uint32 workerIndex)
+	virtual void OnThreadCreated(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnThreadStarted(uint32 workerIndex)
+	virtual void OnThreadStarted(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnThreadStoped(uint32 workerIndex)
+	virtual void OnThreadStoped(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnThreadIdleBegin(uint32 workerIndex)
+	virtual void OnThreadIdleBegin(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnThreadIdleEnd(uint32 workerIndex)
+	virtual void OnThreadIdleEnd(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
 	}
 
-	void OnTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID)
+	virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, MT::TaskExecuteState::Type type) override 
 	{
 		MT_UNUSED(debugColor);
 		MT_UNUSED(debugID);
+		MT_UNUSED(type);
+
+#ifdef MT_PLATFORM_ORBIS
+		switch(type)
+		{
+		case MT::TaskExecuteState::START:
+			sceRazorCpuPushMarkerStatic(debugID, MT::Color::ConvertToABGR(debugColor), SCE_RAZOR_MARKER_DISABLE_HUD);
+			break;
+		case MT::TaskExecuteState::STOP:
+			sceRazorCpuPopMarker();
+			break;
+		case MT::TaskExecuteState::RESUME:
+			break;
+		case MT::TaskExecuteState::SUSPEND:
+			break;
+		}
+#endif
 	}
 
-	void OnTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID)
-	{
-		MT_UNUSED(debugColor);
-		MT_UNUSED(debugID);
-	}
 
 };
 
@@ -278,6 +295,10 @@ SUITE(DxtTests)
 
 		void Do(MT::FiberContext& context)
 		{
+#if defined(MT_PLATFORM_ORBIS) && defined(MT_INSTRUMENTED_BUILD)
+			sceRazorCpuPushMarkerStatic("compress_dxt_task", MT::Color::ConvertToABGR(MT::Color::SteelBlue), SCE_RAZOR_MARKER_DISABLE_HUD);
+#endif
+
 			// use stack_array as subtask container. beware stack overflow!
 			MT::StackArray<CompressDxtBlock, 1024> subTasks;
 
@@ -296,6 +317,10 @@ SUITE(DxtTests)
 			{
 				pIsFinished->Store(1);
 			}
+
+#if defined(MT_PLATFORM_ORBIS) && defined(MT_INSTRUMENTED_BUILD)
+			sceRazorCpuPopMarker();
+#endif
 		}
 	};
 
@@ -453,8 +478,9 @@ SUITE(DxtTests)
 		}
 	}
 
-/*
 
+
+/*
 	// dxt compressor Hiload test (for profiling purposes)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	TEST(HiloadDxtTest)
@@ -474,7 +500,12 @@ SUITE(DxtTests)
 		CompressDxt compressTask2(128, 128, stride, srcImage, &isFinished2);
 		MT_ASSERT ((compressTask2.width & 3) == 0 && (compressTask2.height & 3) == 0, "Image size must be a multiple of 4");
 
+#ifdef MT_INSTRUMENTED_BUILD
+		Microprofile profiler;
+		MT::TaskScheduler scheduler(0, nullptr, &profiler);
+#else
 		MT::TaskScheduler scheduler;
+#endif
 
 		int workersCount = (int)scheduler.GetWorkersCount();
 		printf("Scheduler started, %d workers\n", workersCount);

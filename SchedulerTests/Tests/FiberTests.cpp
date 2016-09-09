@@ -30,6 +30,9 @@
 	#define SMALLEST_STACK_SIZE (32768)
 #endif
 
+int64 startTime = 0;
+int64 endTime = 0;
+
 
 SUITE(FiberTests)
 {
@@ -52,6 +55,10 @@ SUITE(FiberTests)
 
 	void FiberMain(void* userData)
 	{
+		endTime = MT::GetTimeMicroSeconds();
+		uint32 microsecondsFromThreadToFiber = (uint32)(endTime - startTime);
+		printf("%d us to convert from thread to fiber\n", microsecondsFromThreadToFiber);
+
 		MT_UNUSED(userData);
 
 		MT::Fiber fiber1;
@@ -74,11 +81,13 @@ SUITE(FiberTests)
 
 TEST(FiberSimpleTest)
 {
+
 	MT::Fiber fiber;
 	fiberMain = &fiber;
 
 	counter.Store(0);
-
+	
+	startTime = MT::GetTimeMicroSeconds();
 	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

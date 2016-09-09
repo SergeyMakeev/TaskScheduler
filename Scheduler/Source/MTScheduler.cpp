@@ -203,14 +203,16 @@ namespace MT
 		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
 
 #ifdef MT_INSTRUMENTED_BUILD
-		threadContext.NotifyTaskEndExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
+		//threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::SUSPEND);
+		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP);
 #endif
 
 		// Run current task code
 		Fiber::SwitchTo(threadContext.schedulerFiber, fiberContext->fiber);
 
 #ifdef MT_INSTRUMENTED_BUILD
-		threadContext.NotifyTaskBeginExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
+		//threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::RESUME);
+		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
 #endif
 
 		// If task was done
@@ -297,7 +299,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
-			fiberContext.GetThreadContext()->NotifyTaskBeginExecute( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID );
+			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::START );
 #endif
 
 			fiberContext.currentTask.taskFunc( fiberContext, fiberContext.currentTask.userData );
@@ -305,7 +307,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
-			fiberContext.GetThreadContext()->NotifyTaskEndExecute( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID );
+			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::STOP );
 #endif
 
 			Fiber::SwitchTo(fiberContext.fiber, fiberContext.GetThreadContext()->schedulerFiber);
@@ -395,7 +397,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 		context.NotifyThreadStart(context.workerIndex);
-		context.NotifyTaskBeginExecute( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME );
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
 #endif
 
 		while(context.state.Load() != internal::ThreadState::EXIT)
@@ -481,6 +483,7 @@ namespace MT
 		} // main thread loop
 
 #ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP);
 		context.NotifyThreadStop(context.workerIndex);
 #endif
 

@@ -64,19 +64,11 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 
-		void ThreadContext::NotifyTaskBeginExecute(MT::Color::Type debugColor, const mt_char* debugID)
+		void ThreadContext::NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->OnTaskBeginExecute(debugColor, debugID);
-			}
-		}
-
-		void ThreadContext::NotifyTaskEndExecute(MT::Color::Type debugColor, const mt_char* debugID)
-		{
-			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
-			{
-				eventListener->OnTaskEndExecute(debugColor, debugID);
+				eventListener->NotifyTaskExecuteStateChanged(debugColor, debugID, type);
 			}
 		}
 
