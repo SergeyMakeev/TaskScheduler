@@ -229,6 +229,7 @@ namespace MT
 
 				Queue& queue = queues[queueIndex];
 				bool res = queue.Add(itemArray[i]);
+				MT_USED_IN_ASSERT(res);
 				MT_ASSERT(res == true, "Sanity check failed");
 			}
 
