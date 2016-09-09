@@ -88,6 +88,7 @@ namespace MT
 			desc.poolDestroyFunc = T::PoolTaskDestroy;
 			desc.taskFunc = T::TaskEntryPoint;
 			desc.stackRequirements = T::GetStackRequirements();
+			desc.priority = T::GetTaskPriority();
 			desc.userData = &task;
 
 #ifdef MT_INSTRUMENTED_BUILD

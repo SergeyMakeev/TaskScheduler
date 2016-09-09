@@ -26,17 +26,17 @@
 namespace MT
 {
 
-	/// \class StackArray
-	/// \brief Array, allocated on stack.
-	template<class T, size_t capacity>
-	class StackArray
+	/// \class Static vector
+	/// \brief A variable-size array container with fixed capacity.
+	template<class T, size_t CAPACITY>
+	class StaticVector
 	{
 		static const int32 ALIGNMENT = 16;
 		static const int32 ALIGNMENT_MASK = (ALIGNMENT-1);
 
 		uint32 count;
 
-		byte rawMemory_[sizeof(T) * capacity + ALIGNMENT];
+		byte rawMemory_[sizeof(T) * CAPACITY + ALIGNMENT];
 
 		inline T* IndexToObject(int32 index)
 		{
@@ -63,24 +63,24 @@ namespace MT
 
 	public:
 
-		MT_NOCOPYABLE(StackArray);
+		MT_NOCOPYABLE(StaticVector);
 
-		inline StackArray()
+		inline StaticVector()
 			: count(0)
 		{
 		}
 
-		inline StackArray(uint32 _count, const T & defaultElement = T())
+		inline StaticVector(uint32 _count, const T & defaultElement = T())
 			: count(_count)
 		{
-			MT_ASSERT(count <= capacity, "Too big size");
+			MT_ASSERT(count <= CAPACITY, "Too big size");
 			for (uint32 i = 0; i < count; i++)
 			{
 				CopyCtor(Begin() + i, defaultElement);
 			}
 		}
 
-		inline ~StackArray()
+		inline ~StaticVector()
 		{
 			for (uint32 i = 0; i < count; i++)
 			{
@@ -102,7 +102,7 @@ namespace MT
 
 		inline void PushBack(T && val)
 		{
-			MT_ASSERT(count < capacity, "Can't add element");
+			MT_ASSERT(count < CAPACITY, "Can't add element");
 			uint32 lastElementIndex = count;
 			count++;
 			MoveCtor( IndexToObject(lastElementIndex), std::move(val) );

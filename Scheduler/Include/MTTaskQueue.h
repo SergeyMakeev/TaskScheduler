@@ -31,172 +31,239 @@
 
 namespace MT
 {
+	namespace TaskPriority
+	{
+		enum Type
+		{
+			HIGH = 0,
+			NORMAL = 1,
+			LOW = 2,
+
+			COUNT,
+
+			INVALID
+		};
+	}
+
 	/// \class TaskQueue
 	/// \brief thread safe task queue
 	///
-	template<typename T>
+	template<typename T, uint32 CAPACITY>
 	class TaskQueue
 	{
-		static const int32 ALIGNMENT = 16;
 
-	public:
-		static const unsigned int CAPACITY = 4096u;
-	private:
-		static const unsigned int MASK = CAPACITY - 1u;
+		//////////////////////////////////////////////////////////////////////////
+		class Queue
+		{
+			static const int32 ALIGNMENT = 16;
+			static const unsigned int MASK = CAPACITY - 1u;
+
+			void* data;
+			size_t begin;
+			size_t end;
+
+			inline T* Buffer()
+			{
+				return (T*)(data);
+			}
+
+			inline void CopyCtor(T* element, const T & val)
+			{
+				new(element) T(val);
+			}
+
+			inline void MoveCtor(T* element, T && val)
+			{
+				new(element) T(std::move(val));
+			}
+
+			inline void Dtor(T* element)
+			{
+				MT_UNUSED(element);
+				element->~T();
+			}
+
+			inline size_t Size() const
+			{
+				if (IsEmpty())
+				{
+					return 0;
+				}
+
+				size_t count = ((end & MASK) - (begin & MASK)) & MASK;
+				return count;
+			}
+
+			inline void Clear()
+			{
+				size_t queueSize = Size();
+				for (size_t i = 0; i < queueSize; i++)
+				{
+					T* pElement = Buffer() + ((begin + i) & MASK);
+					Dtor(pElement);
+				}
+
+				begin = 0;
+				end = 0;
+			}
+
+		public:
+
+			Queue()
+				: begin(0)
+				, end(0)
+			{
+				size_t bytesCount = sizeof(T) * CAPACITY;
+				data = Memory::Alloc(bytesCount, ALIGNMENT);
+			}
+
+			~Queue()
+			{
+				if (data != nullptr)
+				{
+					Memory::Free(data);
+					data = nullptr;
+				}
+			}
+
+			inline bool HasSpace(size_t itemCount)
+			{
+				if ((Size() + itemCount) >= CAPACITY)
+				{
+					return false;
+				}
+
+				return true;
+			}
+
+			inline bool Add(const T& item)
+			{
+				if ((Size() + 1) >= CAPACITY)
+				{
+					return false;
+				}
+
+				size_t index = (end & MASK);
+				T* pElement = Buffer() + index;
+				CopyCtor( pElement, item );
+				end++;
+
+				return true;
+			}
+
+
+			inline bool TryPopOldest(T & item)
+			{
+				if (IsEmpty())
+				{
+					return false;
+				}
+
+				size_t index = (begin & MASK);
+				T* pElement = Buffer() + index;
+				begin++;
+				item = *pElement;
+				Dtor(pElement);
+				return true;
+			}
+
+			inline bool TryPopNewest(T & item)
+			{
+				if (IsEmpty())
+				{
+					return false;
+				}
+
+				end--;
+				size_t index = (end & MASK);
+				T* pElement = Buffer() + index;
+				item = *pElement;
+				Dtor(pElement);
+				return true;
+			}
+
+			inline bool IsEmpty() const
+			{
+				return (begin == end);
+			}
+		};
+		//////////////////////////////////////////////////////////////////////////
 
 		MT::Mutex mutex;
-		
-		void* data;
-
-		size_t begin;
-		size_t end;
-		
-		inline T* Buffer()
-		{
-			return (T*)(data);
-		}
-
-		inline void CopyCtor(T* element, const T & val)
-		{
-			new(element) T(val);
-		}
-
-		inline void MoveCtor(T* element, T && val)
-		{
-			new(element) T(std::move(val));
-		}
-
-		inline void Dtor(T* element)
-		{
-			MT_UNUSED(element);
-			element->~T();
-		}
-
-		inline bool _IsEmpty() const
-		{
-			return (begin == end);
-		}
-
-		inline size_t Size() const
-		{
-			if (_IsEmpty())
-			{
-				return 0;
-			}
-
-			size_t count = ((end & MASK) - (begin & MASK)) & MASK;
-			return count;
-		}
-
-		inline void Clear()
-		{
-			size_t queueSize = Size();
-			for (size_t i = 0; i < queueSize; i++)
-			{
-				T* pElement = Buffer() + ((begin + i) & MASK);
-				Dtor(pElement);
-			}
-
-			begin = 0;
-			end = 0;
-		}
-
+		Queue queues[TaskPriority::COUNT];
 
 	public:
 
 		MT_NOCOPYABLE(TaskQueue);
 
-		/// \name Initializes a new instance of the TaskQueue class.
-		/// \brief  
 		TaskQueue()
-			: begin(0)
-			, end(0)
 		{
-			size_t bytesCount = sizeof(T) * CAPACITY;
-			data = Memory::Alloc(bytesCount, ALIGNMENT);
 		}
 
 		~TaskQueue()
 		{
-			if (data != nullptr)
-			{
-				Memory::Free(data);
-				data = nullptr;
-			}
 		}
 
-		/// \brief Add multiple tasks onto queue.
-		/// \param itemArray A pointer to first item. Must not be nullptr
-		/// \param count Items count.
 		bool Add(const T* itemArray, size_t count)
 		{
 			MT::ScopedGuard guard(mutex);
 
-			if ((Size() + count) >= CAPACITY)
+			// Check for space for all queues.
+			// At the moment it is not known exactly in what queue items will be added.
+			for(size_t i = 0; i < MT_ARRAY_SIZE(queues); i++)
 			{
-				return false;
+				Queue& queue = queues[i];
+				if (!queue.HasSpace(count))
+				{
+					return false;
+				}
 			}
 
-			for (size_t i = 0; i < count; ++i)
+			// Adding the tasks into the appropriate queue
+			for(size_t i = 0; i < count; i++)
 			{
-				size_t index = (end & MASK);
-				T* pElement = Buffer() + index;
-				CopyCtor( pElement, itemArray[i] );
-				end++;
+				const T& item = itemArray[i];
+
+				uint32 queueIndex = (uint32)item.desc.priority;
+				MT_ASSERT(queueIndex < MT_ARRAY_SIZE(queues), "Invalid task priority");
+
+				Queue& queue = queues[queueIndex];
+				bool res = queue.Add(itemArray[i]);
+				MT_ASSERT(res == true, "Sanity check failed");
 			}
 
 			return true;
 		}
 
 
-		/// \brief Try pop oldest item from queue.
-		/// \param item Resultant item
-		/// \return true on success or false if the queue is empty.
 		bool TryPopOldest(T & item)
 		{
 			MT::ScopedGuard guard(mutex);
-
-			if (_IsEmpty())
+			for(uint32 queueIndex = 0; queueIndex < TaskPriority::COUNT; queueIndex++)
 			{
-				return false;
+				Queue& queue = queues[queueIndex];
+				if (queue.TryPopOldest(item))
+				{
+					return true;
+				}
 			}
-
-			size_t index = (begin & MASK);
-			T* pElement = Buffer() + index;
-			begin++;
-			item = *pElement;
-			Dtor(pElement);
-			return true;
+			return false;
 		}
 
-		/// \brief Try pop a newest item (recently added) from queue.
-		/// \param item Resultant item
-		/// \return true on success or false if the queue is empty.
 		bool TryPopNewest(T & item)
 		{
 			MT::ScopedGuard guard(mutex);
-
-			if (_IsEmpty())
+			for(uint32 queueIndex = 0; queueIndex < TaskPriority::COUNT; queueIndex++)
 			{
-				return false;
+				Queue& queue = queues[queueIndex];
+				if (queue.TryPopNewest(item))
+				{
+					return true;
+				}
 			}
-
-			end--;
-			size_t index = (end & MASK);
-			T* pElement = Buffer() + index;
-			item = *pElement;
-			Dtor(pElement);
-			return true;
+			return false;
 		}
 
-		/// \brief Check if queue is empty.
-		/// \return true - if queue is empty.
-		bool IsEmpty()
-		{
-			MT::ScopedGuard guard(mutex);
-
-			return _IsEmpty();
-		}
 
 	};
 }

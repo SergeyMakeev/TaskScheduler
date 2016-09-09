@@ -35,7 +35,7 @@ typedef MT::TaskPool<SimpleTask, 512> TestPoolType;
 
 struct SimpleTask
 {
-	MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	MT::Atomic32<int32>* doCounter;
 	MT::Atomic32<int32>* dtorCounter;
@@ -149,7 +149,7 @@ TEST(SingleThreadPoolTest)
 
 struct ThreadTest
 {
-	MT_DECLARE_TASK(ThreadTest, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(ThreadTest, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	TestPoolType * taskPool;
 

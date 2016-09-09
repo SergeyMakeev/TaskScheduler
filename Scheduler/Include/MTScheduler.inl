@@ -29,12 +29,12 @@ namespace MT
 		template<class T>
 		inline internal::GroupedTask GetGroupedTask(TaskGroup group, const T * src)
 		{
-			internal::TaskDesc desc(T::TaskEntryPoint, src, T::GetStackRequirements());
+			internal::TaskDesc desc(T::TaskEntryPoint, src, T::GetStackRequirements(), T::GetTaskPriority() );
 #ifdef MT_INSTRUMENTED_BUILD
 			desc.debugID = T::GetDebugID();
 			desc.debugColor = T::GetDebugColor();
 #endif
-			return internal::GroupedTask(desc, group);
+			return internal::GroupedTask( desc, group );
 		}
 
 		//template specialization for FiberContext*
@@ -43,9 +43,9 @@ namespace MT
 		{
 			MT_USED_IN_ASSERT(group);
 			MT_ASSERT(group == TaskGroup::ASSIGN_FROM_CONTEXT, "Group must be assigned from context");
-			FiberContext * fiberContext = *src;
+			FiberContext* fiberContext = *src;
 			MT_ASSERT(fiberContext->currentTask.stackRequirements == fiberContext->stackRequirements, "Sanity check failed");
-			internal::GroupedTask groupedTask(fiberContext->currentTask, fiberContext->currentGroup);
+			internal::GroupedTask groupedTask( fiberContext->currentTask, fiberContext->currentGroup );
 			groupedTask.awaitingFiber = fiberContext;
 			return groupedTask;
 		}
@@ -56,7 +56,7 @@ namespace MT
 		{
 			MT_ASSERT(src->IsValid(), "Invalid task handle!");
 			const internal::TaskDesc & desc = src->GetDesc();
-			return internal::GroupedTask(desc, group);
+			return internal::GroupedTask( desc, group );
 		}
 
 

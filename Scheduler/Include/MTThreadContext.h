@@ -86,7 +86,7 @@ namespace MT
 			Fiber schedulerFiber;
 
 			// task queue awaiting execution
-			TaskQueue<internal::GroupedTask> queue;
+			TaskQueue<internal::GroupedTask, TASK_BUFFER_CAPACITY> queue;
 
 			// new task has arrived to queue event
 			Event hasNewTasksEvent;

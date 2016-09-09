@@ -29,7 +29,7 @@ SUITE(StackSizeTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct StandartStackSizeTask
 {
-	MT_DECLARE_TASK(StandartStackSizeTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(StandartStackSizeTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	void Do(MT::FiberContext&)
 	{
@@ -47,7 +47,7 @@ struct StandartStackSizeTask
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct ExtendedStackSizeTask
 {
-	MT_DECLARE_TASK(ExtendedStackSizeTask, MT::StackRequirements::EXTENDED, MT::Color::Red);
+	MT_DECLARE_TASK(ExtendedStackSizeTask, MT::StackRequirements::EXTENDED, MT::TaskPriority::NORMAL, MT::Color::Red);
 
 	void Do(MT::FiberContext&)
 	{

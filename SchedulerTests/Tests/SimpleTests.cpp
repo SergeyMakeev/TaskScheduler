@@ -29,7 +29,7 @@ SUITE(SimpleTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SimpleTask
 {
-	MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	static const int sourceData = 0xFF33FF;
 	int resultData;
@@ -63,7 +63,7 @@ TEST(RunOneSimpleTask)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct ALotOfTasks
 {
-	MT_DECLARE_TASK(ALotOfTasks, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(ALotOfTasks, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	MT::Atomic32<int32>* counter;
 

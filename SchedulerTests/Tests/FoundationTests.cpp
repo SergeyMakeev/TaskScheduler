@@ -26,7 +26,7 @@
 #include <MTQueueMPMC.h>
 #include <MTConcurrentRingBuffer.h>
 #include <MTArrayView.h>
-#include <MTStackArray.h>
+#include <MTStaticVector.h>
 
 SUITE(FoundationTests)
 {
@@ -68,7 +68,7 @@ TEST(StackArrayTest)
 {
 	const int elementsCount = 128;
 
-	MT::StackArray<int, elementsCount> stackArray;
+	MT::StaticVector<int, elementsCount> stackArray;
 
 	CHECK(stackArray.IsEmpty() == true);
 

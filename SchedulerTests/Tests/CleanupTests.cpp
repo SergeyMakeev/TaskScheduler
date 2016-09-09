@@ -31,7 +31,7 @@ SUITE(CleanupTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct NotFinishedTaskDestroy
 {
-	MT_DECLARE_TASK(NotFinishedTaskDestroy, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(NotFinishedTaskDestroy, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)

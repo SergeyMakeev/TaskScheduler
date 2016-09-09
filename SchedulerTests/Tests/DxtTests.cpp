@@ -23,6 +23,7 @@
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
+#include <MTStaticVector.h>
 
 #include <squish.h>
 #include <string.h>
@@ -175,7 +176,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxtBlock
 	{
-		MT_DECLARE_TASK(CompressDxtBlock, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(CompressDxtBlock, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dstBlocks;
@@ -254,7 +255,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct CompressDxt
 	{
-		MT_DECLARE_TASK(CompressDxt, MT::StackRequirements::EXTENDED, MT::Color::Aqua);
+		MT_DECLARE_TASK(CompressDxt, MT::StackRequirements::EXTENDED, MT::TaskPriority::NORMAL, MT::Color::Aqua);
 
 		uint32 width;
 		uint32 height;
@@ -299,8 +300,8 @@ SUITE(DxtTests)
 			sceRazorCpuPushMarkerStatic("compress_dxt_task", MT::Color::ConvertToABGR(MT::Color::SteelBlue), SCE_RAZOR_MARKER_DISABLE_HUD);
 #endif
 
-			// use stack_array as subtask container. beware stack overflow!
-			MT::StackArray<CompressDxtBlock, 1024> subTasks;
+			// use StaticVector as subtask container. beware stack overflow!
+			MT::StaticVector<CompressDxtBlock, 1024> subTasks;
 
 			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 			{
@@ -329,7 +330,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxtBlock
 	{
-		MT_DECLARE_TASK(DecompressDxtBlock, MT::StackRequirements::STANDARD, MT::Color::Red);
+		MT_DECLARE_TASK(DecompressDxtBlock, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Red);
 
 		MT::ArrayView<uint8> srcBlocks;
 		MT::ArrayView<uint8> dstPixels;
@@ -406,7 +407,7 @@ SUITE(DxtTests)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct DecompressDxt
 	{
-		MT_DECLARE_TASK(DecompressDxt, MT::StackRequirements::EXTENDED, MT::Color::Yellow);
+		MT_DECLARE_TASK(DecompressDxt, MT::StackRequirements::EXTENDED, MT::TaskPriority::NORMAL, MT::Color::Yellow);
 
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::ArrayView<uint8> decompressedImage;
@@ -444,8 +445,8 @@ SUITE(DxtTests)
 
 		void Do(MT::FiberContext& context)
 		{
-			// use stack_array as subtask container. beware stack overflow!
-			MT::StackArray<DecompressDxtBlock, 1024> subTasks;
+			// use StaticVector as subtask container. beware stack overflow!
+			MT::StaticVector<DecompressDxtBlock, 1024> subTasks;
 
 			int stride = blkWidth * 4 * 3;
 

@@ -27,7 +27,6 @@
 #include <MTTools.h>
 #include <MTPlatform.h>
 #include <MTQueueMPMC.h>
-#include <MTStackArray.h>
 #include <MTArrayView.h>
 #include <MTThreadContext.h>
 #include <MTFiberContext.h>
@@ -101,7 +100,7 @@ namespace MT
 #endif
 
 
-#define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS) \
+#define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY) \
 	\
 	MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	\
@@ -127,13 +126,17 @@ namespace MT
 	{ \
 		return STACK_REQUIREMENTS; \
 	} \
+	static MT::TaskPriority::Type GetTaskPriority() \
+	{ \
+		return TASK_PRIORITY; \
+	} \
 
 
 
 #ifdef MT_INSTRUMENTED_BUILD
 #include <MTProfilerEventListener.h>
 
-#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, DEBUG_COLOR) \
+#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR) \
 	static const mt_char* GetDebugID() \
 	{ \
 		return MT_TEXT( #TYPE ); \
@@ -144,13 +147,13 @@ namespace MT
 		return DEBUG_COLOR; \
 	} \
 	\
-	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS);
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY);
 
 
 #else
 
-#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, DEBUG_COLOR) \
-	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS);
+#define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR) \
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY);
 
 #endif
 
@@ -177,6 +180,15 @@ namespace MT
 	namespace internal
 	{
 		struct ThreadContext;
+	}
+
+	namespace TaskStealingMode
+	{
+		enum Type
+		{
+			DISABLED = 0,
+			ENABLED = 1,
+		};
 	}
 
 	struct WorkerThreadParams
@@ -308,6 +320,8 @@ namespace MT
 		IProfilerEventListener * profilerEventListener;
 #endif
 
+		bool taskStealingDisabled;
+
 		FiberContext* RequestFiberContext(internal::GroupedTask& task);
 		void ReleaseFiberContext(FiberContext*&& fiberExecutionContext);
 		void RunTasksImpl(ArrayView<internal::TaskBucket>& buckets, FiberContext * parentFiber, bool restoredFromAwaitState);
@@ -316,7 +330,7 @@ namespace MT
 		static void WorkerThreadMain( void* userData );
 		static void SchedulerFiberMain( void* userData );
 		static void FiberMain( void* userData );
-		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount);
+		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount, bool taskStealingDisabled);
 
 		static FiberContext* ExecuteTask (internal::ThreadContext& threadContext, FiberContext* fiberContext);
 
@@ -325,9 +339,9 @@ namespace MT
 		/// \brief Initializes a new instance of the TaskScheduler class.
 		/// \param workerThreadsCount Worker threads count. Automatically determines the required number of threads if workerThreadsCount set to 0
 #ifdef MT_INSTRUMENTED_BUILD
-		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr, IProfilerEventListener* listener = nullptr);
+		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr, IProfilerEventListener* listener = nullptr, TaskStealingMode::Type stealMode = TaskStealingMode::ENABLED);
 #else
-		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr);
+		TaskScheduler(uint32 workerThreadsCount = 0, WorkerThreadParams* workerParameters = nullptr, TaskStealingMode::Type stealMode = TaskStealingMode::ENABLED);
 #endif
 
 
@@ -347,9 +361,9 @@ namespace MT
 		TaskGroup CreateGroup();
 		void ReleaseGroup(TaskGroup group);
 
-		bool IsEmpty();
-
 		int32 GetWorkersCount() const;
+
+		bool IsTaskStealingDisabled() const;
 
 		bool IsWorkerThread() const;
 

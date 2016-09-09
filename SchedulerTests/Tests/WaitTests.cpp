@@ -36,7 +36,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Subtask
 	{
-		MT_DECLARE_TASK(Subtask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(Subtask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		void Do(MT::FiberContext&)
 		{
@@ -48,7 +48,7 @@ namespace SimpleWaitFromSubtask
 
 	struct Task
 	{
-		MT_DECLARE_TASK(Task, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(Task, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		void Do(MT::FiberContext& ctx)
 		{

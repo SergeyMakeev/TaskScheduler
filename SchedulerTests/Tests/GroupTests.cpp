@@ -37,7 +37,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummySubTask
 	{
-		MT_DECLARE_TASK(DummySubTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(DummySubTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		float tempData[64];
 
@@ -55,7 +55,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummyAnimTask
 	{
-		MT_DECLARE_TASK(DummyAnimTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(DummyAnimTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		float tempData[128];
 
@@ -76,7 +76,7 @@ namespace SimpleWaitFromSubtask
 
 	struct DummyPhysicTask
 	{
-		MT_DECLARE_TASK(DummyPhysicTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+		MT_DECLARE_TASK(DummyPhysicTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 		float tempData[128];
 

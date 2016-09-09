@@ -41,7 +41,7 @@ SUITE(SubtasksTests)
 template<size_t N>
 struct DeepSubtaskQueue
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<N>, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	int result;
 
@@ -62,7 +62,7 @@ struct DeepSubtaskQueue
 template<>
 struct DeepSubtaskQueue<0>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<0>, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -75,7 +75,7 @@ struct DeepSubtaskQueue<0>
 template<>
 struct DeepSubtaskQueue<1>
 {
-	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(DeepSubtaskQueue<1>, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	int result;
 	void Do(MT::FiberContext&)
@@ -104,7 +104,7 @@ static MT::TaskGroup resultGroup;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct GroupSubtask
 {
-	MT_DECLARE_TASK(GroupSubtask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(GroupSubtask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -114,7 +114,7 @@ struct GroupSubtask
 
 struct GroupTask
 {
-	MT_DECLARE_TASK(GroupTask, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(GroupTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -125,7 +125,7 @@ struct GroupTask
 
 struct TaskWithManySubtasks
 {
-	MT_DECLARE_TASK(TaskWithManySubtasks, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskWithManySubtasks, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	void Do(MT::FiberContext& context)
 	{
@@ -197,7 +197,7 @@ TEST(ManyTasksOneSubtask)
 
 struct TaskSubtaskCombo_Sum1
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum1, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	MT::Atomic32<int32>* data;
 
@@ -209,7 +209,7 @@ struct TaskSubtaskCombo_Sum1
 
 struct TaskSubtaskCombo_Sum4
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum4, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	MT::Atomic32<int32>* data;
 
@@ -227,7 +227,7 @@ struct TaskSubtaskCombo_Sum4
 
 struct TaskSubtaskCombo_Sum16
 {
-	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::StackRequirements::STANDARD, MT::Color::Blue);
+	MT_DECLARE_TASK(TaskSubtaskCombo_Sum16, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
 	MT::Atomic32<int32>* data;
 

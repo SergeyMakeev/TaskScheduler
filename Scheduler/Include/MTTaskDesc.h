@@ -24,7 +24,6 @@
 
 #include <MTTools.h>
 #include <MTPlatform.h>
-#include <MTStackArray.h>
 #include <MTArrayView.h>
 #include <MTColorTable.h>
 #include <MTStackRequirements.h>
@@ -56,6 +55,9 @@ namespace MT
 			//Stack requirements for task
 			MT::StackRequirements::Type stackRequirements;
 
+			//Priority for task
+			MT::TaskPriority::Type priority;
+
 #ifdef MT_INSTRUMENTED_BUILD
 			const mt_char* debugID;
 			MT::Color::Type debugColor;
@@ -73,11 +75,12 @@ namespace MT
 #endif
 			}
 
-			TaskDesc(TTaskEntryPoint _taskFunc, const void* _userData, MT::StackRequirements::Type _stackRequirements)
+			TaskDesc(TTaskEntryPoint _taskFunc, const void* _userData, MT::StackRequirements::Type _stackRequirements, MT::TaskPriority::Type _priority)
 				: taskFunc(_taskFunc)
 				, poolDestroyFunc(nullptr)
 				, userData(_userData)
 				, stackRequirements(_stackRequirements)
+				, priority(_priority)
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				debugID = nullptr;

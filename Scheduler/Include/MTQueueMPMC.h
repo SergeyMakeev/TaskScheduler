@@ -28,7 +28,7 @@
 namespace MT
 {
 	/// \class ConcurrentQueueLIFO
-	/// \brief Lock-Free Multi-Producer Multi-Consumer Queue 
+	/// \brief Lock-Free Multi-Producer Multi-Consumer Queue with fixed capacity.
 	///
 	/// based on Bounded MPMC queue article by Dmitry Vyukov
 	/// http://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue

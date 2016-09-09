@@ -27,12 +27,13 @@ namespace MT
 {
 
 #ifdef MT_INSTRUMENTED_BUILD
-	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters, IProfilerEventListener* listener)
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters, IProfilerEventListener* listener, TaskStealingMode::Type stealMode)
 #else
-	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters)
+	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters, TaskStealingMode::Type stealMode)
 #endif
 		: roundRobinThreadIndex(0)
 		, startedThreadsCount(0)
+		, taskStealingDisabled(stealMode == TaskStealingMode::DISABLED)
 	{
 
 #ifdef MT_INSTRUMENTED_BUILD
@@ -316,9 +317,9 @@ namespace MT
 	}
 
 
-	bool TaskScheduler::TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount)
+	bool TaskScheduler::TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount, bool taskStealingDisabled)
 	{
-		if (workersCount <= 1)
+		if (workersCount <= 1 || taskStealingDisabled )
 		{
 			return false;
 		}
@@ -375,6 +376,7 @@ namespace MT
 		context.NotifyThreadCreate(context.workerIndex);
 #endif
 
+		bool taskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled();
 		uint32 workersCount = context.taskScheduler->GetWorkersCount();
 		int32 totalThreadsCount = context.taskScheduler->threadsCount.LoadRelaxed();
 
@@ -403,7 +405,7 @@ namespace MT
 		while(context.state.Load() != internal::ThreadState::EXIT)
 		{
 			internal::GroupedTask task;
-			if (context.queue.TryPopOldest(task) || TryStealTask(context, task, workersCount) )
+			if (context.queue.TryPopOldest(task) || TryStealTask(context, task, workersCount, taskStealingDisabled) )
 			{
 #ifdef MT_INSTRUMENTED_BUILD
 				bool isNewTask = (task.awaitingFiber == nullptr);
@@ -599,16 +601,9 @@ namespace MT
 		return allGroups.Wait(milliseconds);
 	}
 
-	bool TaskScheduler::IsEmpty()
+	bool TaskScheduler::IsTaskStealingDisabled() const
 	{
-		for (uint32 i = 0; i < MT_MAX_THREAD_COUNT; i++)
-		{
-			if (!threadContext[i].queue.IsEmpty())
-			{
-				return false;
-			}
-		}
-		return true;
+		return taskStealingDisabled;
 	}
 
 	int32 TaskScheduler::GetWorkersCount() const
