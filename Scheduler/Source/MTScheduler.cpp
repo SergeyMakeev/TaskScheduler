@@ -21,6 +21,7 @@
 // 	THE SOFTWARE.
 
 #include <MTScheduler.h>
+#include <MTStaticVector.h>
 #include <string.h> // for memset
 
 namespace MT
@@ -458,9 +459,22 @@ namespace MT
 							break;
 						}
 
-						// If task is yielded his execution, get another task from queue.
+						// If task is yielded execution, get another task from queue.
 						if (taskStatus == FiberTaskStatus::YIELDED)
 						{
+							// Task is yielded, add to tasks queue
+							ArrayView<internal::GroupedTask> buffer(context.descBuffer, 1);
+							ArrayView<internal::TaskBucket> buckets( MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket)), 1 );
+
+							FiberContext* yieldedTask = fiberContext;
+							StaticVector<FiberContext*, 1> yieldedTasksQueue(1, yieldedTask);
+							internal::DistibuteDescriptions( TaskGroup(TaskGroup::ASSIGN_FROM_CONTEXT), yieldedTasksQueue.Begin(), buffer, buckets );
+
+							// add yielded task to scheduler
+							context.taskScheduler->RunTasksImpl(buckets, nullptr, true);
+
+							// ATENTION! yielded task can be already completed at this point
+
 							break;
 						}
 					}
