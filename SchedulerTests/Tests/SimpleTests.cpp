@@ -108,6 +108,11 @@ struct WorkerThreadState
 
 	WorkerThreadState()
 	{
+		Reset();
+	}
+
+	void Reset()
+	{
 		counterPhase0 = 0;
 		counterPhase1 = 0;
 	}
@@ -185,6 +190,13 @@ TEST(YieldTasks)
 	{
 		tasks.PushBack(YieldTask());
 	}
+
+	for(int32 i = 0; i < workersCount; i++)
+	{
+		WorkerThreadState& state = workerStates[i];
+		state.Reset();
+	}
+
 
 	scheduler.RunAsync(MT::TaskGroup::Default(), tasks.Begin(), (uint32)tasks.Size());
 
