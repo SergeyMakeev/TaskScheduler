@@ -26,6 +26,10 @@
 #include <MTPlatform.h>
 #include <MTTaskBucket.h>
 
+#ifdef Yield
+	#undef Yield
+#endif
+
 
 namespace MT
 {
@@ -43,7 +47,7 @@ namespace MT
 			UNKNOWN = 0,
 			RUNNED = 1,
 			FINISHED = 2,
-			AWAITING_GROUP = 3,
+			YIELDED = 3,
 			AWAITING_CHILD = 4,
 		};
 	}
@@ -71,6 +75,9 @@ namespace MT
 		//
 		void RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
 		void RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount);
+
+		//
+		void Yield();
 
 		void Reset();
 

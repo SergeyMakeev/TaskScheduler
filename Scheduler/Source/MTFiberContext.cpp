@@ -21,6 +21,7 @@
 // 	THE SOFTWARE.
 
 #include <MTScheduler.h>
+#include <MTStaticVector.h>
 
 namespace MT
 {
@@ -67,6 +68,40 @@ namespace MT
 		parentFiber = nullptr;
 		threadContext = nullptr;
 		stackRequirements = StackRequirements::INVALID;
+	}
+
+	void FiberContext::Yield()
+	{
+		ArrayView<internal::GroupedTask> buffer(threadContext->descBuffer, 1);
+		ArrayView<internal::TaskBucket> buckets( MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket)), 1 );
+
+		FiberContext* thisTask = this;
+		StaticVector<FiberContext*, 1> yieldTaskQueue(1, thisTask);
+		internal::DistibuteDescriptions( TaskGroup(TaskGroup::ASSIGN_FROM_CONTEXT), yieldTaskQueue.Begin(), buffer, buckets );
+
+		taskStatus = FiberTaskStatus::YIELDED;
+
+		TaskScheduler* taskScheduler = threadContext->taskScheduler;
+		Fiber & schedulerFiber = threadContext->schedulerFiber;
+
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext->NotifyTaskExecuteStateChanged( currentTask.debugColor, currentTask.debugID, TaskExecuteState::SUSPEND );
+#endif
+
+		// Yielding, so reset thread context
+		threadContext = nullptr;
+
+		// add task to scheduler
+		taskScheduler->RunTasksImpl(buckets, nullptr, true);
+
+		// ATENTION! this task can be already completed at this point
+
+		//switch to scheduler
+		Fiber::SwitchTo(fiber, schedulerFiber);
+
+#ifdef MT_INSTRUMENTED_BUILD
+		threadContext->NotifyTaskExecuteStateChanged( currentTask.debugColor, currentTask.debugID, TaskExecuteState::RESUME );
+#endif
 	}
 
 	void FiberContext::RunSubtasksAndYieldImpl(ArrayView<internal::TaskBucket>& buckets)

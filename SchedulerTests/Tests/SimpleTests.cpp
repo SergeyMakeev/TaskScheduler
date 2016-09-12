@@ -23,6 +23,7 @@
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
+#include <MTStaticVector.h>
 
 SUITE(SimpleTests)
 {
@@ -77,7 +78,6 @@ struct ALotOfTasks
 // Checks one simple task
 TEST(ALotOfTasks)
 {
-
 	MT::TaskScheduler scheduler;
 
 	MT::Atomic32<int32> counter;
@@ -96,5 +96,115 @@ TEST(ALotOfTasks)
 	CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), timeout));
 	CHECK_EQUAL(TASK_COUNT, counter.Load());
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+struct WorkerThreadState
+{
+	uint32 counterPhase0;
+	uint32 counterPhase1;
+
+	WorkerThreadState()
+	{
+		counterPhase0 = 0;
+		counterPhase1 = 0;
+	}
+};
+
+
+WorkerThreadState workerStates[64];
+
+uint32 TASK_COUNT_PER_WORKER = 0;
+
+MT::Atomic32<uint32> finishedTaskCount;
+
+struct YieldTask
+{
+	MT::Atomic32<uint32> counter;
+
+	MT_DECLARE_TASK(YieldTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
+
+	YieldTask()
+	{
+		counter.Store(0);
+	}
+
+
+	 volatile WorkerThreadState* GetWorkerState( volatile uint32 workerIndex) volatile
+	{
+		MT_ASSERT(workerIndex < MT_ARRAY_SIZE(workerStates), "Invalid worker index");
+		volatile WorkerThreadState& state = workerStates[workerIndex];
+		return &state;
+	}
+
+	void Do(MT::FiberContext& context)
+	{
+		volatile WorkerThreadState* state0 = GetWorkerState( context.GetThreadContext()->workerIndex );
+
+		// phase 0
+		CHECK_EQUAL((uint32)1, counter.IncFetch());
+		state0->counterPhase0++;
+		context.Yield();
+
+		// worker index can be changed after yield, get actual index
+		volatile WorkerThreadState* state1 = GetWorkerState( context.GetThreadContext()->workerIndex );
+
+		//I check that all the tasks (on this worker) have passed phase0 before executing phase1
+		CHECK_EQUAL(TASK_COUNT_PER_WORKER, state1->counterPhase0);
+
+		// phase 1
+		CHECK_EQUAL((uint32)2, counter.IncFetch());
+		state1->counterPhase1++;
+
+		finishedTaskCount.IncFetch();
+	}
+};
+
+
+TEST(YieldTasks)
+{
+	// Disable task stealing (for testing purposes only)
+#ifdef MT_INSTRUMENTED_BUILD
+	MT::TaskScheduler scheduler(0, nullptr, nullptr, MT::TaskStealingMode::DISABLED);
+#else
+	MT::TaskScheduler scheduler(0, nullptr, MT::TaskStealingMode::DISABLED);
+#endif
+
+	finishedTaskCount.Store(0);
+
+	int32 workersCount = scheduler.GetWorkersCount();
+	TASK_COUNT_PER_WORKER = workersCount * 4;
+	int32 taskCount = workersCount * TASK_COUNT_PER_WORKER;
+
+	MT::HardwareFullMemoryBarrier();
+
+	MT::StaticVector<YieldTask, 512> tasks;
+	for(int32 i = 0; i < taskCount; i++)
+	{
+		tasks.PushBack(YieldTask());
+	}
+
+	scheduler.RunAsync(MT::TaskGroup::Default(), tasks.Begin(), (uint32)tasks.Size());
+
+	CHECK(scheduler.WaitGroup(MT::TaskGroup::Default(), 10000));
+
+	for(int32 i = 0; i < workersCount; i++)
+	{
+		WorkerThreadState& state = workerStates[i];
+
+		CHECK_EQUAL(TASK_COUNT_PER_WORKER, state.counterPhase0);
+		CHECK_EQUAL(TASK_COUNT_PER_WORKER, state.counterPhase1);
+	}
+
+	CHECK_EQUAL(taskCount, (int32)finishedTaskCount.Load());
+
+	printf("Yield test: %d tasks finished, used %d workers\n", taskCount, workersCount);
+
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

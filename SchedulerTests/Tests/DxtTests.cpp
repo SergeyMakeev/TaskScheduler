@@ -74,9 +74,6 @@ int _kbhit(void)
 #ifdef MT_INSTRUMENTED_BUILD
 
 
-#ifdef MT_PLATFORM_ORBIS
-#include <perf.h>
-#endif
 
 class Microprofile : public MT::IProfilerEventListener
 {
@@ -111,21 +108,6 @@ class Microprofile : public MT::IProfilerEventListener
 		MT_UNUSED(debugID);
 		MT_UNUSED(type);
 
-#ifdef MT_PLATFORM_ORBIS
-		switch(type)
-		{
-		case MT::TaskExecuteState::START:
-			sceRazorCpuPushMarkerStatic(debugID, MT::Color::ConvertToABGR(debugColor), SCE_RAZOR_MARKER_DISABLE_HUD);
-			break;
-		case MT::TaskExecuteState::STOP:
-			sceRazorCpuPopMarker();
-			break;
-		case MT::TaskExecuteState::RESUME:
-			break;
-		case MT::TaskExecuteState::SUSPEND:
-			break;
-		}
-#endif
 	}
 
 
@@ -296,9 +278,6 @@ SUITE(DxtTests)
 
 		void Do(MT::FiberContext& context)
 		{
-#if defined(MT_PLATFORM_ORBIS) && defined(MT_INSTRUMENTED_BUILD)
-			sceRazorCpuPushMarkerStatic("compress_dxt_task", MT::Color::ConvertToABGR(MT::Color::SteelBlue), SCE_RAZOR_MARKER_DISABLE_HUD);
-#endif
 
 			// use StaticVector as subtask container. beware stack overflow!
 			MT::StaticVector<CompressDxtBlock, 1024> subTasks;
@@ -319,9 +298,6 @@ SUITE(DxtTests)
 				pIsFinished->Store(1);
 			}
 
-#if defined(MT_PLATFORM_ORBIS) && defined(MT_INSTRUMENTED_BUILD)
-			sceRazorCpuPopMarker();
-#endif
 		}
 	};
 

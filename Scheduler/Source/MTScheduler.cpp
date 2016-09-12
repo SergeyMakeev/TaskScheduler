@@ -458,8 +458,8 @@ namespace MT
 							break;
 						}
 
-						// If task is in await state drop execution. task will be resumed when RestoreAwaitingTasks called
-						if (taskStatus == FiberTaskStatus::AWAITING_GROUP)
+						// If task is yielded his execution, get another task from queue.
+						if (taskStatus == FiberTaskStatus::YIELDED)
 						{
 							break;
 						}

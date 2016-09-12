@@ -42,7 +42,7 @@
 #include <MTScheduler.h>
 #include "Tests/Tests.h"
 
-#if !defined(_WIN32) &&  !defined(__ORBIS__)
+#if !defined(_WIN32) 
 
 #include <execinfo.h>
 
@@ -81,15 +81,20 @@ void PosixSignalHandler(int signum)
 #endif
 
 
+void MyFiberEntryPoint( void* userData )
+{
+	MT_UNUSED(userData);
+
+}
+
 int main(int argc, char ** argv)
 {
-	MT::Thread::SetThreadSchedulingPolicy(6, MT::ThreadPriority::DEFAULT);
 
 #if defined(_WIN32)
 	timeBeginPeriod(1);
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
-#elif !defined(__ORBIS__)
+#else
 	// install signal handler
 	signal(SIGSEGV, PosixSignalHandler);
 	signal(SIGTRAP, PosixSignalHandler);
