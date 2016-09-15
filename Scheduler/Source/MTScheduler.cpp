@@ -243,6 +243,7 @@ namespace MT
 
 			// Update total task count
 			int allGroupTaskCount = threadContext.taskScheduler->allGroups.Dec();
+			MT_USED_IN_ASSERT(allGroupTaskCount);
 			MT_ASSERT(allGroupTaskCount >= 0, "Sanity check failed!");
 
 			FiberContext* parentFiberContext = fiberContext->parentFiber;
@@ -408,12 +409,12 @@ namespace MT
 							MT::Thread::Sleep(0);
 						} else
 						{
-							if (idleIteration < 60)
+							if (idleIteration < 200)
 							{
 								MT::Thread::Sleep(1);
 							} else
 							{
-								MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 60 ms) and still no tasks to processing");
+								MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 200 ms) and still no tasks to processing");
 								MT::Thread::Sleep(15);
 							}
 						}

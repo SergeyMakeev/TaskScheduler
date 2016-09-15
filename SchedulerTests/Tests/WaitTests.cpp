@@ -91,7 +91,7 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext&)
 		{
-			MT::ThreadBase::SpinSleepMicroSeconds(300);
+			MT::Thread::Sleep(1);
 		}
 	};
 
