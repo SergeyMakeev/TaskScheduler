@@ -81,12 +81,23 @@ SUITE(FiberTests)
 
 TEST(FiberSimpleTest)
 {
-
-	MT::Fiber fiber;
-	fiberMain = &fiber;
-
+	// Two fibers from same thread
+	MT::Fiber fiber1;
+	fiberMain = &fiber1;
 	counter.Store(0);
-	
+	startTime = MT::GetTimeMicroSeconds();
+	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
+
+	// CreateFromCurrentThreadAndRun from same fiber called twice for same fiber
+	fiberMain = &fiber1;
+	counter.Store(0);
+	startTime = MT::GetTimeMicroSeconds();
+	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
+
+
+	MT::Fiber fiber2;
+	fiberMain = &fiber2;
+	counter.Store(0);
 	startTime = MT::GetTimeMicroSeconds();
 	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
 }

@@ -33,10 +33,9 @@ struct NotFinishedTaskDestroy
 {
 	MT_DECLARE_TASK(NotFinishedTaskDestroy, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
 
-	static const int timeLimitMS = 100;
 	void Do(MT::FiberContext&)
 	{
-		MT::Thread::SpinSleepMilliSeconds(timeLimitMS * 20);
+		MT::Thread::SpinSleepMilliSeconds(4);
 	}
 };
 
@@ -45,11 +44,11 @@ TEST(NotFinishedTaskDestroy)
 {
 	MT::TaskScheduler scheduler;
 
-	NotFinishedTaskDestroy task;
+	NotFinishedTaskDestroy tasks[1024];
 
-	scheduler.RunAsync(MT::TaskGroup::Default(), &task, 1);
+	scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
 
-	CHECK(!scheduler.WaitAll(NotFinishedTaskDestroy::timeLimitMS));
+	CHECK(!scheduler.WaitAll(3));
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

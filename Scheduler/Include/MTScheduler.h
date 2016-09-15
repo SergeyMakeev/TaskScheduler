@@ -220,7 +220,6 @@ namespace MT
 		class TaskGroupDescription
 		{
 			Atomic32<int32> inProgressTaskCount;
-			Event allDoneEvent;
 
 #if MT_GROUP_DEBUG
 			bool debugIsFree;
@@ -233,8 +232,6 @@ namespace MT
 			TaskGroupDescription()
 			{
 				inProgressTaskCount.Store(0);
-				allDoneEvent.Create( EventReset::MANUAL, true );
-
 #if MT_GROUP_DEBUG
 				debugIsFree = true;
 #endif
@@ -260,19 +257,9 @@ namespace MT
 				return inProgressTaskCount.AddFetch(sum);
 			}
 
-			void Signal()
+			Atomic32<int32>* GetWaitCounter()
 			{
-				allDoneEvent.Signal();
-			}
-
-			void Reset()
-			{
-				allDoneEvent.Reset();
-			}
-
-			bool Wait(uint32 milliseconds)
-			{
-				return allDoneEvent.Wait(milliseconds);
+				return &inProgressTaskCount;
 			}
 
 #if MT_GROUP_DEBUG
@@ -286,6 +273,15 @@ namespace MT
 				return debugIsFree;
 			}
 #endif
+		};
+
+
+		struct WaitContext
+		{
+			Atomic32<int32>* waitCounter;
+			internal::ThreadContext* threadContext;
+			uint32 waitTimeMs;
+			uint32 exitCode;
 		};
 
 
@@ -329,8 +325,10 @@ namespace MT
 
 		static void WorkerThreadMain( void* userData );
 		static void SchedulerFiberMain( void* userData );
+		static void SchedulerFiberWait( void* userData );
+		static bool SchedulerFiberStep( internal::ThreadContext& context );
 		static void FiberMain( void* userData );
-		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task, uint32 workersCount, bool taskStealingDisabled);
+		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task);
 
 		static FiberContext* ExecuteTask (internal::ThreadContext& threadContext, FiberContext* fiberContext);
 

@@ -47,6 +47,19 @@ namespace MT
 			self->func(self->funcData);
 		}
 
+		void CleanUp()
+		{
+			if (fiber)
+			{
+				// Do not destroy fibers created using ::ConvertThreadToFiberEx
+				if (func != nullptr)
+				{
+					::DeleteFiber(fiber);
+				}
+				fiber = nullptr;
+			}
+		}
+
 	public:
 
 		MT_NOCOPYABLE(Fiber);
@@ -58,14 +71,7 @@ namespace MT
 
 		~Fiber()
 		{
-			if (fiber)
-			{
-				if (func)
-				{
-					DeleteFiber(fiber);
-				}
-				fiber = nullptr;
-			}
+			CleanUp();
 		}
 
 
@@ -76,10 +82,19 @@ namespace MT
 			func = nullptr;
 			funcData = nullptr;
 
-			fiber = ::ConvertThreadToFiberEx(nullptr, MW_FIBER_FLAG_FLOAT_SWITCH);
-			MT_ASSERT(fiber != nullptr, "Can't create fiber");
+			void* fiberSelf = FiberGetSelf();
+			if (fiberSelf != nullptr)
+			{
+				fiber = fiberSelf;
+			} else
+			{
+				fiber = ::ConvertThreadToFiberEx(nullptr, MW_FIBER_FLAG_FLOAT_SWITCH);
+				MT_ASSERT(fiber != nullptr, "Can't create fiber");
+			}
 
 			entryPoint(userData);
+
+			CleanUp();
 		}
 
 

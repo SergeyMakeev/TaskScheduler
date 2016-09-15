@@ -82,6 +82,110 @@ namespace SimpleWaitFromSubtask
 		int taskCountFinished = taskCount.Load();
 		CHECK(taskCountFinished == MT_ARRAY_SIZE(tasks));
 	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct LongTask
+	{
+		MT_DECLARE_TASK(LongTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
+
+		void Do(MT::FiberContext&)
+		{
+			MT::ThreadBase::SpinSleepMicroSeconds(300);
+		}
+	};
+
+	TEST(TimeoutWaitAllTest)
+	{
+		MT::TaskScheduler scheduler;
+
+		LongTask tasks[4096];
+		scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
+
+		int64 startTime = MT::GetTimeMicroSeconds();
+
+		CHECK(scheduler.WaitAll(33) == false);
+
+		int64 endTime = MT::GetTimeMicroSeconds();
+		int32 waitTime = (int32)(endTime - startTime);
+		printf("WaitAll(33) = %3.2f ms\n", waitTime / 1000.0f);
+	}
+
+	TEST(TimeoutWaitGroupTest)
+	{
+		MT::TaskScheduler scheduler;
+
+		MT::TaskGroup myGroup = scheduler.CreateGroup();
+
+		LongTask tasks[4096];
+		scheduler.RunAsync(myGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
+
+		int64 startTime = MT::GetTimeMicroSeconds();
+
+		CHECK(scheduler.WaitGroup(myGroup, 33) == false);
+
+		int64 endTime = MT::GetTimeMicroSeconds();
+		int32 waitTime = (int32)(endTime - startTime);
+		printf("WaitGroup(33) = %3.2f ms\n", waitTime / 1000.0f);
+	}
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	MT::Atomic32<uint32> finishedTaskCount;
+
+	struct SecondaryTask
+	{
+		MT_DECLARE_TASK(SecondaryTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
+
+		void Do(MT::FiberContext&)
+		{
+			MT::ThreadBase::SpinSleepMicroSeconds(20);
+			finishedTaskCount.IncFetch();
+		}
+	};
+
+
+	struct PrimaryTask
+	{
+		MT::TaskGroup secondaryGroup;
+
+		MT_DECLARE_TASK(PrimaryTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
+
+		PrimaryTask(MT::TaskGroup _secondaryGroup)
+			: secondaryGroup(_secondaryGroup)
+		{
+		}
+
+		void Do(MT::FiberContext& ctx)
+		{
+			SecondaryTask tasks[64];
+			ctx.RunAsync(secondaryGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
+
+			//CHECK(ctx.WaitGroup(secondaryGroup, 10000));
+
+			finishedTaskCount.IncFetch();
+		}
+	};
+
+
+	TEST(RunOneSimpleWaitTaskFromTask)
+	{
+		finishedTaskCount.Store(0);
+
+		MT::TaskScheduler scheduler;
+
+		MT::TaskGroup mainGroup = scheduler.CreateGroup();
+		MT::TaskGroup secondaryGroup = scheduler.CreateGroup();
+
+		PrimaryTask task(secondaryGroup);
+		scheduler.RunAsync(mainGroup, &task, 1);
+
+		CHECK(scheduler.WaitGroup(mainGroup, 10000));
+	}
+
+
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -45,13 +45,21 @@ namespace MT
 		};
 	}
 
+	namespace DummyQueueFlag
+	{
+		enum Type
+		{
+			IS_DUMMY_QUEUE = 1
+		};
+	}
+
+
 	/// \class TaskQueue
 	/// \brief thread safe task queue
 	///
 	template<typename T, uint32 CAPACITY>
 	class TaskQueue
 	{
-
 		//////////////////////////////////////////////////////////////////////////
 		class Queue
 		{
@@ -110,12 +118,19 @@ namespace MT
 		public:
 
 			Queue()
-				: begin(0)
+				: data(nullptr)
+				, begin(0)
 				, end(0)
+			{
+			}
+
+			// Queue is just dummy until you call the Create
+			void Create()
 			{
 				size_t bytesCount = sizeof(T) * CAPACITY;
 				data = Memory::Alloc(bytesCount, ALIGNMENT);
 			}
+
 
 			~Queue()
 			{
@@ -138,6 +153,8 @@ namespace MT
 
 			inline bool Add(const T& item)
 			{
+				MT_VERIFY(data, "Can't add items to dummy queue", return false; );
+
 				if ((Size() + 1) >= CAPACITY)
 				{
 					return false;
@@ -159,6 +176,8 @@ namespace MT
 					return false;
 				}
 
+				MT_VERIFY(data, "Can't pop items from dummy queue", return false; );
+
 				size_t index = (begin & MASK);
 				T* pElement = Buffer() + index;
 				begin++;
@@ -173,6 +192,8 @@ namespace MT
 				{
 					return false;
 				}
+
+				MT_VERIFY(data, "Can't pop items from dummy queue", return false; );
 
 				end--;
 				size_t index = (end & MASK);
@@ -198,6 +219,15 @@ namespace MT
 
 		TaskQueue()
 		{
+			for(uint32 i = 0; i < MT_ARRAY_SIZE(queues); i++)
+			{
+				queues[i].Create();
+			}
+		}
+
+		TaskQueue(DummyQueueFlag::Type)
+		{
+			// Create dummy queue.
 		}
 
 		~TaskQueue()

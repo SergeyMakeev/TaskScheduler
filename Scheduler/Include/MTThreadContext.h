@@ -82,6 +82,9 @@ namespace MT
 			// thread
 			Thread thread;
 
+			// thread Id
+			ThreadId threadId;
+
 			// scheduler fiber
 			Fiber schedulerFiber;
 
@@ -103,26 +106,34 @@ namespace MT
 			// Thread random number generator
 			LcgRandom random;
 
+			bool isExternalDescBuffer;
+
 			// prevent false cache sharing between threads
 			uint8 cacheline[64];
 
 			ThreadContext();
+			ThreadContext(void* externalDescBuffer);
 			~ThreadContext();
 
 			void SetThreadIndex(uint32 threadIndex);
 
 #ifdef MT_INSTRUMENTED_BUILD
 			
-			void NotifyThreadCreate(uint32 threadIndex);
-			void NotifyThreadStart(uint32 threadIndex);
-			void NotifyThreadStop(uint32 threadIndex);
+			void NotifyThreadCreated(uint32 threadIndex);
+			void NotifyThreadStarted(uint32 threadIndex);
+			void NotifyThreadStoped(uint32 threadIndex);
 
 			void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type);
 
-			void NotifyThreadIdleBegin(uint32 threadIndex);
-			void NotifyThreadIdleEnd(uint32 threadIndex);
+			void NotifyThreadIdleStarted(uint32 threadIndex);
+			void NotifyThreadIdleFinished(uint32 threadIndex);
+
+			void NotifyWaitStarted();
+			void NotifyWaitFinished();
 
 #endif
+
+			static size_t GetMemoryRequrementInBytesForDescBuffer();
 		};
 
 	}

@@ -24,6 +24,7 @@
 #include <MTConfig.h>
 #include <MTTypes.h>
 
+
 //
 // micro windows header is used to avoid including heavy windows header to MTPlatform.h
 //
@@ -32,7 +33,6 @@
 
 #define MW_WINBASEAPI __declspec(dllimport)
 #define MW_WINAPI __stdcall
-
 
 #if defined(_WINDOWS_) || defined(_WINBASE_)
 
@@ -65,6 +65,7 @@ typedef CONTEXT MW_CONTEXT;
 #define MW_MEM_RELEASE (MEM_RELEASE)
 
 
+#define MW_CURRENT_FIBER_OFFSET (FIELD_OFFSET(NT_TIB, FiberData))
 #define MW_STACK_BASE_OFFSET (FIELD_OFFSET(NT_TIB, StackBase))
 #define MW_STACK_STACK_LIMIT_OFFSET (FIELD_OFFSET(NT_TIB, StackLimit))
 #define MW_CONTEXT_FULL (CONTEXT_FULL)
@@ -163,6 +164,7 @@ struct __declspec(align(16)) MW_CONTEXT
 
 static_assert(__alignof(MW_CONTEXT) == 16, "MW_CONTEXT align requirements must be 16 bytes");
 
+#define MW_CURRENT_FIBER_OFFSET (32)
 #define MW_STACK_BASE_OFFSET (8)
 #define MW_STACK_STACK_LIMIT_OFFSET (16)
 #define MW_CONTEXT_FULL (0x10000B)
@@ -193,6 +195,7 @@ struct MW_CONTEXT
 };
 
 
+#define MW_CURRENT_FIBER_OFFSET (16)
 #define MW_STACK_BASE_OFFSET (4)
 #define MW_STACK_STACK_LIMIT_OFFSET (8)
 #define MW_CONTEXT_FULL (0x10007)
@@ -211,7 +214,7 @@ struct MW_CONTEXT
 #define MW_PAGE_READWRITE (0x04)
 #define MW_PAGE_NOACCESS (0x01)
 #define MW_MEM_RELEASE (0x8000)
-#define MW_FIBER_FLAG_FLOAT_SWITCH (0x1)
+
 
 #define MW_THREAD_PRIORITY_HIGHEST (2) 
 #define MW_THREAD_PRIORITY_NORMAL (0) 
@@ -219,13 +222,18 @@ struct MW_CONTEXT
 
 #define MW_CREATE_SUSPENDED (0x00000004)
 
+
 #if MT_PTR64
 #define MW_MAXIMUM_PROCESSORS (64)
+#define MW_FIBER_FLAG_FLOAT_SWITCH (0x1)
 #else
 #define MW_MAXIMUM_PROCESSORS (32)
+#define MW_FIBER_FLAG_FLOAT_SWITCH (0x1)
 #endif
 
+
 #endif
+
 
 
 
@@ -279,9 +287,11 @@ MW_WINBASEAPI void MW_WINAPI DeleteFiber( void* lpFiber );
 MW_WINBASEAPI void* MW_WINAPI ConvertThreadToFiberEx( void* lpParameter, MW_DWORD dwFlags );
 MW_WINBASEAPI void* MW_WINAPI CreateFiber( size_t dwStackSize, TFiberStartFunc lpStartAddress, void* lpParameter );
 MW_WINBASEAPI void MW_WINAPI SwitchToFiber( void* lpFiber );
+MW_WINBASEAPI MW_BOOL MW_WINAPI IsThreadAFiber();
 
 MW_WINBASEAPI void MW_WINAPI RaiseException(MW_DWORD dwExceptionCode, MW_DWORD dwExceptionFlags, MW_DWORD nNumberOfArguments, const MW_ULONG_PTR* lpArguments );
- 
+
+MW_WINBASEAPI MW_DWORD MW_WINAPI GetLastError();
 
 }
 

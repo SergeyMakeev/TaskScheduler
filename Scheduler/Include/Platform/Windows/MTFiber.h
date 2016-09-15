@@ -27,6 +27,35 @@
 
 #include <MTConfig.h>
 
+
+#if MT_PTR64
+
+#define ReadTeb(offset) __readgsqword(offset);
+#define WriteTeb(offset, v) __writegsqword(offset, v)
+
+#else
+
+#define ReadTeb(offset) __readfsdword(offset);
+#define WriteTeb(offset, v) __writefsdword(offset, v)
+
+#endif
+
+
+inline void* FiberGetSelf()
+{
+	MW_BOOL isThreadAFiber = ::IsThreadAFiber();
+	if  (isThreadAFiber == 0)
+	{
+		// GetCurrentFiber() return invalid values is current thread is not fiber.
+		return nullptr;
+	}
+
+	//This function is equal to GetCurrentFiber() macro
+	void* pFiber = (void*)ReadTeb(MW_CURRENT_FIBER_OFFSET);
+	return pFiber;
+}
+
+
 	#include "MTFiberOptimized.h"
 
 

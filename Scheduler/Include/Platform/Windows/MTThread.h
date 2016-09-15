@@ -28,17 +28,51 @@
 
 namespace MT
 {
-	class _Fiber;
+
+	class ThreadId
+	{
+		MW_DWORD id;
+		Atomic32<uint32> isInitialized;
+
+	public:
+
+		MT_NOCOPYABLE(ThreadId);
+
+		ThreadId()
+		{
+			isInitialized.Store(0);
+		}
+
+		void SetAsCurrentThread()
+		{
+			id = ::GetCurrentThreadId();
+			isInitialized.Store(1);
+		}
+
+		bool IsCurrentThread() const
+		{
+			if (isInitialized.Load() == 0)
+			{
+				return false;
+			}
+
+			MW_DWORD callThread = ::GetCurrentThreadId();
+			if (callThread == id)
+			{
+				return true;
+			}
+			return false;
+		}
+	};
+
 
 	class Thread : public ThreadBase
 	{
-		MW_DWORD threadId;
 		MW_HANDLE thread;
 
 		static MW_DWORD __stdcall ThreadFuncInternal(void *pThread)
 		{
 			Thread* self = (Thread*)pThread;
-			self->threadId = ::GetCurrentThreadId();
 			self->func(self->funcData);
 			return 0;
 		}
@@ -67,7 +101,6 @@ namespace MT
 
 		Thread()
 			: thread(nullptr)
-			, threadId(0)
 		{
 		}
 
@@ -119,12 +152,6 @@ namespace MT
 			thread = nullptr;
 		}
 
-		bool IsCurrentThread() const
-		{
-			MW_DWORD id = ::GetCurrentThreadId();
-			return (threadId == id);
-		}
-
 #ifdef MT_INSTRUMENTED_BUILD
 		static void SetThreadName(const char* threadName)
 		{
@@ -144,7 +171,7 @@ namespace MT
 			THREADNAME_INFO info;
 			info.dwType = 0x1000;
 			info.szName = threadName;
-			info.dwThreadID = GetCurrentThreadId();
+			info.dwThreadID = ::GetCurrentThreadId();
 			info.dwFlags = 0;
 
 			__try

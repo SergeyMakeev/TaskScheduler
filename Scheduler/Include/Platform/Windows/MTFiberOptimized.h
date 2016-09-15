@@ -29,20 +29,6 @@
 #include <Platform/Common/MTAtomic.h>
 #include <string>
 
-#if MT_PTR64
-
-#define ReadTeb(offset) __readgsqword(offset);
-#define WriteTeb(offset, v) __writegsqword(offset, v)
-
-#else
-
-#define ReadTeb(offset) __readfsdword(offset);
-#define WriteTeb(offset, v) __writefsdword(offset, v)
-
-
-#endif
-
-
 
 namespace MT
 {
@@ -85,6 +71,21 @@ namespace MT
 			self->func(self->funcData);
 		}
 
+		void CleanUp()
+		{
+			if (isInitialized)
+			{
+				// if func != null than we have stack memory ownership
+				if (func != nullptr)
+				{
+					Memory::FreeStack(stackDesc);
+				}
+
+				isInitialized = false;
+			}
+		}
+
+
 	public:
 
 		MT_NOCOPYABLE(Fiber);
@@ -103,16 +104,7 @@ namespace MT
 
 		~Fiber()
 		{
-			if (isInitialized)
-			{
-				// if func != null than we have stack memory ownership
-				if (func != nullptr)
-				{
-					Memory::FreeStack(stackDesc);
-				}
-
-				isInitialized = false;
-			}
+			CleanUp();
 		}
 
 		void CreateFromCurrentThreadAndRun(TThreadEntryPoint entryPoint, void *userData)
@@ -134,6 +126,8 @@ namespace MT
 			isInitialized = true;
 
 			entryPoint(userData);
+
+			CleanUp();
 		}
 
 		void Create(size_t stackSize, TThreadEntryPoint entryPoint, void* userData)

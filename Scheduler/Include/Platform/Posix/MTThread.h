@@ -51,7 +51,41 @@
 
 namespace MT
 {
-	class _Fiber;
+	class ThreadId
+	{
+		pthread_t id;
+		Atomic32<uint32> isInitialized;
+
+	public:
+
+		MT_NOCOPYABLE(ThreadId);
+
+		ThreadId()
+		{
+			isInitialized.Store(0);
+		}
+
+		void SetAsCurrentThread()
+		{
+			id = pthread_self();
+			isInitialized.Store(1);
+		}
+
+		bool IsCurrentThread() const
+		{
+			if (isInitialized.Load() == 0)
+			{
+				return false;
+			}
+
+			pthread_t callThread = pthread_self();
+			if (pthread_equal(callThread, id))
+			{
+				return true;
+			}
+			return false;
+		}
+	};
 
 	class Thread : public ThreadBase
 	{
@@ -220,20 +254,6 @@ namespace MT
 			isStarted = false;
 		}
 
-		bool IsCurrentThread() const
-		{
-			if(!isStarted)
-			{
-				return false;
-			}
-
-			pthread_t callThread = pthread_self();
-			if (pthread_equal(callThread, thread))
-			{
-					return true;
-			}
-			return false;
-		}
 
 		static int GetNumberOfHardwareThreads()
 		{

@@ -20,6 +20,10 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 
+
+#include <MTConfig.h>
+
+
 #include "Tests.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
@@ -74,9 +78,30 @@ int _kbhit(void)
 #ifdef MT_INSTRUMENTED_BUILD
 
 
+void PushPerfMarker(const char* name, MT::Color::Type color)
+{
+	MT_UNUSED(name);
+	MT_UNUSED(color);
+}
+
+void PopPerfMarker(const char* name)
+{
+	MT_UNUSED(name);
+}
+
 
 class Microprofile : public MT::IProfilerEventListener
 {
+public:
+
+	Microprofile()
+	{
+	}
+
+	~Microprofile()
+	{
+	}
+
 	virtual void OnThreadCreated(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
@@ -92,25 +117,42 @@ class Microprofile : public MT::IProfilerEventListener
 		MT_UNUSED(workerIndex);
 	}
 
-	virtual void OnThreadIdleBegin(uint32 workerIndex) override 
+	virtual void OnThreadIdleStarted(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
+		PushPerfMarker("ThreadIdle", MT::Color::Red);
 	}
 
-	virtual void OnThreadIdleEnd(uint32 workerIndex) override 
+	virtual void OnThreadIdleFinished(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
+		PopPerfMarker("ThreadIdle");
+	}
+
+	virtual void OnThreadWaitStarted() override 
+	{
+		PushPerfMarker("ThreadWait", MT::Color::Red);
+	}
+
+	virtual void OnThreadWaitFinished() override 
+	{
+		PopPerfMarker("ThreadWait");
 	}
 
 	virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, MT::TaskExecuteState::Type type) override 
 	{
-		MT_UNUSED(debugColor);
-		MT_UNUSED(debugID);
-		MT_UNUSED(type);
-
+		switch(type)
+		{
+		case MT::TaskExecuteState::START:
+		case MT::TaskExecuteState::RESUME:
+			PushPerfMarker(debugID, debugColor);
+			break;
+		case MT::TaskExecuteState::STOP:
+		case MT::TaskExecuteState::SUSPEND:
+			PopPerfMarker(debugID);
+			break;
+		}
 	}
-
-
 };
 
 
@@ -246,15 +288,19 @@ SUITE(DxtTests)
 		uint32 blkWidth;
 		uint32 blkHeight;
 
+		uint32 passCount;
+
 		MT::ArrayView<uint8> srcPixels;
 		MT::ArrayView<uint8> dxtBlocks;
 		MT::Atomic32<uint32>* pIsFinished;
 
 
-		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, const MT::ArrayView<uint8> & _srcPixels, MT::Atomic32<uint32>* _pIsFinished = nullptr)
+		CompressDxt(uint32 _width, uint32 _height, uint32 _stride, const MT::ArrayView<uint8> & _srcPixels, MT::Atomic32<uint32>* _pIsFinished = nullptr, uint32 _passCount = 1)
 			: srcPixels(_srcPixels)
 			, pIsFinished(_pIsFinished)
 		{
+			passCount = _passCount;
+
 			width = _width;
 			height = _height;
 			stride = _stride;
@@ -278,26 +324,28 @@ SUITE(DxtTests)
 
 		void Do(MT::FiberContext& context)
 		{
-
-			// use StaticVector as subtask container. beware stack overflow!
-			MT::StaticVector<CompressDxtBlock, 1024> subTasks;
-
-			for (uint32 blkY = 0; blkY < blkHeight; blkY++)
+			for(uint32 i = 0; i < passCount; i++)
 			{
-				for (uint32 blkX = 0; blkX < blkWidth; blkX++)
+				// use StaticVector as subtask container. beware stack overflow!
+				MT::StaticVector<CompressDxtBlock, 1024> subTasks;
+
+				for (uint32 blkY = 0; blkY < blkHeight; blkY++)
 				{
-					uint32 blockIndex = blkY * blkWidth + blkX;
-					subTasks.PushBack( CompressDxtBlock(blkX * 4, blkY * 4, stride, srcPixels, dxtBlocks, blockIndex * 8) );
+					for (uint32 blkX = 0; blkX < blkWidth; blkX++)
+					{
+						uint32 blockIndex = blkY * blkWidth + blkX;
+						subTasks.PushBack( CompressDxtBlock(blkX * 4, blkY * 4, stride, srcPixels, dxtBlocks, blockIndex * 8) );
+					}
 				}
+
+				context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 			}
 
-			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &subTasks[0], subTasks.Size());
 
 			if (pIsFinished != nullptr)
 			{
 				pIsFinished->Store(1);
 			}
-
 		}
 	};
 
@@ -456,7 +504,6 @@ SUITE(DxtTests)
 	}
 
 
-
 /*
 	// dxt compressor Hiload test (for profiling purposes)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -513,6 +560,47 @@ SUITE(DxtTests)
 	}
 */
 
+/*
+	// dxt compressor stress test (for profiling purposes)
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	TEST(DxtStressTest)
+	{
+		static_assert(MT_ARRAY_SIZE(EmbeddedImage::lenaColor) == 49152, "Image size is invalid");
+
+		int stride = 384;
+
+		MT::ArrayView<uint8> srcImage((void*)&EmbeddedImage::lenaColor[0], MT_ARRAY_SIZE(EmbeddedImage::lenaColor));
+
+		uint32 passCount = 10;
+
+		CompressDxt compressTask(128, 128, stride, srcImage, nullptr, passCount);
+		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
+
+#ifdef MT_INSTRUMENTED_BUILD
+		Microprofile profiler;
+		MT::TaskScheduler scheduler(0, nullptr, &profiler);
+#else
+		MT::TaskScheduler scheduler;
+#endif
+
+		int workersCount = (int)scheduler.GetWorkersCount();
+		printf("Scheduler started, %d workers\n", workersCount);
+
+#ifdef MT_INSTRUMENTED_BUILD
+		PushPerfMarker("DxtStressTest", MT::Color::Red);
+#endif
+
+		printf("DxtStressTest\n");
+		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask, 1);
+
+		CHECK(scheduler.WaitAll(10000000));
+
+#ifdef MT_INSTRUMENTED_BUILD
+		PopPerfMarker("DxtStressTest");
+#endif
+	}
+*/
+
 	// dxt compressor complex test
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	TEST(RunComplexDxtTest)
@@ -526,12 +614,7 @@ SUITE(DxtTests)
 		CompressDxt compressTask(128, 128, stride, srcImage);
 		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
 
-#ifdef MT_INSTRUMENTED_BUILD
-		Microprofile profiler;
-		MT::TaskScheduler scheduler(0, nullptr, &profiler);
-#else
 		MT::TaskScheduler scheduler;
-#endif
 
 		int workersCount = (int)scheduler.GetWorkersCount();
 		printf("Scheduler started, %d workers\n", workersCount);

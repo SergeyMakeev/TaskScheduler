@@ -103,10 +103,12 @@ namespace MT
 	{
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
-		ArrayView<internal::GroupedTask> buffer(MT_ALLOCATE_ON_STACK(sizeof(internal::GroupedTask) * taskCount), taskCount);
+		uint32 bytesCountForGroupedTasks = sizeof(internal::GroupedTask) * taskCount;
+		ArrayView<internal::GroupedTask> buffer( MT_ALLOCATE_ON_STACK( bytesCountForGroupedTasks ), taskCount );
 
 		uint32 bucketCount = MT::Min((uint32)GetWorkersCount(), taskCount);
-		ArrayView<internal::TaskBucket> buckets(MT_ALLOCATE_ON_STACK(sizeof(internal::TaskBucket) * bucketCount), bucketCount);
+		uint32 bytesCountForTaskBuckets = sizeof(internal::TaskBucket) * bucketCount;
+		ArrayView<internal::TaskBucket> buckets( MT_ALLOCATE_ON_STACK( bytesCountForTaskBuckets ), bucketCount );
 
 		internal::DistibuteDescriptions(group, taskArray, buffer, buckets);
 		RunTasksImpl(buckets, nullptr, false);

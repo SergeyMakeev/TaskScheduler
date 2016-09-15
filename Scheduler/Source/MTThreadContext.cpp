@@ -46,14 +46,35 @@ namespace MT
 			, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 			, state(ThreadState::ALIVE)
 			, workerIndex(0)
+			, isExternalDescBuffer(false)
 		{
-			 descBuffer = Memory::Alloc( sizeof(internal::GroupedTask) * TASK_BUFFER_CAPACITY );
+			 descBuffer = Memory::Alloc( GetMemoryRequrementInBytesForDescBuffer() );
+		}
+
+		ThreadContext::ThreadContext(void* externalDescBuffer)
+			: lastActiveFiberContext(nullptr)
+			, taskScheduler(nullptr)
+			, queue(DummyQueueFlag::IS_DUMMY_QUEUE)
+			, hasNewTasksEvent(EventReset::AUTOMATIC, true)
+			, state(ThreadState::ALIVE)
+			, workerIndex(0)
+			, isExternalDescBuffer(true)
+		{
+			descBuffer = externalDescBuffer;
 		}
 
 		ThreadContext::~ThreadContext()
 		{
-			Memory::Free(descBuffer);
+			if (isExternalDescBuffer == false)
+			{
+				Memory::Free(descBuffer);
+			}
 			descBuffer = nullptr;
+		}
+
+		size_t ThreadContext::GetMemoryRequrementInBytesForDescBuffer()
+		{
+			return sizeof(internal::GroupedTask) * TASK_BUFFER_CAPACITY;
 		}
 
 		void ThreadContext::SetThreadIndex(uint32 threadIndex)
@@ -64,6 +85,23 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 
+		void ThreadContext::NotifyWaitStarted()
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadWaitStarted();
+			}
+		}
+
+		void ThreadContext::NotifyWaitFinished()
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadWaitFinished();
+			}
+		}
+
+
 		void ThreadContext::NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
@@ -72,7 +110,7 @@ namespace MT
 			}
 		}
 
-		void ThreadContext::NotifyThreadCreate(uint32 threadIndex)
+		void ThreadContext::NotifyThreadCreated(uint32 threadIndex)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
@@ -80,7 +118,7 @@ namespace MT
 			}
 		}
 
-		void ThreadContext::NotifyThreadStart(uint32 threadIndex)
+		void ThreadContext::NotifyThreadStarted(uint32 threadIndex)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
@@ -88,7 +126,7 @@ namespace MT
 			}
 		}
 
-		void ThreadContext::NotifyThreadStop(uint32 threadIndex)
+		void ThreadContext::NotifyThreadStoped(uint32 threadIndex)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
@@ -96,19 +134,19 @@ namespace MT
 			}
 		}
 
-		void ThreadContext::NotifyThreadIdleBegin(uint32 threadIndex)
+		void ThreadContext::NotifyThreadIdleStarted(uint32 threadIndex)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->OnThreadIdleBegin(threadIndex);
+				eventListener->OnThreadIdleStarted(threadIndex);
 			}
 		}
 
-		void ThreadContext::NotifyThreadIdleEnd(uint32 threadIndex)
+		void ThreadContext::NotifyThreadIdleFinished(uint32 threadIndex)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->OnThreadIdleEnd(threadIndex);
+				eventListener->OnThreadIdleFinished(threadIndex);
 			}
 		}
 

@@ -69,6 +69,20 @@ namespace MT
 			self->func(self->funcData);
 		}
 
+		void CleanUp()
+		{
+			if (isInitialized)
+			{
+				// if func != null than we have stack memory ownership
+				if (func != nullptr)
+				{
+					Memory::FreeStack(stackDesc);
+				}
+
+				isInitialized = false;
+			}
+		}
+
 	public:
 
 		MT_NOCOPYABLE(Fiber);
@@ -83,16 +97,7 @@ namespace MT
 
 		~Fiber()
 		{
-			if (isInitialized)
-			{
-				// if func != null than we have stack memory ownership
-				if (func != nullptr)
-				{
-					Memory::FreeStack(stackDesc);
-				}
-
-				isInitialized = false;
-			}
+			CleanUp();
 		}
 
 
@@ -123,9 +128,9 @@ namespace MT
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "pthread_attr_getstack - failed");
 #endif
+
 			MT_ASSERT(stackAddr != nullptr, "Invalid stack address");
 			MT_ASSERT(stackSize > 0, "Invalid stack size");
-
 
 			// get execution context
 			res = getcontext(&fiberContext);
@@ -144,6 +149,8 @@ namespace MT
 			isInitialized = true;
 
 			entryPoint(userData);
+
+			CleanUp();
 		}
 
 

@@ -47,10 +47,17 @@ namespace MT
 		virtual void OnThreadStoped(uint32 workerIndex) = 0;
 
 		// Called from worker thread context when worker thread start to idle
-		virtual void OnThreadIdleBegin(uint32 workerIndex) = 0;
+		virtual void OnThreadIdleStarted(uint32 workerIndex) = 0;
 
-		// Called from worker thread context when worker thread return to work
-		virtual void OnThreadIdleEnd(uint32 workerIndex) = 0;
+		// Called from worker thread context when worker thread return to work from idle
+		virtual void OnThreadIdleFinished(uint32 workerIndex) = 0;
+
+		// Called from thread when thread is waiting for group
+		virtual void OnThreadWaitStarted() = 0;
+
+		// Called from thread when thread is finished waiting for group
+		virtual void OnThreadWaitFinished() = 0;
+
 
 		// Called from the worker thread that has change the task execution state
 		virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type) = 0;
