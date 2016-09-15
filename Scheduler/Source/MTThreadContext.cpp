@@ -55,7 +55,6 @@ namespace MT
 			: lastActiveFiberContext(nullptr)
 			, taskScheduler(nullptr)
 			, queue(DummyQueueFlag::IS_DUMMY_QUEUE)
-			, hasNewTasksEvent(EventReset::AUTOMATIC, true)
 			, state(ThreadState::ALIVE)
 			, workerIndex(0)
 			, isExternalDescBuffer(true)

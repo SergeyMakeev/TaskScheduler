@@ -169,7 +169,22 @@ TEST(OneTaskManySubtasks)
 // Checks many simple task with subtasks
 TEST(ManyTasksOneSubtask)
 {
-	MT::TaskScheduler scheduler;
+	MT::WorkerThreadParams singleCoreParams;
+	singleCoreParams.core = 0;
+	singleCoreParams.priority = MT::ThreadPriority::LOW;
+
+
+	uint32 workersCount = 0;
+	MT::WorkerThreadParams* pWorkerParams = nullptr;
+
+	if (MT::Thread::GetNumberOfHardwareThreads() <= 1)
+	{
+		workersCount = 1;
+		pWorkerParams = &singleCoreParams;
+	}
+
+
+	MT::TaskScheduler scheduler(workersCount, pWorkerParams);
 
 	bool waitAllOK = true;
 
