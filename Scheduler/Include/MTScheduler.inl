@@ -101,6 +101,7 @@ namespace MT
 	template<class TTask>
 	void TaskScheduler::RunAsync(TaskGroup group, const TTask* taskArray, uint32 taskCount)
 	{
+		MT_ASSERT(taskCount < (internal::TASK_BUFFER_CAPACITY - 1), "Too many tasks per one Run.");
 		MT_ASSERT(!IsWorkerThread(), "Can't use RunAsync inside Task. Use FiberContext.RunAsync() instead.");
 
 		uint32 bytesCountForGroupedTasks = sizeof(internal::GroupedTask) * taskCount;

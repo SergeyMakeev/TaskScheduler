@@ -127,6 +127,7 @@ namespace MT
 
 	void FiberContext::RunAsync(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
+		MT_ASSERT(taskHandleCount < (internal::TASK_BUFFER_CAPACITY - 1), "Too many tasks per one Run.");
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(threadContext->taskScheduler, "Sanity check failed!");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
@@ -145,10 +146,9 @@ namespace MT
 
 	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, const TaskHandle* taskHandleArray, uint32 taskHandleCount)
 	{
+		MT_ASSERT(taskHandleCount < (internal::TASK_BUFFER_CAPACITY - 1), "Too many tasks per one Run.");
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(threadContext->taskScheduler, "TaskScheduler is nullptr");
-
-		MT_ASSERT(taskHandleCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 

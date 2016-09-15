@@ -414,8 +414,8 @@ namespace MT
 								MT::Thread::Sleep(1);
 							} else
 							{
-								MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 200 ms) and still no tasks to processing");
-								MT::Thread::Sleep(15);
+								//MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 200 ms) and still no tasks to processing");
+								MT::Thread::Sleep(20);
 							}
 						}
 					}
@@ -654,6 +654,8 @@ namespace MT
 
 			for(;;)
 			{
+				MT_ASSERT(bucket.count < (internal::TASK_BUFFER_CAPACITY - 1), "Sanity check failed. Too many tasks per one bucket.");
+				
 				bool res = context.queue.Add(bucket.tasks, bucket.count);
 				if (res == true)
 				{

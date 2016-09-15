@@ -26,8 +26,8 @@ namespace MT
 	template<class TTask>
 	void FiberContext::RunSubtasksAndYield(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount)
 	{
+		MT_ASSERT(taskCount < (internal::TASK_BUFFER_CAPACITY - 1), "Too many tasks per one Run.");
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
-		MT_ASSERT(taskCount < internal::TASK_BUFFER_CAPACITY, "Buffer overrun!");
 
 		TaskScheduler& scheduler = *(threadContext->taskScheduler);
 
@@ -43,6 +43,8 @@ namespace MT
 	template<class TTask>
 	void FiberContext::RunAsync(TaskGroup taskGroup, const TTask* taskArray, size_t taskCount)
 	{
+		MT_ASSERT(taskCount < (internal::TASK_BUFFER_CAPACITY - 1), "Too many tasks per one Run.");
+
 		MT_ASSERT(threadContext, "ThreadContext is nullptr");
 		MT_ASSERT(threadContext->taskScheduler->IsWorkerThread(), "Can't use RunAsync outside Task. Use TaskScheduler.RunAsync() instead.");
 

@@ -99,7 +99,7 @@ namespace SimpleWaitFromSubtask
 	{
 		MT::TaskScheduler scheduler;
 
-		LongTask tasks[4096];
+		LongTask tasks[4000];
 		scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		int64 startTime = MT::GetTimeMicroSeconds();
@@ -117,7 +117,7 @@ namespace SimpleWaitFromSubtask
 
 		MT::TaskGroup myGroup = scheduler.CreateGroup();
 
-		LongTask tasks[4096];
+		LongTask tasks[4000];
 		scheduler.RunAsync(myGroup, &tasks[0], MT_ARRAY_SIZE(tasks));
 
 		int64 startTime = MT::GetTimeMicroSeconds();
