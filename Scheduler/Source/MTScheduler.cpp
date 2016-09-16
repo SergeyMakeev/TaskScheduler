@@ -404,18 +404,24 @@ namespace MT
 						}
 					} else
 					{
-						if (idleIteration < 24)
+						if (idleIteration < 40)
 						{
-							MT::Thread::Sleep(0);
+							MT::YieldThread();
 						} else
 						{
-							if (idleIteration < 200)
+							if (idleIteration < 100)
 							{
-								MT::Thread::Sleep(1);
+								MT::Thread::Sleep(0);
 							} else
 							{
-								//MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 200 ms) and still no tasks to processing");
-								MT::Thread::Sleep(20);
+								if (idleIteration < 200)
+								{
+									MT::Thread::Sleep(1);
+								} else
+								{
+									//MT_REPORT_ASSERT("Sanity check failed. Wait too long (at least 200 ms) and still no tasks to processing");
+									MT::Thread::Sleep(20);
+								}
 							}
 						}
 					}
@@ -690,6 +696,13 @@ namespace MT
 
 		TaskScheduler::TaskGroupDescription& groupDesc = GetGroupDesc(group);
 
+		// Early exit if not tasks in group
+		int32 taskCount = groupDesc.GetTaskCount();
+		if (taskCount == 0)
+		{
+			return true;
+		}
+
 		size_t bytesCountForDescBuffer = internal::ThreadContext::GetMemoryRequrementInBytesForDescBuffer();
 		void* descBuffer = MT_ALLOCATE_ON_STACK(bytesCountForDescBuffer);
 		
@@ -715,6 +728,13 @@ namespace MT
 	bool TaskScheduler::WaitAll(uint32 milliseconds)
 	{
 		MT_VERIFY(IsWorkerThread() == false, "Can't use WaitAll inside Task.", return false);
+
+		// Early exit if not tasks in group
+		int32 taskCount = allGroups.GetTaskCount();
+		if (taskCount == 0)
+		{
+			return true;
+		}
 
 		size_t bytesCountForDescBuffer = internal::ThreadContext::GetMemoryRequrementInBytesForDescBuffer();
 		void* descBuffer = MT_ALLOCATE_ON_STACK(bytesCountForDescBuffer);

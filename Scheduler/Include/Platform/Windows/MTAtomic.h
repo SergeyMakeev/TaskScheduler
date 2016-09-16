@@ -31,8 +31,6 @@
 #include <type_traits>
 #include <xmmintrin.h>
 
-
-
 #define MT_ATOMIC_COMPILE_TIME_CHECK \
 	static_assert(std::is_pod< Atomic32Base<T> >::value == true, "Atomic32Base must be a POD (plain old data type)"); \
 	static_assert(sizeof(T) == sizeof(int32), "Atomic32Base, type T must be equal size as int32"); \

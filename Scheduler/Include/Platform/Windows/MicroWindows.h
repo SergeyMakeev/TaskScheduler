@@ -258,6 +258,7 @@ MW_WINBASEAPI MW_BOOL MW_WINAPI CloseHandle(MW_HANDLE hObject);
 MW_WINBASEAPI MW_HANDLE MW_WINAPI GetCurrentThread();
 MW_WINBASEAPI MW_DWORD MW_WINAPI GetCurrentThreadId();
 MW_WINBASEAPI MW_DWORD MW_WINAPI ResumeThread(MW_HANDLE hThread);
+MW_WINBASEAPI MW_BOOL MW_WINAPI SwitchToThread();
 
 
 MW_WINBASEAPI void MW_WINAPI GetSystemInfo(MW_SYSTEM_INFO* lpSystemInfo);
@@ -292,6 +293,9 @@ MW_WINBASEAPI MW_BOOL MW_WINAPI IsThreadAFiber();
 MW_WINBASEAPI void MW_WINAPI RaiseException(MW_DWORD dwExceptionCode, MW_DWORD dwExceptionFlags, MW_DWORD nNumberOfArguments, const MW_ULONG_PTR* lpArguments );
 
 MW_WINBASEAPI MW_DWORD MW_WINAPI GetLastError();
+
+
+
 
 }
 

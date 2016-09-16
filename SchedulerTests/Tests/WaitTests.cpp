@@ -77,10 +77,10 @@ namespace SimpleWaitFromSubtask
 		CHECK(scheduler.WaitAll(2000));
 
 		int subTaskCountFinisehd = subTaskCount.Load();
-		CHECK(subTaskCountFinisehd == MT_ARRAY_SIZE(tasks) * 2);
+		CHECK_EQUAL(MT_ARRAY_SIZE(tasks) * 2, (size_t)subTaskCountFinisehd);
 
 		int taskCountFinished = taskCount.Load();
-		CHECK(taskCountFinished == MT_ARRAY_SIZE(tasks));
+		CHECK_EQUAL(MT_ARRAY_SIZE(tasks), (size_t)taskCountFinished);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ namespace SimpleWaitFromSubtask
 
 		int64 startTime = MT::GetTimeMicroSeconds();
 
-		CHECK(scheduler.WaitAll(33) == false);
+		CHECK_EQUAL(false, scheduler.WaitAll(33));
 
 		int64 endTime = MT::GetTimeMicroSeconds();
 		int32 waitTime = (int32)(endTime - startTime);
@@ -122,7 +122,7 @@ namespace SimpleWaitFromSubtask
 
 		int64 startTime = MT::GetTimeMicroSeconds();
 
-		CHECK(scheduler.WaitGroup(myGroup, 33) == false);
+		CHECK_EQUAL(false, scheduler.WaitGroup(myGroup, 33));
 
 		int64 endTime = MT::GetTimeMicroSeconds();
 		int32 waitTime = (int32)(endTime - startTime);

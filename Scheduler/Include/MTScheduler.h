@@ -237,22 +237,22 @@ namespace MT
 #endif
 			}
 
-			int GetTaskCount() const
+			int32 GetTaskCount() const
 			{
 				return inProgressTaskCount.Load();
 			}
 
-			int Dec()
+			int32 Dec()
 			{
 				return inProgressTaskCount.DecFetch();
 			}
 
-			int Inc()
+			int32 Inc()
 			{
 				return inProgressTaskCount.IncFetch();
 			}
 
-			int Add(int sum)
+			int32 Add(int sum)
 			{
 				return inProgressTaskCount.AddFetch(sum);
 			}

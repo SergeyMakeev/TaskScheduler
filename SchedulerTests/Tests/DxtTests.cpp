@@ -29,136 +29,11 @@
 #include <MTScheduler.h>
 #include <MTStaticVector.h>
 
+#include "../Profiler/Profiler.h"
+
 #include <squish.h>
 #include <string.h>
 #include <math.h>
-
-
-/*
-#ifdef _WIN32
-
-#include <conio.h>
-
-#else
-
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-int _kbhit(void)
-{
-	struct termios oldt, newt;
-	int ch;
-	int oldf;
-
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt;
-	newt.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-	ch = getchar();
-
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-	if(ch != EOF)
-	{
-		ungetc(ch, stdin);
-		return 1;
-	}
-
-	return 0;
-}
-#endif
-*/
-
-#ifdef MT_INSTRUMENTED_BUILD
-
-
-void PushPerfMarker(const char* name, MT::Color::Type color)
-{
-	MT_UNUSED(name);
-	MT_UNUSED(color);
-}
-
-void PopPerfMarker(const char* name)
-{
-	MT_UNUSED(name);
-}
-
-
-class Microprofile : public MT::IProfilerEventListener
-{
-public:
-
-	Microprofile()
-	{
-	}
-
-	~Microprofile()
-	{
-	}
-
-	virtual void OnThreadCreated(uint32 workerIndex) override 
-	{
-		MT_UNUSED(workerIndex);
-	}
-
-	virtual void OnThreadStarted(uint32 workerIndex) override 
-	{
-		MT_UNUSED(workerIndex);
-	}
-
-	virtual void OnThreadStoped(uint32 workerIndex) override 
-	{
-		MT_UNUSED(workerIndex);
-	}
-
-	virtual void OnThreadIdleStarted(uint32 workerIndex) override 
-	{
-		MT_UNUSED(workerIndex);
-		PushPerfMarker("ThreadIdle", MT::Color::Red);
-	}
-
-	virtual void OnThreadIdleFinished(uint32 workerIndex) override 
-	{
-		MT_UNUSED(workerIndex);
-		PopPerfMarker("ThreadIdle");
-	}
-
-	virtual void OnThreadWaitStarted() override 
-	{
-		PushPerfMarker("ThreadWait", MT::Color::Red);
-	}
-
-	virtual void OnThreadWaitFinished() override 
-	{
-		PopPerfMarker("ThreadWait");
-	}
-
-	virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, MT::TaskExecuteState::Type type) override 
-	{
-		switch(type)
-		{
-		case MT::TaskExecuteState::START:
-		case MT::TaskExecuteState::RESUME:
-			PushPerfMarker(debugID, debugColor);
-			break;
-		case MT::TaskExecuteState::STOP:
-		case MT::TaskExecuteState::SUSPEND:
-			PopPerfMarker(debugID);
-			break;
-		}
-	}
-};
-
-
-#endif
-
-
 
 
 
@@ -525,8 +400,7 @@ SUITE(DxtTests)
 		MT_ASSERT ((compressTask2.width & 3) == 0 && (compressTask2.height & 3) == 0, "Image size must be a multiple of 4");
 
 #ifdef MT_INSTRUMENTED_BUILD
-		Microprofile profiler;
-		MT::TaskScheduler scheduler(0, nullptr, &profiler);
+		MT::TaskScheduler scheduler(0, nullptr, GetProfiler());
 #else
 		MT::TaskScheduler scheduler;
 #endif
@@ -560,6 +434,7 @@ SUITE(DxtTests)
 	}
 */
 
+
 /*
 	// dxt compressor stress test (for profiling purposes)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -577,8 +452,7 @@ SUITE(DxtTests)
 		MT_ASSERT ((compressTask.width & 3) == 0 && (compressTask.height & 3) == 0, "Image size must be a multiple of 4");
 
 #ifdef MT_INSTRUMENTED_BUILD
-		Microprofile profiler;
-		MT::TaskScheduler scheduler(0, nullptr, &profiler);
+		MT::TaskScheduler scheduler(0, nullptr, GetProfiler());
 #else
 		MT::TaskScheduler scheduler;
 #endif
@@ -586,18 +460,10 @@ SUITE(DxtTests)
 		int workersCount = (int)scheduler.GetWorkersCount();
 		printf("Scheduler started, %d workers\n", workersCount);
 
-#ifdef MT_INSTRUMENTED_BUILD
-		PushPerfMarker("DxtStressTest", MT::Color::Red);
-#endif
-
 		printf("DxtStressTest\n");
 		scheduler.RunAsync(MT::TaskGroup::Default(), &compressTask, 1);
 
 		CHECK(scheduler.WaitAll(10000000));
-
-#ifdef MT_INSTRUMENTED_BUILD
-		PopPerfMarker("DxtStressTest");
-#endif
 	}
 */
 

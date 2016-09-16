@@ -51,6 +51,17 @@
 
 namespace MT
 {
+	//
+	// Signals the calling thread to yield execution to another thread that is ready to run.
+	//
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	inline void YieldThread()
+	{
+		int err = pthread_yield();
+		MT_USED_IN_ASSERT(err);
+		MT_ASSERT(err == 0, "pthread_yield - error");
+	}
+
 	class ThreadId
 	{
 		pthread_t id;

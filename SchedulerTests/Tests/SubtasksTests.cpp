@@ -24,6 +24,8 @@
 #include <UnitTest++.h>
 #include <MTScheduler.h>
 
+#include "../Profiler/Profiler.h"
+
 
 #ifdef MT_THREAD_SANITIZER
 	#define MT_DEFAULT_WAIT_TIME (500000)
@@ -169,22 +171,21 @@ TEST(OneTaskManySubtasks)
 // Checks many simple task with subtasks
 TEST(ManyTasksOneSubtask)
 {
+/*
+	MT::Thread::SetThreadSchedulingPolicy(0, MT::ThreadPriority::DEFAULT);
+
 	MT::WorkerThreadParams singleCoreParams;
-	singleCoreParams.core = 0;
-	singleCoreParams.priority = MT::ThreadPriority::LOW;
+	singleCoreParams.core = 1;
+	singleCoreParams.priority = MT::ThreadPriority::DEFAULT;
 
+#ifdef MT_INSTRUMENTED_BUILD
+	MT::TaskScheduler scheduler(1, &singleCoreParams, GetProfiler());
+#else
+	MT::TaskScheduler scheduler(1, &singleCoreParams);
+#endif
+*/
 
-	uint32 workersCount = 0;
-	MT::WorkerThreadParams* pWorkerParams = nullptr;
-
-	if (MT::Thread::GetNumberOfHardwareThreads() <= 1)
-	{
-		workersCount = 1;
-		pWorkerParams = &singleCoreParams;
-	}
-
-
-	MT::TaskScheduler scheduler(workersCount, pWorkerParams);
+	MT::TaskScheduler scheduler;
 
 	bool waitAllOK = true;
 
@@ -192,6 +193,10 @@ TEST(ManyTasksOneSubtask)
 
 	for (int i = 0; i < MT_ITERATIONS_COUNT; ++i)
 	{
+#ifdef MT_INSTRUMENTED_BUILD
+		PushPerfEvent("Iteration");
+#endif
+
 		GroupTask group;
 		scheduler.RunAsync(sourceGroup, &group, 1);
 		//if (!scheduler.WaitAll(MT_DEFAULT_WAIT_TIME))
@@ -201,7 +206,12 @@ TEST(ManyTasksOneSubtask)
 			waitAllOK = false;
 			break;
 		}
+
+#ifdef MT_INSTRUMENTED_BUILD
+		PopPerfEvent("Iteration");
+#endif
 	}
+
 
 	CHECK(waitAllOK);
 }
