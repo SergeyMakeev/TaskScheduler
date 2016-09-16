@@ -31,6 +31,7 @@
 #include <time.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <sched.h>
 
 #if MT_PLATFORM_OSX
 #include <thread>
@@ -57,7 +58,7 @@ namespace MT
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void YieldThread()
 	{
-		int err = pthread_yield();
+		int err = sched_yield();
 		MT_USED_IN_ASSERT(err);
 		MT_ASSERT(err == 0, "pthread_yield - error");
 	}
