@@ -29,9 +29,6 @@
 //  Look like low latency hybrid wait is work better for PS4/X1, but a little worse on PC
 //#define MT_LOW_LATENCY_EXPERIMENTAL_WAIT (1)
 
-#if defined(MT_PLATFORM_POSIX)
-#define MT_LOW_LATENCY_EXPERIMENTAL_WAIT (1)
-#endif
 
 namespace MT
 {
