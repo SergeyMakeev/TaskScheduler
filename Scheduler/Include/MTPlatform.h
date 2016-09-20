@@ -52,6 +52,7 @@ namespace MT
 #endif
 
 #include <Platform/Common/MTAtomic.h>
+#include <Platform/Common/MTSpinWait.h>
 
 namespace MT
 {

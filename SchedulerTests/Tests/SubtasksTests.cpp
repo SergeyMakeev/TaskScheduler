@@ -135,7 +135,7 @@ struct TaskWithManySubtasks
 		for (int i = 0; i < 2; ++i)
 		{
 			context.RunSubtasksAndYield(MT::TaskGroup::Default(), &task, 1);
-			MT::Thread::SpinSleepMilliSeconds(1);
+			MT::SpinSleepMilliSeconds(1);
 		}
 	}
 
@@ -171,21 +171,11 @@ TEST(OneTaskManySubtasks)
 // Checks many simple task with subtasks
 TEST(ManyTasksOneSubtask)
 {
-/*
-	MT::Thread::SetThreadSchedulingPolicy(0, MT::ThreadPriority::DEFAULT);
-
-	MT::WorkerThreadParams singleCoreParams;
-	singleCoreParams.core = 1;
-	singleCoreParams.priority = MT::ThreadPriority::DEFAULT;
-
 #ifdef MT_INSTRUMENTED_BUILD
-	MT::TaskScheduler scheduler(1, &singleCoreParams, GetProfiler());
+	MT::TaskScheduler scheduler(0, nullptr, GetProfiler());
 #else
-	MT::TaskScheduler scheduler(1, &singleCoreParams);
-#endif
-*/
-
 	MT::TaskScheduler scheduler;
+#endif
 
 	bool waitAllOK = true;
 

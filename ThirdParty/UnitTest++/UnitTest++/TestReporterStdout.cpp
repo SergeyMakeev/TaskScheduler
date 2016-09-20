@@ -51,8 +51,9 @@ void TestReporterStdout::ReportTestStart(TestDetails const& details/*test*/)
 void TestReporterStdout::ReportTestFinish(TestDetails const& /*test*/, float delta)
 {
 #ifdef _XBOX_ONE
-	delta;
-	OutputDebugStringA("=> Finished\n");
+	char msg[128];
+	sprintf(msg, "=> Finished in %3.2f sec\n", delta);
+	OutputDebugStringA(msg);
 #else
 	printf("=> Finished in %3.2f sec\n", delta);
 #endif
@@ -68,7 +69,13 @@ void TestReporterStdout::ReportSummary(int const totalTestCount, int const faile
     else
         printf("Success: %d tests passed.\n", totalTestCount);
 
+#ifdef _XBOX_ONE
+	char msg[128];
+	sprintf(msg, "Test time: %.2f seconds.\n", secondsElapsed);
+	OutputDebugStringA(msg);
+#else
     printf("Test time: %.2f seconds.\n", secondsElapsed);
+#endif
 }
 
 }

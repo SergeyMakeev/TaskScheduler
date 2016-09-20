@@ -35,7 +35,7 @@ struct NotFinishedTaskDestroy
 
 	void Do(MT::FiberContext&)
 	{
-		MT::Thread::SpinSleepMilliSeconds(4);
+		MT::SpinSleepMilliSeconds(4);
 	}
 };
 

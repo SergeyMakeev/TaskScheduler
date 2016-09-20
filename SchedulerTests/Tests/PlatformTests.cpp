@@ -56,7 +56,7 @@ SUITE(PlatformTests)
 
 	void MyThreadFunc2(void*)
 	{
-		MT::Thread::SpinSleepMilliSeconds(300);
+		MT::SpinSleepMilliSeconds(300);
 		pEvent1->Signal();
 	}
 
@@ -104,7 +104,7 @@ SUITE(PlatformTests)
 	{
 		while (needExitSignal.Load() == 0)
 		{
-			MT::Thread::SpinSleepMicroSeconds(50);
+			MT::SpinSleepMicroSeconds(50);
 			MT::Event * pEvent = pStressEvent.Load();
 			pEvent->Signal();
 		}
@@ -190,7 +190,7 @@ SUITE(PlatformTests)
 
 		MT::Timer timer;
 
-		MT::Thread::SpinSleepMilliSeconds(100);
+		MT::SpinSleepMilliSeconds(100);
 
 		CHECK( timer.GetPastMilliSeconds() >= 100 );
 	}

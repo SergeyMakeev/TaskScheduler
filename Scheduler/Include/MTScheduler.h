@@ -326,7 +326,8 @@ namespace MT
 		static void WorkerThreadMain( void* userData );
 		static void SchedulerFiberMain( void* userData );
 		static void SchedulerFiberWait( void* userData );
-		static bool SchedulerFiberStep( internal::ThreadContext& context );
+		static bool SchedulerFiberStep( internal::ThreadContext& context, bool disableTaskStealing);
+		static void SchedulerFiberProcessTask( internal::ThreadContext& context, internal::GroupedTask& task );
 		static void FiberMain( void* userData );
 		static bool TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task);
 

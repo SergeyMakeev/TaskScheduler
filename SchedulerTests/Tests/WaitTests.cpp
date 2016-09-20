@@ -40,7 +40,7 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext&)
 		{
-			MT::Thread::SpinSleepMilliSeconds(2);
+			MT::SpinSleepMilliSeconds(2);
 			subTaskCount.IncFetch();
 		}
 	};
@@ -141,7 +141,7 @@ namespace SimpleWaitFromSubtask
 
 		void Do(MT::FiberContext&)
 		{
-			MT::ThreadBase::SpinSleepMicroSeconds(20);
+			MT::SpinSleepMicroSeconds(20);
 			finishedTaskCount.IncFetch();
 		}
 	};
