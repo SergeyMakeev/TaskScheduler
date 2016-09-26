@@ -41,6 +41,28 @@ public:
 	{
 	}
 
+	virtual void OnFibersCreated(uint32 fibersCount) override
+	{
+		MT_UNUSED(fibersCount);
+	}
+
+	virtual void OnThreadsCreated(uint32 threadsCount) override
+	{
+		MT_UNUSED(threadsCount);
+	}
+
+	virtual void OnFiberAssignedToThread(uint32 fiberIndex, uint32 threadIndex) override
+	{
+		MT_UNUSED(fiberIndex);
+		MT_UNUSED(threadIndex);
+	}
+
+	virtual void OnThreadAssignedToFiber(uint32 threadIndex, uint32 fiberIndex) override
+	{
+		MT_UNUSED(threadIndex);
+		MT_UNUSED(fiberIndex);
+	}
+
 	virtual void OnThreadCreated(uint32 workerIndex) override 
 	{
 		MT_UNUSED(workerIndex);
@@ -78,7 +100,7 @@ public:
 		PopPerfMarker("ThreadWait");
 	}
 
-	virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, MT::TaskExecuteState::Type type) override 
+	virtual void OnTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, MT::TaskExecuteState::Type type) override 
 	{
 		switch(type)
 		{

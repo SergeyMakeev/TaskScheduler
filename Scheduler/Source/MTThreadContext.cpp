@@ -100,12 +100,27 @@ namespace MT
 			}
 		}
 
+		void ThreadContext::NotifyFiberAssignedToThread(uint32 fiberIndex, uint32 threadIndex)
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnFiberAssignedToThread(fiberIndex, threadIndex);
+			}
+		}
+
+		void ThreadContext::NotifyThreadAssignedToFiber()
+		{
+			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
+			{
+				eventListener->OnThreadAssignedToFiber(workerIndex, 0xFFFFFFFF);
+			}
+		}
 
 		void ThreadContext::NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type)
 		{
 			if (IProfilerEventListener* eventListener = taskScheduler->GetProfilerEventListener())
 			{
-				eventListener->NotifyTaskExecuteStateChanged(debugColor, debugID, type);
+				eventListener->OnTaskExecuteStateChanged(debugColor, debugID, type);
 			}
 		}
 

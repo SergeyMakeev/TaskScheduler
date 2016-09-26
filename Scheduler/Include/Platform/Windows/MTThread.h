@@ -43,35 +43,66 @@ namespace MT
 		MW_DWORD id;
 		Atomic32<uint32> isInitialized;
 
-	public:
+		void Assign(const ThreadId& other)
+		{
+			id = other.id;
+			isInitialized.Store(other.isInitialized.Load());
+		}
 
-		MT_NOCOPYABLE(ThreadId);
+	public:
 
 		ThreadId()
 		{
 			isInitialized.Store(0);
 		}
 
-		void SetAsCurrentThread()
+		ThreadId(const ThreadId& other)
 		{
-			id = ::GetCurrentThreadId();
-			isInitialized.Store(1);
+			Assign(other);
 		}
 
-		bool IsCurrentThread() const
+		ThreadId& operator=(const ThreadId& other)
 		{
-			if (isInitialized.Load() == 0)
+			Assign(other);
+			return *this;
+		}
+
+		static ThreadId Self()
+		{
+			ThreadId selfThread;
+			selfThread.id = ::GetCurrentThreadId();
+			selfThread.isInitialized.Store(1);
+			return selfThread;
+		}
+
+		bool IsValid() const
+		{
+			return (isInitialized.Load() != 0);
+		}
+
+		bool IsEqual(const ThreadId& other)
+		{
+			if (isInitialized.Load() != other.isInitialized.Load())
 			{
 				return false;
 			}
-
-			MW_DWORD callThread = ::GetCurrentThreadId();
-			if (callThread == id)
+			if (id != other.id)
 			{
-				return true;
+				return false;
 			}
-			return false;
+			return true;
 		}
+
+		uint64 AsUInt64() const
+		{
+			if (isInitialized.Load() == 0)
+			{
+				return (uint64)-1;
+			}
+
+			return (uint64)id;
+		}
+
 	};
 
 

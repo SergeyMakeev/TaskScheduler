@@ -131,6 +131,8 @@ namespace MT
 			void NotifyWaitStarted();
 			void NotifyWaitFinished();
 
+			void NotifyFiberAssignedToThread(uint32 fiberIndex, uint32 threadIndex);
+			void NotifyThreadAssignedToFiber();
 #endif
 
 			static size_t GetMemoryRequrementInBytesForDescBuffer();

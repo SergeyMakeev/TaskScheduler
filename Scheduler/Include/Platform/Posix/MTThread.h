@@ -63,41 +63,74 @@ namespace MT
 		MT_ASSERT(err == 0, "pthread_yield - error");
 	}
 
+
 	class ThreadId
 	{
 		pthread_t id;
 		Atomic32<uint32> isInitialized;
 
-	public:
+		void Assign(const ThreadId& other)
+		{
+			id = other.id;
+			isInitialized.Store(other.isInitialized.Load());
+		}
 
-		MT_NOCOPYABLE(ThreadId);
+	public:
 
 		ThreadId()
 		{
 			isInitialized.Store(0);
 		}
 
-		void SetAsCurrentThread()
+		ThreadId(const ThreadId& other)
 		{
-			id = pthread_self();
-			isInitialized.Store(1);
+			Assign(other);
 		}
 
-		bool IsCurrentThread() const
+		ThreadId& operator=(const ThreadId& other)
 		{
-			if (isInitialized.Load() == 0)
+			Assign(other);
+			return *this;
+		}
+
+		static ThreadId Self()
+		{
+			ThreadId selfThread;
+			selfThread.id = pthread_self();
+			selfThread.isInitialized.Store(1);
+			return selfThread;
+		}
+
+		bool IsValid() const
+		{
+			return (isInitialized.Load() != 0);
+		}
+
+		bool IsEqual(const ThreadId& other)
+		{
+			if (isInitialized.Load() != other.isInitialized.Load())
 			{
 				return false;
 			}
-
-			pthread_t callThread = pthread_self();
-			if (pthread_equal(callThread, id))
+			if (pthread_equal(id, other.id) == false)
 			{
-				return true;
+				return false;
 			}
-			return false;
+			return true;
+		}
+
+		uint64 AsUInt64() const
+		{
+			if (isInitialized.Load() == 0)
+			{
+				return (uint64)-1;
+			}
+
+			return (uint64)id;
 		}
 	};
+
+
 
 	class Thread : public ThreadBase
 	{

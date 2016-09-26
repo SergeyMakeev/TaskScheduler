@@ -58,14 +58,19 @@ namespace MT
 			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 1, 1, (int)MT_MAX_THREAD_COUNT) );
 		}
 
+
+		uint32 fiberIndex = 0;
+
 		// create fiber pool (fibers with standard stack size)
 		for (uint32 i = 0; i < MT_MAX_STANDART_FIBERS_COUNT; i++)
 		{
 			FiberContext& context = standartFiberContexts[i];
 			context.fiber.Create(MT_STANDART_FIBER_STACK_SIZE, FiberMain, &context);
+			context.fiberIndex = fiberIndex;
 			bool res = standartFibersAvailable.TryPush( &context );
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == true, "Can't add fiber to storage");
+			fiberIndex++;
 		}
 
 		// create fiber pool (fibers with extended stack size)
@@ -73,11 +78,16 @@ namespace MT
 		{
 			FiberContext& context = extendedFiberContexts[i];
 			context.fiber.Create(MT_EXTENDED_FIBER_STACK_SIZE, FiberMain, &context);
+			context.fiberIndex = fiberIndex;
 			bool res = extendedFibersAvailable.TryPush( &context );
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == true, "Can't add fiber to storage");
+			fiberIndex++;
 		}
 
+#ifdef MT_INSTRUMENTED_BUILD
+		NotifyFibersCreated(MT_MAX_STANDART_FIBERS_COUNT + MT_MAX_EXTENDED_FIBERS_COUNT);
+#endif
 
 		for (int16 i = 0; i < TaskGroup::MT_MAX_GROUPS_COUNT; i++)
 		{
@@ -95,6 +105,11 @@ namespace MT
 
 		// create worker thread pool
 		int32 totalThreadsCount = GetWorkersCount();
+
+#ifdef MT_INSTRUMENTED_BUILD
+		NotifyThreadsCreated(totalThreadsCount);
+#endif
+
 		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
 			threadContext[i].SetThreadIndex(i);
@@ -196,7 +211,7 @@ namespace MT
 
 	FiberContext* TaskScheduler::ExecuteTask(internal::ThreadContext& threadContext, FiberContext* fiberContext)
 	{
-		MT_ASSERT(threadContext.threadId.IsCurrentThread(), "Thread context sanity check failed");
+		MT_ASSERT(threadContext.threadId.IsEqual(ThreadId::Self()), "Thread context sanity check failed");
 
 		MT_ASSERT(fiberContext, "Invalid fiber context");
 		MT_ASSERT(fiberContext->currentTask.IsValid(), "Invalid task");
@@ -207,7 +222,7 @@ namespace MT
 		// Update task status
 		fiberContext->SetStatus(FiberTaskStatus::RUNNED);
 
-		MT_ASSERT(fiberContext->GetThreadContext()->threadId.IsCurrentThread(), "Thread context sanity check failed");
+		MT_ASSERT(fiberContext->GetThreadContext()->threadId.IsEqual(ThreadId::Self()), "Thread context sanity check failed");
 
 		const void* poolUserData = fiberContext->currentTask.userData;
 		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
@@ -261,13 +276,13 @@ namespace MT
 				if (childrenFibersCount == 0)
 				{
 					// This is a last subtask. Restore parent task
-					MT_ASSERT(threadContext.threadId.IsCurrentThread(), "Thread context sanity check failed");
+					MT_ASSERT(threadContext.threadId.IsEqual(ThreadId::Self()), "Thread context sanity check failed");
 					MT_ASSERT(parentFiberContext->GetThreadContext() == nullptr, "Inactive parent should not have a valid thread context");
 
 					// WARNING!! Thread context can changed here! Set actual current thread context.
 					parentFiberContext->SetThreadContext(&threadContext);
 
-					MT_ASSERT(parentFiberContext->GetThreadContext()->threadId.IsCurrentThread(), "Thread context sanity check failed");
+					MT_ASSERT(parentFiberContext->GetThreadContext()->threadId.IsEqual(ThreadId::Self()), "Thread context sanity check failed");
 
 					// All subtasks is done.
 					// Exiting and return parent fiber to scheduler
@@ -298,7 +313,7 @@ namespace MT
 		{
 			MT_ASSERT(fiberContext.currentTask.IsValid(), "Invalid task in fiber context");
 			MT_ASSERT(fiberContext.GetThreadContext(), "Invalid thread context");
-			MT_ASSERT(fiberContext.GetThreadContext()->threadId.IsCurrentThread(), "Thread context sanity check failed");
+			MT_ASSERT(fiberContext.GetThreadContext()->threadId.IsEqual(ThreadId::Self()), "Thread context sanity check failed");
 
 #ifdef MT_INSTRUMENTED_BUILD
 			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
@@ -357,7 +372,7 @@ namespace MT
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 
 		isWorkerThreadTLS = 1;
-		context.threadId.SetAsCurrentThread();
+		context.threadId = ThreadId::Self();
 
 #ifdef MT_INSTRUMENTED_BUILD
 		const char* threadNames[] = {"worker0","worker1","worker2","worker3","worker4","worker5","worker6","worker7","worker8","worker9","worker10","worker11","worker12"};
@@ -736,7 +751,7 @@ namespace MT
 		internal::ThreadContext context(descBuffer);
 		context.taskScheduler = this;
 		context.SetThreadIndex(0xFFFFFFFF);
-		context.threadId.SetAsCurrentThread();
+		context.threadId = ThreadId::Self();
 
 		WaitContext waitContext;
 		waitContext.threadContext = &context;
@@ -749,6 +764,11 @@ namespace MT
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(SchedulerFiberWait, &waitContext);
 
 		isWorkerThreadTLS = 0;
+
+#ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyThreadAssignedToFiber();
+#endif
+
 		return (waitContext.exitCode == 0);
 	}
 
@@ -769,7 +789,7 @@ namespace MT
 		internal::ThreadContext context(descBuffer);
 		context.taskScheduler = this;
 		context.SetThreadIndex(0xFFFFFFFF);
-		context.threadId.SetAsCurrentThread();
+		context.threadId = ThreadId::Self();
 
 		WaitContext waitContext;
 		waitContext.threadContext = &context;
@@ -782,6 +802,11 @@ namespace MT
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(SchedulerFiberWait, &waitContext);
 
 		isWorkerThreadTLS = 0;
+
+#ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyThreadAssignedToFiber();
+#endif
+
 		return (waitContext.exitCode == 0);
 	}
 
@@ -843,7 +868,7 @@ namespace MT
 		MT_ASSERT(res, "Can't return group to pool");
 	}
 
-	TaskScheduler::TaskGroupDescription & TaskScheduler::GetGroupDesc(TaskGroup group)
+	TaskScheduler::TaskGroupDescription& TaskScheduler::GetGroupDesc(TaskGroup group)
 	{
 		MT_ASSERT(group.IsValid(), "Invalid group ID");
 
@@ -853,6 +878,29 @@ namespace MT
 		MT_ASSERT(groupDesc.GetDebugIsFree() == false, "Invalid group");
 		return groupDesc;
 	}
+
+
+#ifdef MT_INSTRUMENTED_BUILD
+
+	void TaskScheduler::NotifyFibersCreated(uint32 fibersCount)
+	{
+		if (IProfilerEventListener* eventListener = GetProfilerEventListener())
+		{
+			eventListener->OnFibersCreated(fibersCount);
+		}
+	}
+
+	void TaskScheduler::NotifyThreadsCreated(uint32 threadsCount)
+	{
+		if (IProfilerEventListener* eventListener = GetProfilerEventListener())
+		{
+			eventListener->OnThreadsCreated(threadsCount);
+		}
+	}
+
+
+#endif
+
 }
 
 

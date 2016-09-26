@@ -507,20 +507,21 @@ namespace MT
 #define SCOPE_CONCAT_IMPL(x, y) x##y
 #define SCOPE_CONCAT(x, y) SCOPE_CONCAT_IMPL(x, y)
 
+#define MT_SCOPE_NOT_INITIALIZED (0)
+#define MT_SCOPE_NOT_YET_INITIALIZED (-1)
+
 #define DECLARE_SCOPE_DESCRIPTOR_IMPL_PRE( file, line, name, storagePointer, resultID ) \
-	const int32 scope_notInitialized = 0; \
-	const int32 scope_notYetInitialized = -1; \
 	\
-	static MT::Atomic32Base<int32> SCOPE_CONCAT(scope_descriptorIndex_, line) = { scope_notInitialized }; \
+	static MT::Atomic32Base<int32> SCOPE_CONCAT(scope_descriptorIndex_, line) = { MT_SCOPE_NOT_INITIALIZED }; \
 	static_assert(std::is_pod< MT::Atomic32Base<int32> >::value == true, "AtomicInt32Base type should be POD, to be placed in bss/data section"); \
 	\
-	int32 SCOPE_CONCAT(scope_descId_, line) = scope_notInitialized; \
+	int32 SCOPE_CONCAT(scope_descId_, line) = MT_SCOPE_NOT_INITIALIZED; \
 	\
-	int32 SCOPE_CONCAT(scope_state_, line) = SCOPE_CONCAT(scope_descriptorIndex_, line).CompareAndSwap(scope_notInitialized, scope_notYetInitialized); \
+	int32 SCOPE_CONCAT(scope_state_, line) = SCOPE_CONCAT(scope_descriptorIndex_, line).CompareAndSwap(MT_SCOPE_NOT_INITIALIZED, MT_SCOPE_NOT_YET_INITIALIZED); \
 	switch(SCOPE_CONCAT(scope_state_, line)) \
 	{ \
 		/* first time here, need to allocate descriptor*/ \
-		case scope_notInitialized: \
+		case MT_SCOPE_NOT_INITIALIZED: \
 		{ \
 			MT_ASSERT( storagePointer != nullptr, "Scopes storage pointer was not initialized!"); \
 
@@ -533,12 +534,12 @@ namespace MT
 		\
 		/* allocation in progress */ \
 		/* wait until the allocation is finished */ \
-		case scope_notYetInitialized: \
+		case MT_SCOPE_NOT_YET_INITIALIZED: \
 		{ \
 			for(;;) \
 			{ \
 				SCOPE_CONCAT(scope_descId_, line) = SCOPE_CONCAT(scope_descriptorIndex_, line).Load(); \
-				if (SCOPE_CONCAT(scope_descId_, line) != scope_notYetInitialized) \
+				if (SCOPE_CONCAT(scope_descId_, line) != MT_SCOPE_NOT_YET_INITIALIZED) \
 				{ \
 					break; \
 				} \
@@ -586,24 +587,24 @@ namespace MT
 // push new stack entry to stack
 #define SCOPE_STACK_PUSH(scopeDescriptorId, stackPointer) \
 	MT_ASSERT(stackPointer != nullptr, "Stack pointer is not initialized for current thread."); \
-	int32 scope_stackParentId = stackPointer -> Top(); \
-	MT_ASSERT(scope_stackParentId >= 0, "Invalid parent ID"); \
-	stackPointer -> Push(scope_stackParentId, scopeDescriptorId); \
+	int32 SCOPE_CONCAT(scope_stackParentId_, __LINE__) = stackPointer -> Top(); \
+	MT_ASSERT(SCOPE_CONCAT(scope_stackParentId_, __LINE__) >= 0, "Invalid parent ID"); \
+	stackPointer -> Push(SCOPE_CONCAT(scope_stackParentId_, __LINE__), scopeDescriptorId); \
 
 
 // push new stack entry to stack
 #define SCOPE_STACK_PUSH1(scopeDescriptorId, param1, stackPointer) \
 	MT_ASSERT(stackPointer != nullptr, "Stack pointer is not initialized for current thread."); \
-	int32 scope_stackParentId = stackPointer -> Top(); \
-	MT_ASSERT(scope_stackParentId >= 0, "Invalid parent ID"); \
-	stackPointer -> Push(scope_stackParentId, scopeDescriptorId, param1); \
+	int32 SCOPE_CONCAT(scope_stackParentId_, __LINE__) = stackPointer -> Top(); \
+	MT_ASSERT(SCOPE_CONCAT(scope_stackParentId_, __LINE__) >= 0, "Invalid parent ID"); \
+	stackPointer -> Push(SCOPE_CONCAT(scope_stackParentId_, __LINE__), scopeDescriptorId, param1); \
 
 // push new stack entry to stack
 #define SCOPE_STACK_PUSH2(scopeDescriptorId, param1, param2, stackPointer) \
 	MT_ASSERT(stackPointer != nullptr, "Stack pointer is not initialized for current thread."); \
-	int32 scope_stackParentId = stackPointer -> Top(); \
-	MT_ASSERT(scope_stackParentId >= 0, "Invalid parent ID"); \
-	stackPointer -> Push(scope_stackParentId, scopeDescriptorId, param1, param2); \
+	int32 SCOPE_CONCAT(scope_stackParentId_, __LINE__) = stackPointer -> Top(); \
+	MT_ASSERT(SCOPE_CONCAT(scope_stackParentId_, __LINE__) >= 0, "Invalid parent ID"); \
+	stackPointer -> Push(SCOPE_CONCAT(scope_stackParentId_, __LINE__), scopeDescriptorId, param1, param2); \
 
 
 // pop from the stack

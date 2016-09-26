@@ -115,6 +115,9 @@ namespace MT
 		// System fiber
 		Fiber fiber;
 
+		//Fiber index in pool
+		uint32 fiberIndex;
+
 		// Prevent false sharing between threads
 		uint8 cacheline[64];
 	};

@@ -37,6 +37,12 @@ namespace MT
 		IProfilerEventListener() {};
 		virtual ~IProfilerEventListener() {};
 
+		// Called from main scheduler thread when all fibers has created (notify about fibers count)
+		virtual void OnFibersCreated(uint32 fibersCount) = 0;
+
+		// Called from main scheduler thread when all threads has created (notify about threads count)
+		virtual void OnThreadsCreated(uint32 threadsCount) = 0;
+
 		// Called from worker thread context when worker thread created 
 		virtual void OnThreadCreated(uint32 workerIndex) = 0;
 
@@ -58,9 +64,14 @@ namespace MT
 		// Called from thread when thread is finished waiting for group
 		virtual void OnThreadWaitFinished() = 0;
 
+		// Called from thread when fiber assigned to this worker thread
+		virtual void OnFiberAssignedToThread(uint32 fiberIndex, uint32 threadIndex) = 0;
+
+		// Called from thread when fiber assigned to this worker thread
+		virtual void OnThreadAssignedToFiber(uint32 threadIndex, uint32 fiberIndex) = 0;
 
 		// Called from the worker thread that has change the task execution state
-		virtual void NotifyTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type) = 0;
+		virtual void OnTaskExecuteStateChanged(MT::Color::Type debugColor, const mt_char* debugID, TaskExecuteState::Type type) = 0;
 	};
 
 }

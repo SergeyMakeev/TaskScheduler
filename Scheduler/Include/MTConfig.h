@@ -100,6 +100,8 @@
 
 #endif
 
+
+
 //
 // x86-64 CPU has strong memory model, so we don't need to define acquire/release fences here
 // 
@@ -111,7 +113,16 @@
 //
 // Acquire fence is a fence which does not permit subsequent memory operations to be advanced before it.
 //
-#define mt_acquire_fence()
+
+#if MT_MSVC_COMPILER_FAMILY
+// MSVC compiler barrier
+#define mt_acquire_fence() _ReadWriteBarrier()
+#elif MT_GCC_COMPILER_FAMILY
+// GCC compiler barrier
+#define mt_acquire_fence() asm volatile("" ::: "memory")
+#else
+#error Platform is not supported!
+#endif
 
 
 	
@@ -122,5 +133,14 @@
 //
 // Release fence is a fence which does not permit preceding memory operations to be delayed past it.
 //
-#define mt_release_fence()
+
+#if MT_MSVC_COMPILER_FAMILY
+// MSVC compiler barrier
+#define mt_release_fence() _ReadWriteBarrier()
+#elif MT_GCC_COMPILER_FAMILY
+// GCC compiler barrier
+#define mt_release_fence() asm volatile("" ::: "memory")
+#else
+#error Platform is not supported!
+#endif
 

@@ -35,6 +35,12 @@
 #include <MTStackRequirements.h>
 #include <Scopes/MTScopes.h>
 
+/*
+	You can inject some profiler code right into the task scope using this macro.
+*/
+#ifndef MT_SCHEDULER_PROFILER_TASK_SCOPE_CODE_INJECTION
+#define MT_SCHEDULER_PROFILER_TASK_SCOPE_CODE_INJECTION( TYPE, DEBUG_COLOR, SRC_FILE, SRC_LINE)
+#endif
 
 namespace MT
 {
@@ -100,12 +106,13 @@ namespace MT
 #endif
 
 
-#define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY) \
+#define MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR) \
 	\
 	MT_COMPILE_TIME_TYPE_CHECK(TYPE) \
 	\
 	static void TaskEntryPoint(MT::FiberContext& fiberContext, const void* userData) \
 	{ \
+		MT_SCHEDULER_PROFILER_TASK_SCOPE_CODE_INJECTION(TYPE, DEBUG_COLOR, __FILE__, __LINE__); \
 		/* C style cast */ \
 		TYPE * task = (TYPE *)(userData); \
 		task->Do(fiberContext); \
@@ -147,13 +154,12 @@ namespace MT
 		return DEBUG_COLOR; \
 	} \
 	\
-	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY);
-
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR);
 
 #else
 
 #define MT_DECLARE_TASK(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR) \
-	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY);
+	MT_DECLARE_TASK_IMPL(TYPE, STACK_REQUIREMENTS, TASK_PRIORITY, DEBUG_COLOR);
 
 #endif
 
@@ -372,6 +378,10 @@ namespace MT
 		{
 			return profilerEventListener;
 		}		
+
+		void NotifyFibersCreated(uint32 fibersCount);
+		void NotifyThreadsCreated(uint32 threadsCount);
+
 
 #endif
 	};

@@ -71,7 +71,7 @@ namespace MT
 	template<typename T>
 	struct Atomic32Base
 	{
-		volatile T _value;
+		T _value;
 
 		// The function returns the resulting added value.
 		T AddFetch(T sum)
@@ -167,7 +167,7 @@ namespace MT
 	template<typename T>
 	struct AtomicPtrBase
 	{
-		T* volatile _value;
+		T* _value;
 	
 		T* Load() const
 		{ MT_ATOMICPTR_COMPILE_TIME_CHECK
