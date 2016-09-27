@@ -115,7 +115,7 @@ namespace MT
 			stackBottom = pthread_get_stackaddr_np(callThread);
 			stackSize = pthread_get_stacksize_np(callThread);
 
-			stackBottom -= stackSize;
+			stackBottom = (uint8*)stackBottom - stackSize;
 
 #else
 			// get current thread attributes
