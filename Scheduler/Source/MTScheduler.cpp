@@ -336,13 +336,7 @@ namespace MT
 
 	bool TaskScheduler::TryStealTask(internal::ThreadContext& threadContext, internal::GroupedTask & task)
 	{
-		bool taskStealingDisabled = threadContext.taskScheduler->IsTaskStealingDisabled();
 		uint32 workersCount = threadContext.taskScheduler->GetWorkersCount();
-
-		if (workersCount <= 1 || taskStealingDisabled )
-		{
-			return false;
-		}
 
 		uint32 victimIndex = threadContext.random.Get();
 
@@ -401,7 +395,7 @@ namespace MT
 		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
 #endif
 
-		bool isTaskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled();
+		bool isTaskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled(0);
 
 		int64 timeOut = GetTimeMicroSeconds() + (waitContext.waitTimeMs * 1000);
 
@@ -810,9 +804,9 @@ namespace MT
 		return (waitContext.exitCode == 0);
 	}
 
-	bool TaskScheduler::IsTaskStealingDisabled() const
+	bool TaskScheduler::IsTaskStealingDisabled(uint32 minWorkersCount) const
 	{
-		if (threadsCount.LoadRelaxed() <= 1)
+		if (threadsCount.LoadRelaxed() <= minWorkersCount)
 		{
 			return true;
 		}
