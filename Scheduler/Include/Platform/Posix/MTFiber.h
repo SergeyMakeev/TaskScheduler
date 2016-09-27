@@ -106,14 +106,16 @@ namespace MT
 			MT_ASSERT(!isInitialized, "Already initialized");
 
 			int res = 0;
-			void* stackAddr = nullptr;
+			void* stackBottom = nullptr;
 			size_t stackSize = 0;
 			pthread_t callThread = pthread_self();
 
 #if MT_PLATFORM_OSX
 
-			stackAddr = pthread_get_stackaddr_np(callThread);
+			stackBottom = pthread_get_stackaddr_np(callThread);
 			stackSize = pthread_get_stacksize_np(callThread);
+
+			stackBottom -= stackSize;
 
 #else
 			// get current thread attributes
@@ -124,12 +126,12 @@ namespace MT
 			MT_ASSERT(res == 0, "pthread_getattr_np - failed");
 
 			// get current thread stack
-			res = pthread_attr_getstack(&threadAttr, &stackAddr, &stackSize);
+			res = pthread_attr_getstack(&threadAttr, &stackBottom, &stackSize);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "pthread_attr_getstack - failed");
 #endif
 
-			MT_ASSERT(stackAddr != nullptr, "Invalid stack address");
+			MT_ASSERT(stackBottom != nullptr, "Invalid stack address");
 			MT_ASSERT(stackSize > 0, "Invalid stack size");
 
 			// get execution context
@@ -139,7 +141,7 @@ namespace MT
 
 			// setup context
 			fiberContext.uc_link = nullptr;
-			fiberContext.uc_stack.ss_sp = stackAddr;
+			fiberContext.uc_stack.ss_sp = stackBottom;
 			fiberContext.uc_stack.ss_size = stackSize;
 			fiberContext.uc_stack.ss_flags = 0;
 

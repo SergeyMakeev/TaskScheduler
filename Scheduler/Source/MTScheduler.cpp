@@ -806,7 +806,7 @@ namespace MT
 
 	bool TaskScheduler::IsTaskStealingDisabled(uint32 minWorkersCount) const
 	{
-		if (threadsCount.LoadRelaxed() <= minWorkersCount)
+		if (threadsCount.LoadRelaxed() <= (int32)minWorkersCount)
 		{
 			return true;
 		}
