@@ -118,7 +118,7 @@ namespace MT
 #elif MT_MSVC_COMPILER_FAMILY
 #define mt_thread_local __declspec(thread)
 #else
-#error Can not define mt_thread_local. Unknown platform.
+#error Can't define mt_thread_local. Unknown platform.
 #endif
 
 

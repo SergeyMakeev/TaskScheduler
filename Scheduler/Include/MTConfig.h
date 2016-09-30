@@ -144,3 +144,16 @@
 #error Platform is not supported!
 #endif
 
+
+
+//
+// mt_forceinline
+//
+#if MT_MSVC_COMPILER_FAMILY
+#define mt_forceinline __forceinline
+#elif MT_GCC_COMPILER_FAMILY
+#define mt_forceinline __attribute__((always_inline)) inline
+#else
+#error Can't define mt_forceinline. Unknown platform.
+#endif
+
