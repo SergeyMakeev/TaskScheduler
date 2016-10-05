@@ -81,12 +81,6 @@ void PosixSignalHandler(int signum)
 #endif
 
 
-void MyFiberEntryPoint( void* userData )
-{
-	MT_UNUSED(userData);
-
-}
-
 int main(int argc, char ** argv)
 {
 
@@ -113,6 +107,11 @@ int main(int argc, char ** argv)
 		printf("---- [ attempt #%d] ----\n", pass + 1);
 
 		res = Tests::RunAll();
+		if (res != 0)
+		{
+			printf("Unit test failed - pass %d of %d\n", pass + 1, passCount);
+			return res;
+		}
 	}
 
 #if defined(_WIN32)
