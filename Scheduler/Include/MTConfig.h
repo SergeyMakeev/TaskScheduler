@@ -81,7 +81,7 @@
 // Debug / Release
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEBUG)
 
 #define MT_DEBUG (1)
 

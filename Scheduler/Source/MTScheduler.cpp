@@ -163,10 +163,12 @@ namespace MT
 		{
 		case MT::StackRequirements::STANDARD:
 			res = standartFibersAvailable.TryPop(fiberContext);
+            MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res, "Can't get more standard fibers!");
 			break;
 		case MT::StackRequirements::EXTENDED:
 			res = extendedFibersAvailable.TryPop(fiberContext);
+            MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res, "Can't get more extended fibers!");
 			break;
 		default:
