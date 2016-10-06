@@ -21,8 +21,10 @@
 // 	THE SOFTWARE.
 
 #include "Tests.h"
+#include <math.h>
 #include <UnitTest++.h>
 #include <MTAtomic.h>
+#include <MTScheduler.h>
 
 
 SUITE(AtomicTests)
@@ -128,6 +130,105 @@ TEST(AtomicSimpleTest)
 	char* prevPtr2 = atomicPtr.Exchange(nullptr);
 	CHECK(prevPtr2 == testPtrNew);
 	CHECK(atomicPtr.Load() == nullptr);
+}
+
+
+MT::Atomic32<uint32> isReady;
+MT::Atomic32<uint32> a;
+MT::Atomic32<uint32> b;
+
+uint32 sharedValue = 0;
+
+MT::Atomic32<uint32> simpleLock;
+
+void ThreadFunc( void* userData )
+{
+	MT_UNUSED(userData);
+
+	MT::SpinWait spinWait;
+
+	while(isReady.LoadRelaxed() == 0)
+	{
+		spinWait.SpinOnce();
+	}
+
+	for(int iteration = 0; iteration < 100000; iteration++)
+	{
+		uint32 prevA = a.AddFetch(3);
+		uint32 prevB = b.AddFetch(3);
+
+		CHECK(prevA < prevB);
+		if (prevA < prevB)
+		{
+			break;
+		}
+	}
+
+	float res = 0.0f;
+	uint32 randDelay = rand() % 4;
+	uint32 count = 0;
+	while (count < 1000000)
+    {
+		res = 0.0f;
+		for(uint i = 0; i < randDelay; i++)
+		{
+			res += sin((float)i);
+		}
+
+		if (simpleLock.CompareAndSwap(0, 1) == 0)
+		{
+			sharedValue++;
+			simpleLock.Store(0);
+			count++;
+		}
+	}
+
+	//prevent compiler optimization
+	printf("%3.2f\n", res);
+
+	//
+}
+
+/*
+
+Inspired by "This Is Why They Call It a Weakly-Ordered CPU" blog post by Jeff Preshing
+http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/
+
+*/
+TEST(AtomicOrderingTest)
+{
+	isReady.Store(0);
+
+	a.Store(1);
+	b.Store(2);
+
+	sharedValue = 0;
+
+	simpleLock.Store(0);
+
+	uint32 maxThreadsCount = (uint32)MT::Thread::GetNumberOfHardwareThreads();
+	MT::Thread threads[32];
+
+	uint32 threadsCount = MT::Max(MT::Min(maxThreadsCount, (uint32)MT_ARRAY_SIZE(threads)), (uint32)1);
+
+	printf("threads count %d\n", threadsCount);
+
+	for(uint32 i = 0; i < threadsCount; i++)
+	{
+		threads[i].Start(16384, ThreadFunc, nullptr);
+	}
+
+	isReady.Store(1);
+
+	for(uint32 i = 0; i < threadsCount; i++)
+	{
+		threads[i].Join();
+	}
+
+	uint32 expectedSharedValue = (1000000 * threadsCount);
+	CHECK_EQUAL(sharedValue, expectedSharedValue);
+	
+	
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
