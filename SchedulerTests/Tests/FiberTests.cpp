@@ -75,6 +75,8 @@ SUITE(FiberTests)
 		CHECK_EQUAL(3, counter.Load());
 
 		fiberMain = nullptr;
+        
+        printf("FiberMain - done\n");
 	}
 
 
@@ -100,6 +102,8 @@ TEST(FiberSimpleTest)
 	counter.Store(0);
 	startTime = MT::GetTimeMicroSeconds();
 	fiberMain->CreateFromCurrentThreadAndRun(FiberMain, nullptr);
+    
+    printf("Fiber test done\n");
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
