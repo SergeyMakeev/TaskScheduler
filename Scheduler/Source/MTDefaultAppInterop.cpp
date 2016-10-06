@@ -27,8 +27,6 @@
 
 #if MT_SSE_INTRINSICS_SUPPORTED
 #include <xmmintrin.h>
-#else
-#include <malloc.h>
 #endif
 
 
@@ -76,7 +74,10 @@ namespace MT
 #if MT_SSE_INTRINSICS_SUPPORTED
 		p = _mm_malloc(size, align);
 #else
-		p = memalign(size, align);
+        if (posix_memalign(&p, size, align) != 0)
+        {
+            p = nullptr;
+        }
 #endif
 		MT_ASSERT(p, "Can't allocate memory");
 		return p;
