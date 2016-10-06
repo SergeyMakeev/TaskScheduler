@@ -170,7 +170,7 @@ void ThreadFunc( void* userData )
 	while (count < 1000000)
     {
 		res = 0.0f;
-		for(uint i = 0; i < randDelay; i++)
+		for(uint32 i = 0; i < randDelay; i++)
 		{
 			res += sin((float)i);
 		}
