@@ -152,22 +152,24 @@ void ThreadFunc( void* userData )
 		spinWait.SpinOnce();
 	}
 
-	for(int iteration = 0; iteration < 100000; iteration++)
+	for(int iteration = 0; iteration < 10000000; iteration++)
 	{
-		uint32 prevA = a.AddFetch(3);
-		uint32 prevB = b.AddFetch(3);
+		uint32 prevA = a.AddFetch(1);
+		uint32 prevB = b.AddFetch(1);
 
-		CHECK(prevA < prevB);
-		if (prevA < prevB)
+		// A should be less than B, but can also be a equal due to threads race 
+		CHECK(prevA <= prevB);
+		if (prevA > prevB)
 		{
+			printf("a = %d, b = %d\n", prevA, prevB);
 			break;
 		}
 	}
 
 	float res = 0.0f;
-	uint32 randDelay = rand() % 4;
+	uint32 randDelay = 1 + (rand() % 4);
 	uint32 count = 0;
-	while (count < 1000000)
+	while (count < 10000000)
     {
 		res = 0.0f;
 		for(uint32 i = 0; i < randDelay; i++)
@@ -206,10 +208,9 @@ TEST(AtomicOrderingTest)
 
 	simpleLock.Store(0);
 
-	uint32 maxThreadsCount = (uint32)MT::Thread::GetNumberOfHardwareThreads();
-	MT::Thread threads[32];
 
-	uint32 threadsCount = MT::Max(MT::Min(maxThreadsCount, (uint32)MT_ARRAY_SIZE(threads)), (uint32)1);
+	MT::Thread threads[2];
+	uint32 threadsCount = MT_ARRAY_SIZE(threads);
 
 	printf("threads count %d\n", threadsCount);
 
@@ -225,7 +226,7 @@ TEST(AtomicOrderingTest)
 		threads[i].Join();
 	}
 
-	uint32 expectedSharedValue = (1000000 * threadsCount);
+	uint32 expectedSharedValue = (10000000 * threadsCount);
 	CHECK_EQUAL(sharedValue, expectedSharedValue);
 	
 	
