@@ -25,6 +25,19 @@
 #ifndef __MT_FIBER__
 #define __MT_FIBER__
 
+//#define MT_USE_BOOST_CONTEXT (1)
+
+
+
+#if MT_USE_BOOST_CONTEXT
+
+#include <fcontext.h>
+
+//TODO
+
+#else
+
+
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
 #endif
@@ -45,6 +58,9 @@
 
 #include <MTAppInterop.h>
 #include "MTAtomic.h"
+
+#endif
+
 
 namespace MT
 {
@@ -116,6 +132,8 @@ namespace MT
 			int res = getcontext(&fiberContext);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res == 0, "getcontext - failed");
+            
+            isInitialized = true;
             
             entryPoint(userData);
             

@@ -345,7 +345,7 @@ namespace MT
 		static void Sleep(uint32 milliseconds)
 		{
 			struct timespec req;
-			time_t sec = (int)(milliseconds/1000);
+			int sec = (int)(milliseconds / 1000);
 			milliseconds = milliseconds - (sec*1000);
 			req.tv_sec = sec;
 			req.tv_nsec = milliseconds * 1000000L;

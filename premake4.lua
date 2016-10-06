@@ -133,42 +133,46 @@ os.mkdir("./Bin")
 
 project "UnitTest++"
 	kind "StaticLib"
-	defines { "_CRT_SECURE_NO_WARNINGS" }
-	files {
-		"ThirdParty/UnitTest++/UnitTest++/**.cpp",
-                "ThirdParty/UnitTest++/UnitTest++/**.h", 
+	defines {
+		"_CRT_SECURE_NO_WARNINGS"
 	}
 
-if isPosix or isOSX then
-	excludes { "ThirdParty/UnitTest++/UnitTest++/Win32/**.*" }
-else
-	excludes { "ThirdParty/UnitTest++/UnitTest++/Posix/**.*" }
-end
+	files {
+		"ThirdParty/UnitTest++/UnitTest++/**.cpp",
+		"ThirdParty/UnitTest++/UnitTest++/**.h", 
+	}
+
+	if isPosix or isOSX then
+		excludes { "ThirdParty/UnitTest++/UnitTest++/Win32/**.*" }
+	else
+		excludes { "ThirdParty/UnitTest++/UnitTest++/Posix/**.*" }
+	end
 
 
 project "Squish"
 	kind "StaticLib"
-	defines { "_CRT_SECURE_NO_WARNINGS" }
+	defines { 
+		"_CRT_SECURE_NO_WARNINGS"
+	}
+
 	files {
 		"ThirdParty/Squish/**.*", 
 	}
 
-	includedirs
-	{
+	includedirs {
 		"ThirdParty/Squish"
 	}
 
-
 project "TaskScheduler"
-        kind "StaticLib"
+    kind "StaticLib"
  	flags {"NoPCH"}
  	files {
- 		"Scheduler/**.*", 
+ 		"Scheduler/**.*",
+		 "ThirdParty/Boost.Context/*.h",
  	}
 
-	includedirs
-	{
-		"ThirdParty/Squish", "Scheduler/Include", "ThirdParty/UnitTest++/UnitTest++"
+	includedirs {
+		"ThirdParty/Squish", "Scheduler/Include", "ThirdParty/UnitTest++/UnitTest++", "ThirdParty/Boost.Context"
 	}
 	
 	if isPosix or isOSX then
@@ -184,8 +188,7 @@ project "TaskSchedulerTests"
  		"SchedulerTests/**.*", 
  	}
 
-	includedirs
-	{
+	includedirs {
 		"ThirdParty/Squish", "Scheduler/Include", "ThirdParty/UnitTest++/UnitTest++"
 	}
 	
@@ -199,7 +202,6 @@ project "TaskSchedulerTests"
 		"UnitTest++", "Squish", "TaskScheduler"
 	}
 
-	
 	if isPosix or isOSX then
 		links { "pthread" }
 	end
