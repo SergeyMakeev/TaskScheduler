@@ -640,7 +640,7 @@ namespace MT
 		int newTaskCountInGroup[TaskGroup::MT_MAX_GROUPS_COUNT];
 
 		// Default value is 0
-		memset(&newTaskCountInGroup[0], 0, MT_ARRAY_SIZE(newTaskCountInGroup));
+		memset(&newTaskCountInGroup[0], 0, sizeof(newTaskCountInGroup));
 
 		// Set parent fiber pointer
 		// Calculate the number of tasks per group
