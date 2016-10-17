@@ -87,8 +87,8 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=undefined -fno-omit-frame-pointer" }
-		linkoptions { "-fsanitize=undefined" }
+		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fno-omit-frame-pointer" }
+		--linkoptions { "-fsanitize=undefined" }
 	else
 --		defines { "MT_THREAD_SANITIZER"}
 		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g -fno-omit-frame-pointer" }
@@ -106,12 +106,12 @@ else
   if isPosix then
   	linkoptions { "-rdynamic" }
   	if isOSX then
-		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer" }
-		linkoptions { "-fsanitize=address" }
+		buildoptions { "-Wno-invalid-offsetof -Wno-deprecated-declarations -fno-omit-frame-pointer" }
+		--linkoptions { "-fsanitize=undefined" }
 	else
 --		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=undefined -fPIE -g -fno-omit-frame-pointer" }
-  		linkoptions { "-fsanitize=undefined -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g -fno-omit-frame-pointer" }
+  		linkoptions { "-fsanitize=address -pie" }
   	end
   end
 end
