@@ -66,6 +66,7 @@ namespace MT
 
 	class ThreadId
 	{
+	protected:
 		pthread_t id;
 		Atomic32<uint32> isInitialized;
 
@@ -106,7 +107,7 @@ namespace MT
 			return (isInitialized.Load() != 0);
 		}
 
-		mt_forceinline bool IsEqual(const ThreadId& other)
+		mt_forceinline bool IsEqual(const ThreadId& other) const
 		{
 			if (isInitialized.Load() != other.isInitialized.Load())
 			{

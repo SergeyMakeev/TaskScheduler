@@ -297,8 +297,12 @@ namespace MT
 		// Started threads count
 		Atomic32<int32> startedThreadsCount;
 
+		std::array<ThreadId, 4 > waitingThreads;
+		Atomic32<int32> nextWaitingThreadSlotIndex;
+
 		// Threads created by task manager
 		Atomic32<int32> threadsCount;
+
 		internal::ThreadContext threadContext[MT_MAX_THREAD_COUNT];
 
 		// All groups task statistic

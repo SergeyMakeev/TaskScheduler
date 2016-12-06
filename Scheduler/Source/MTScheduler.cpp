@@ -32,9 +32,6 @@
 
 namespace MT
 {
-	mt_thread_local uint32 isWorkerThreadTLS = 0;
-
-
 #ifdef MT_INSTRUMENTED_BUILD
 	TaskScheduler::TaskScheduler(uint32 workerThreadsCount, WorkerThreadParams* workerParameters, IProfilerEventListener* listener, TaskStealingMode::Type stealMode)
 #else
@@ -57,7 +54,6 @@ namespace MT
 			//query number of processor
 			threadsCount.StoreRelaxed( (uint32)MT::Clamp(Thread::GetNumberOfHardwareThreads() - 1, 1, (int)MT_MAX_THREAD_COUNT) );
 		}
-
 
 		uint32 fiberIndex = 0;
 
@@ -230,16 +226,14 @@ namespace MT
 		TPoolTaskDestroy poolDestroyFunc = fiberContext->currentTask.poolDestroyFunc;
 
 #ifdef MT_INSTRUMENTED_BUILD
-		//threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::SUSPEND);
-		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP);
+		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP, MT_SYSTEM_FIBER_INDEX);
 #endif
 
 		// Run current task code
 		Fiber::SwitchTo(threadContext.schedulerFiber, fiberContext->fiber);
 
 #ifdef MT_INSTRUMENTED_BUILD
-		//threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::RESUME);
-		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
+		threadContext.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START, MT_SYSTEM_FIBER_INDEX);
 #endif
 
 		// If task was done
@@ -319,7 +313,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
-			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::START );
+			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::START, (int32)fiberContext.fiberIndex);
 #endif
 
 			fiberContext.currentTask.taskFunc( fiberContext, fiberContext.currentTask.userData );
@@ -327,7 +321,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 			fiberContext.fiber.SetName( MT_SYSTEM_TASK_FIBER_NAME );
-			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::STOP );
+			fiberContext.GetThreadContext()->NotifyTaskExecuteStateChanged( fiberContext.currentTask.debugColor, fiberContext.currentTask.debugID, TaskExecuteState::STOP, (int32)fiberContext.fiberIndex);
 #endif
 
 			Fiber::SwitchTo(fiberContext.fiber, fiberContext.GetThreadContext()->schedulerFiber);
@@ -367,7 +361,6 @@ namespace MT
 		internal::ThreadContext& context = *(internal::ThreadContext*)(userData);
 		MT_ASSERT(context.taskScheduler, "Task scheduler must be not null!");
 
-		isWorkerThreadTLS = 1;
 		context.threadId = ThreadId::Self();
 
 #ifdef MT_INSTRUMENTED_BUILD
@@ -393,8 +386,10 @@ namespace MT
 		MT_ASSERT(waitContext.waitCounter, "Wait counter must be not null!");
 
 #ifdef MT_INSTRUMENTED_BUILD
+		context.NotifyTemporaryWorkerThreadJoin();
+
 		context.NotifyWaitStarted();
-		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START, MT_SYSTEM_FIBER_INDEX);
 #endif
 
 		bool isTaskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled(0);
@@ -429,10 +424,11 @@ namespace MT
 		}
 
 #ifdef MT_INSTRUMENTED_BUILD
-		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP);
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP, MT_SYSTEM_FIBER_INDEX);
 		context.NotifyWaitFinished();
-#endif
 
+		context.NotifyTemporaryWorkerThreadLeave();
+#endif
 	}
 
 	void TaskScheduler::SchedulerFiberMain( void* userData )
@@ -464,7 +460,7 @@ namespace MT
 
 #ifdef MT_INSTRUMENTED_BUILD
 		context.NotifyThreadStarted(context.workerIndex);
-		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START);
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::START, MT_SYSTEM_FIBER_INDEX);
 #endif
 		bool isTaskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled();
 
@@ -528,7 +524,7 @@ namespace MT
 		} // main thread loop
 
 #ifdef MT_INSTRUMENTED_BUILD
-		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP);
+		context.NotifyTaskExecuteStateChanged( MT_SYSTEM_TASK_COLOR, MT_SYSTEM_TASK_NAME, TaskExecuteState::STOP, MT_SYSTEM_FIBER_INDEX);
 		context.NotifyThreadStoped(context.workerIndex);
 #endif
 
@@ -755,15 +751,12 @@ namespace MT
 		waitContext.waitTimeMs = milliseconds;
 		waitContext.exitCode = 0;
 
-		isWorkerThreadTLS = 1;
-
+		int32 waitingSlotIndex = nextWaitingThreadSlotIndex.IncFetch();
+		waitingThreads[waitingSlotIndex % waitingThreads.size()] = ThreadId::Self();
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(SchedulerFiberWait, &waitContext);
-
-		isWorkerThreadTLS = 0;
-
-#ifdef MT_INSTRUMENTED_BUILD
-		context.NotifyThreadAssignedToFiber();
-#endif
+		
+		MT_ASSERT( waitingThreads[waitingSlotIndex % waitingThreads.size()].IsEqual(ThreadId::Self()), "waitingThreads array overflow");
+		waitingThreads[waitingSlotIndex % waitingThreads.size()] = ThreadId();
 
 		return (waitContext.exitCode == 0);
 	}
@@ -793,15 +786,13 @@ namespace MT
 		waitContext.waitTimeMs = milliseconds;
 		waitContext.exitCode = 0;
 
-		isWorkerThreadTLS = 1;
+		int32 waitingSlotIndex = nextWaitingThreadSlotIndex.IncFetch();
+		waitingThreads[waitingSlotIndex % waitingThreads.size()] = ThreadId::Self();
 
 		context.schedulerFiber.CreateFromCurrentThreadAndRun(SchedulerFiberWait, &waitContext);
 
-		isWorkerThreadTLS = 0;
-
-#ifdef MT_INSTRUMENTED_BUILD
-		context.NotifyThreadAssignedToFiber();
-#endif
+		MT_ASSERT( waitingThreads[waitingSlotIndex % waitingThreads.size()].IsEqual(ThreadId::Self()), "waitingThreads array overflow");
+		waitingThreads[waitingSlotIndex % waitingThreads.size()] = ThreadId();
 
 		return (waitContext.exitCode == 0);
 	}
@@ -824,7 +815,21 @@ namespace MT
 
 	bool TaskScheduler::IsWorkerThread() const
 	{
-		return (isWorkerThreadTLS != 0);
+		int32 threadsCount = GetWorkersCount();
+		for (int32 i = 0; i < threadsCount; i++)
+		{
+			if (threadContext[i].threadId.IsEqual(ThreadId::Self()))
+			{
+				return true;
+			}
+		}
+		for (uint32 i = 0; i < waitingThreads.size(); i++)
+		{
+			if (waitingThreads[i].IsEqual(ThreadId::Self()))
+				return true;
+		}
+
+		return false;
 	}
 
 	TaskGroup TaskScheduler::CreateGroup()
