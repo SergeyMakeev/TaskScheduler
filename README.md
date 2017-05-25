@@ -137,7 +137,21 @@ C/C++11 mappings to processors by Peter Sewell
 https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html 
 
 Memory Ordering in Modern Microprocessors, Part I by Paul E. McKenney
+
 http://www.linuxjournal.com/node/8211/print
 
 Memory Ordering in Modern Microprocessors, Part II by Paul E. McKenney
+
 http://www.linuxjournal.com/node/8212/print
+
+In Praise of Idleness by Bruce Dawson
+
+https://randomascii.wordpress.com/2012/06/05/in-praise-of-idleness/
+
+Implementing Scalable Atomic Locks for Multi-Core Intel® EM64T and IA32 Architectures by Michael Chynoweth 
+
+https://software.intel.com/en-us/articles/implementing-scalable-atomic-locks-for-multi-core-intel-em64t-and-ia32-architectures/
+
+Benefitting Power and Performance Sleep Loops by JOSEPH O., Michael Chynoweth, Tom Propst
+
+https://software.intel.com/en-us/articles/benefitting-power-and-performance-sleep-loops
