@@ -54,6 +54,7 @@ typedef LPTHREAD_START_ROUTINE TThreadStartFunc;
 typedef SYSTEM_INFO MW_SYSTEM_INFO;
 
 typedef CRITICAL_SECTION MW_CRITICAL_SECTION;
+typedef CONDITION_VARIABLE MW_CONDITION_VARIABLE;
 
 typedef CONTEXT MW_CONTEXT;
 
@@ -63,7 +64,7 @@ typedef CONTEXT MW_CONTEXT;
 #define MW_PAGE_READWRITE (PAGE_READWRITE)
 #define MW_PAGE_NOACCESS (PAGE_NOACCESS)
 #define MW_MEM_RELEASE (MEM_RELEASE)
-
+#define MW_ERROR_TIMEOUT (ERROR_TIMEOUT)
 
 #define MW_CURRENT_FIBER_OFFSET (FIELD_OFFSET(NT_TIB, FiberData))
 #define MW_STACK_BASE_OFFSET (FIELD_OFFSET(NT_TIB, StackBase))
@@ -135,6 +136,11 @@ struct MW_SYSTEM_INFO
 	MW_DWORD dwNumberOfProcessors;
 	uint8 _unused_03[12];
 };
+
+
+// Condition variable
+typedef void* MW_CONDITION_VARIABLE;
+
 
 #if MT_PTR64
 
@@ -214,7 +220,7 @@ struct MW_CONTEXT
 #define MW_PAGE_READWRITE (0x04)
 #define MW_PAGE_NOACCESS (0x01)
 #define MW_MEM_RELEASE (0x8000)
-
+#define MW_ERROR_TIMEOUT (1460L)
 
 #define MW_THREAD_PRIORITY_HIGHEST (2) 
 #define MW_THREAD_PRIORITY_NORMAL (0) 
@@ -265,6 +271,11 @@ MW_WINBASEAPI void MW_WINAPI GetSystemInfo(MW_SYSTEM_INFO* lpSystemInfo);
 
 MW_WINBASEAPI void MW_WINAPI Sleep(MW_DWORD dwMilliseconds);
 MW_WINBASEAPI MW_DWORD MW_WINAPI WaitForSingleObject(MW_HANDLE hHandle, MW_DWORD dwMilliseconds);
+
+MW_WINBASEAPI	void MW_WINAPI InitializeConditionVariable (MW_CONDITION_VARIABLE* lpConditionVariable);
+MW_WINBASEAPI	void MW_WINAPI WakeConditionVariable (MW_CONDITION_VARIABLE* lpConditionVariable);
+MW_WINBASEAPI	void MW_WINAPI WakeAllConditionVariable (MW_CONDITION_VARIABLE* lpConditionVariable);
+MW_WINBASEAPI	MW_BOOL	MW_WINAPI SleepConditionVariableCS (MW_CONDITION_VARIABLE* lpConditionVariable,	MW_CRITICAL_SECTION* lpCriticalSection, MW_DWORD dwMilliseconds);
 
 MW_WINBASEAPI bool MW_WINAPI InitializeCriticalSectionAndSpinCount(MW_CRITICAL_SECTION* lpCriticalSection, MW_DWORD dwSpinCount );
 MW_WINBASEAPI void MW_WINAPI DeleteCriticalSection(MW_CRITICAL_SECTION* lpCriticalSection );

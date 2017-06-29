@@ -22,20 +22,72 @@
 
 #pragma once
 
-#ifndef __MT_EVENT__
-#define __MT_EVENT__
-
-#include <MTConfig.h>
+#ifndef __MT_EVENT_KERNEL__
+#define __MT_EVENT_KERNEL__
 
 
+namespace MT
+{
+	//
+	//
+	//
+	class Event
+	{
+		::MW_HANDLE eventHandle;
 
-#if MT_ENABLE_LEGACY_WINDOWSXP_SUPPORT
-// Windows XP: Conditional variables are not supported. Using kernel mode events.
-#include "MTEventKernel.h"
-#else
-// Conditional variables are supported. Using user mode events.
-#include "MTEventUser.h"
-#endif
+	public:
+
+		MT_NOCOPYABLE(Event);
+
+		Event()
+		{
+			static_assert(sizeof(Event) == sizeof(::MW_HANDLE), "sizeof(Event) is invalid");
+			eventHandle = nullptr;
+		}
+
+		Event(EventReset::Type resetType, bool initialState)
+		{
+			eventHandle = nullptr;
+			Create(resetType, initialState);
+		}
+
+		~Event()
+		{
+			CloseHandle(eventHandle);
+			eventHandle = nullptr;
+		}
+
+		void Create(EventReset::Type resetType, bool initialState)
+		{
+			if (eventHandle != nullptr)
+			{
+				CloseHandle(eventHandle);
+			}
+
+			MW_BOOL bManualReset = (resetType == EventReset::AUTOMATIC) ? 0 : 1;
+			MW_BOOL bInitialState = initialState ? 1 : 0;
+			eventHandle = ::CreateEventW(nullptr, bManualReset, bInitialState, nullptr);
+		}
+
+		void Signal()
+		{
+			SetEvent(eventHandle);
+		}
+
+		void Reset()
+		{
+			ResetEvent(eventHandle);
+		}
+
+		bool Wait(uint32 milliseconds)
+		{
+			MW_DWORD res = WaitForSingleObject(eventHandle, milliseconds);
+			return (res == MW_WAIT_OBJECT_0);
+		}
+
+	};
+
+}
 
 
 #endif
