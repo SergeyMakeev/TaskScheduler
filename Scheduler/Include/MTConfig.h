@@ -158,7 +158,7 @@
 #endif
 
 
-// Enable Windows XP support (disable using conditional variables)
+// Enable Windows XP support (disable conditional variables)
 //#if !MT_PTR64 && MT_PLATFORM_WINDOWS
 //#define MT_ENABLE_LEGACY_WINDOWSXP_SUPPORT (1)
 //#endif

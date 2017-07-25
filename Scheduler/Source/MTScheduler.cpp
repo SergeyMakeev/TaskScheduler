@@ -125,8 +125,7 @@ namespace MT
 		}
 	}
 
-
-	TaskScheduler::~TaskScheduler()
+	void TaskScheduler::JoinWorkerThreads()
 	{
 		int32 totalThreadsCount = GetWorkersCount();
 		for (int32 i = 0; i < totalThreadsCount; i++)
@@ -138,6 +137,15 @@ namespace MT
 		for (int32 i = 0; i < totalThreadsCount; i++)
 		{
 			threadContext[i].thread.Join();
+		}
+		threadsCount.Store(0);
+	}
+
+	TaskScheduler::~TaskScheduler()
+	{
+		if (GetWorkersCount() > 0)
+		{
+			JoinWorkerThreads();
 		}
 	}
 

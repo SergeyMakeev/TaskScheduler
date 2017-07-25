@@ -183,10 +183,6 @@ TEST(ManyTasksOneSubtask)
 
 	for (int i = 0; i < MT_ITERATIONS_COUNT; ++i)
 	{
-#ifdef MT_INSTRUMENTED_BUILD
-		PushPerfEvent("Iteration");
-#endif
-
 		GroupTask group;
 		scheduler.RunAsync(sourceGroup, &group, 1);
 		//if (!scheduler.WaitAll(MT_DEFAULT_WAIT_TIME))
@@ -196,10 +192,6 @@ TEST(ManyTasksOneSubtask)
 			waitAllOK = false;
 			break;
 		}
-
-#ifdef MT_INSTRUMENTED_BUILD
-		PopPerfEvent("Iteration");
-#endif
 	}
 
 

@@ -356,6 +356,8 @@ namespace MT
 
 		~TaskScheduler();
 
+		void JoinWorkerThreads();
+
 		template<class TTask>
 		void RunAsync(TaskGroup group, const TTask* taskArray, uint32 taskCount);
 

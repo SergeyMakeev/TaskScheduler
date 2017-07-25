@@ -1,20 +1,10 @@
-## Commercial games using the TaskScheduler
-
-Skyforge PC
-https://sf.my.com/
-
-Skyforge PS4
-https://www.playstation.com/en-us/games/skyforge-ps4/
-
-
-
 ## About
 
 **Multithreaded task scheduler experiments.**
 
 **Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
 
-Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010, XCODE 6.4**
+Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010/2012/2015, XCODE 6.4**
 
 
 ## Build status
@@ -137,21 +127,7 @@ C/C++11 mappings to processors by Peter Sewell
 https://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html 
 
 Memory Ordering in Modern Microprocessors, Part I by Paul E. McKenney
-
 http://www.linuxjournal.com/node/8211/print
 
 Memory Ordering in Modern Microprocessors, Part II by Paul E. McKenney
-
 http://www.linuxjournal.com/node/8212/print
-
-In Praise of Idleness by Bruce Dawson
-
-https://randomascii.wordpress.com/2012/06/05/in-praise-of-idleness/
-
-Implementing Scalable Atomic Locks for Multi-Core Intel® EM64T and IA32 Architectures by Michael Chynoweth 
-
-https://software.intel.com/en-us/articles/implementing-scalable-atomic-locks-for-multi-core-intel-em64t-and-ia32-architectures/
-
-Benefitting Power and Performance Sleep Loops by JOSEPH O., Michael Chynoweth, Tom Propst
-
-https://software.intel.com/en-us/articles/benefitting-power-and-performance-sleep-loops

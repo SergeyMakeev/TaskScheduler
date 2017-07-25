@@ -21,6 +21,7 @@
 // 	THE SOFTWARE.
 
 #include "Tests.h"
+#include "../Profiler/Profiler.h"
 #include <UnitTest++.h>
 #include <MTScheduler.h>
 
@@ -99,67 +100,145 @@ SUITE(PlatformTests)
 	MT::AtomicPtrBase<MT::Event> pStressEvent = { nullptr };
 	MT::Atomic32Base<uint32> needExitSignal = { 0 };
 	MT::Atomic32Base<uint32> needExitWait = { 0 };
+	MT::Atomic32Base<uint32> needStartWork = { 0 };
 
 	void EventStressTestSignalThreadFunc(void*)
-	{
+	{ BROFILER_THREAD("SignalThread");
+
+		while (needStartWork.Load() == 0)
+		{ BROFILER_CATEGORY("Signal prepare", 0xFFFF00FF);
+			MT::SpinSleepMicroSeconds(300);
+		}
+	
 		while (needExitSignal.Load() == 0)
-		{
-			MT::SpinSleepMicroSeconds(50);
+		{ BROFILER_CATEGORY("Signal Loop", 0xFF556B2F);
+			MT::SpinSleepMicroSeconds(300);
 			MT::Event * pEvent = pStressEvent.Load();
 			pEvent->Signal();
 		}
 	}
 
 	void EventStressTestWaitThreadFunc(void*)
-	{
+	{ BROFILER_THREAD("WaitThread");
+
+		while (needStartWork.Load() == 0)
+		{ BROFILER_CATEGORY("Wait prepare", 0xFFFF00FF);
+			MT::SpinSleepMicroSeconds(300);
+		}
+
 		while (needExitWait.Load() == 0)
-		{
-			MT::Event * pEvent = pStressEvent.Load();
+		{ BROFILER_CATEGORY("Wait Loop", 0xFFF0F8FF);
+			MT::Event* pEvent = pStressEvent.Load();
 			bool res = pEvent->Wait(1000);
+			MT::SpinSleepMicroSeconds(300);
 			CHECK(res == true);
 		}
 	}
+
 
 	
 
 
 	TEST(EventStressTest)
 	{
+#if defined(MT_ENABLE_LEGACY_WINDOWSXP_SUPPORT) && defined(MT_PLATFORM_WINDOWS)
+		printf("Kernel mode events\n");
+#else
+		printf("User mode events\n");
+#endif
+
+	
 		MT::Event stressEvent;
-		stressEvent.Create(MT::EventReset::AUTOMATIC, false);
-		pStressEvent.Store( &stressEvent );
+		MT::Thread signalThreads[3];
+		MT::Thread waitThreads[3];
+		needStartWork.Store(0);
 
-		needExitSignal.Store(0);
-		needExitWait.Store(0);
+		{ 
+			BROFILER_NEXT_FRAME();
+			stressEvent.Create(MT::EventReset::AUTOMATIC, false);
+			pStressEvent.Store( &stressEvent );
 
-		MT::Thread signalThreads[6];
-		for(uint32 i = 0; i < MT_ARRAY_SIZE(signalThreads); i++)
-		{
-			signalThreads[i].Start(32768, EventStressTestSignalThreadFunc, nullptr);
+			needExitSignal.Store(0);
+			needExitWait.Store(0);
+
+			for(uint32 i = 0; i < MT_ARRAY_SIZE(signalThreads); i++)
+			{
+				signalThreads[i].Start(32768, EventStressTestSignalThreadFunc, nullptr);
+			}
+
+			for(uint32 i = 0; i < MT_ARRAY_SIZE(waitThreads); i++)
+			{
+				waitThreads[i].Start(32768, EventStressTestWaitThreadFunc, nullptr);
+			}
+
+			printf("Signal threads num = %d\n", (uint32)MT_ARRAY_SIZE(signalThreads));
+			printf("Wait threads num = %d\n", (uint32)MT_ARRAY_SIZE(waitThreads));
 		}
 
-		MT::Thread waitThreads[2];
-		for(uint32 i = 0; i < MT_ARRAY_SIZE(waitThreads); i++)
+
+#if defined(MT_INSTRUMENTED_BUILD) && defined(MT_ENABLE_BROFILER_SUPPORT)
+		BROFILER_FRAME("EventStressTest");
 		{
-			waitThreads[i].Start(32768, EventStressTestWaitThreadFunc, nullptr);
+			printf("Waiting for 'Brofiler' connection.\n");
+			for(;;)
+			{
+				BROFILER_NEXT_FRAME();
+				MT::Thread::Sleep(150);
+				if (Brofiler::IsActive())
+				{
+					break;
+				}
+			}
 		}
-
-
-
-		int64 startTime = MT::GetTimeMicroSeconds();
+#endif
+		needStartWork.Store(1);
 
 		const int iterationsCount = 5000;
-		for(int i = 0; i < iterationsCount; i++)
+
+		int64 startTimeSignal = MT::GetTimeMicroSeconds();
+		{ BROFILER_NEXT_FRAME();
+		  BROFILER_CATEGORY("Signal Loop", 0xFF556B2F);
+			for(int i = 0; i < iterationsCount; i++)
+			{
+				stressEvent.Signal();
+			}
+		}
+		int64 endTimeSignal = MT::GetTimeMicroSeconds();
+
+
+		int64 startTimeWait = MT::GetTimeMicroSeconds();
+		{ BROFILER_NEXT_FRAME();
+		  BROFILER_CATEGORY("Wait Loop", 0xFFF0F8FF);
+			for(int i = 0; i < iterationsCount; i++)
+			{
+				bool res = stressEvent.Wait(1000);
+				CHECK(res == true);
+			}
+		}
+		int64 endTimeWait = MT::GetTimeMicroSeconds();
+
+		double microSecondsPerWait = (double)((endTimeWait - startTimeWait) / (double)iterationsCount);
+		double microSecondsPerSignal = (double)((endTimeSignal - startTimeSignal) / (double)iterationsCount);
+
+		printf("microseconds per signal = %3.2f, iterations = %d\n", microSecondsPerSignal, iterationsCount);
+		printf("microseconds per wait = %3.2f, iterations = %d\n", microSecondsPerWait, iterationsCount);
+
+#if defined(MT_INSTRUMENTED_BUILD) && defined(MT_ENABLE_BROFILER_SUPPORT)
 		{
-			bool res = stressEvent.Wait(1000);
-			CHECK(res == true);
+			printf("Waiting for the 'Brofiler' to be disconnected\n");
+			for(;;)
+			{
+				BROFILER_NEXT_FRAME();
+				MT::Thread::Sleep(150);
+				if (!Brofiler::IsActive())
+				{
+					break;
+				}
+			}
 		}
 
-		int64 endTime = MT::GetTimeMicroSeconds();
-
-		int microSecondsPerWait = (int)((endTime - startTime) / (int64)iterationsCount);
-
-		printf("microseconds per wait = %d iterations(%d)\n", microSecondsPerWait, iterationsCount);
+		printf("Done\n");
+#endif
 
 		needExitWait.Store(1);
 		for(uint32 i = 0; i < MT_ARRAY_SIZE(waitThreads); i++)
@@ -180,7 +259,6 @@ SUITE(PlatformTests)
 
 		res = stressEvent.Wait(300);
 		CHECK(res == false);
-
 
 	}
 
