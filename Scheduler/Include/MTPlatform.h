@@ -63,8 +63,8 @@ namespace MT
 	{
 		MT::Mutex & mutex;
 
-		ScopedGuard( const ScopedGuard & ) : mutex(*((MT::Mutex*)nullptr)) {}
-		void operator=( const ScopedGuard &) {}
+		ScopedGuard( const ScopedGuard & );
+		void operator=( const ScopedGuard &);
 
 	public:
 

@@ -4,8 +4,11 @@
 
 **Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
 
-Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010/2012/2015, XCODE 6.4**
+Compiled and worked on : **Clang 3.4, GCC 4.8.2, MSVC 2010/2012/2015/2017, XCODE 6.4**
 
+## Commercial games using Task Scheduler
+
+- Skyforge (PC, PS4, X1)
 
 ## Build status
 
