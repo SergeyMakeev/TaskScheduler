@@ -111,8 +111,9 @@ else
 		--linkoptions { "-fsanitize=undefined" }
 	else
 --		defines { "MT_THREAD_SANITIZER"}
-		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g -fno-omit-frame-pointer" }
-  		linkoptions { "-fsanitize=address -pie" }
+		buildoptions { "-Wno-invalid-offsetof -fPIE -g -fno-omit-frame-pointer" }
+--		buildoptions { "-Wno-invalid-offsetof -fsanitize=address -fPIE -g -fno-omit-frame-pointer" }
+--  		linkoptions { "-fsanitize=address -pie" }
   	end
   end
 end
