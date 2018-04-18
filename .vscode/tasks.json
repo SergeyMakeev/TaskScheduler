@@ -1,0 +1,36 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Premake4 - Generate",
+            "type": "shell",
+            "command": "premake4 gmake",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build - Debug64",
+            "type": "shell",
+            "command": "pushd Build/gmake && make config=debug64 && popd",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build - Release64",
+            "type": "shell",
+            "command": "pushd Build/gmake && make config=release64 && popd",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Run",
+            "type": "shell",
+            "command": "pushd Bin/ && ./TaskSchedulerTests && popd",
+            "problemMatcher": []
+        }
+    ]
+}
