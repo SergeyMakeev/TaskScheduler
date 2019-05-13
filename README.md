@@ -18,7 +18,44 @@ Linux + OS X
 Windows
 ![Appveyor build status](https://ci.appveyor.com/api/projects/status/7o760ylay8mdplo6)
 
+## Examples
 
+Minimal example
+```c++
+#include <MTScheduler.h>
+
+// Declare simple task
+struct SimpleTask
+{
+  MT_DECLARE_TASK(SimpleTask, MT::StackRequirements::STANDARD, MT::TaskPriority::NORMAL, MT::Color::Blue);
+
+  void Do(MT::FiberContext&)
+  {
+    // ... do thing here ...
+  }
+};
+
+int main()
+{
+  // Create scheduler
+  MT::TaskScheduler scheduler;
+
+  // Declare tasks
+  static const int TASK_COUNT = 1000;
+  SimpleTask tasks[TASK_COUNT];
+
+  // Run everything
+  scheduler.RunAsync(MT::TaskGroup::Default(), &tasks[0], MT_ARRAY_SIZE(tasks));
+
+  // Wait and help to execute unfinished tasks
+  scheduler.WaitAll(1000)
+
+  return 0;
+}
+```
+
+You can find a lot of usage examples in the test folder:
+https://github.com/SergeyMakeev/TaskScheduler/tree/master/SchedulerTests/Tests
 
 ## Useful reading (in random order):
 
