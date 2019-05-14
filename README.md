@@ -1,6 +1,6 @@
 ## About
 
-**Multithreaded task scheduler experiments.**
+**Cross-platform, fiber-based, multi-threaded task scheduler designed for video games.**
 
 **Written under the influence by great GDC talk "Parallelizing the Naughty Dog engine using fibers" by Christian Gyrling**
 
@@ -18,7 +18,7 @@ Linux + OS X
 Windows
 ![Appveyor build status](https://ci.appveyor.com/api/projects/status/7o760ylay8mdplo6)
 
-## Examples
+## Usage examples
 
 Minimal example
 ```c++
