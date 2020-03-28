@@ -297,6 +297,7 @@ MW_WINBASEAPI MW_BOOL MW_WINAPI VirtualFree( void* lpAddress, size_t dwSize, MW_
 
 MW_WINBASEAPI void MW_WINAPI DeleteFiber( void* lpFiber );
 MW_WINBASEAPI void* MW_WINAPI ConvertThreadToFiberEx( void* lpParameter, MW_DWORD dwFlags );
+MW_WINBASEAPI MW_BOOL MW_WINAPI ConvertFiberToThread();
 MW_WINBASEAPI void* MW_WINAPI CreateFiber( size_t dwStackSize, TFiberStartFunc lpStartAddress, void* lpParameter );
 MW_WINBASEAPI void MW_WINAPI SwitchToFiber( void* lpFiber );
 MW_WINBASEAPI MW_BOOL MW_WINAPI IsThreadAFiber();
