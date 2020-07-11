@@ -71,6 +71,10 @@ namespace MT
 				{
 					::DeleteFiber(fiber);
 				}
+				else 
+				{
+					::ConvertFiberToThread();
+				}
 				fiber = nullptr;
 			}
 		}
