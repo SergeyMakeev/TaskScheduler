@@ -29,6 +29,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then clang --version && g++ --version && premake4 gmake && pushd Build/gmake/ && make config=release64 && popd; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then clang --version && g++ --version && premake4 gmake && pushd Build/gmake/ && make config=debug64 && popd; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo lshw; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo system_profiler SPHardwareDataType; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pushd Bin/ && ./TaskSchedulerTests 3 && popd; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then pushd Bin/ && ./TaskSchedulerTests 6 && popd; fi
 
