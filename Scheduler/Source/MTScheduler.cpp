@@ -402,7 +402,7 @@ namespace MT
 
 		bool isTaskStealingDisabled = context.taskScheduler->IsTaskStealingDisabled(0);
 
-		int64 timeOut = GetTimeMicroSeconds() + (waitContext.waitTimeMs * 1000);
+		int64 timeOut = GetTimeMicroSeconds() + ((int64)waitContext.waitTimeMs * 1000);
 
 		SpinWait spinWait;
 		
