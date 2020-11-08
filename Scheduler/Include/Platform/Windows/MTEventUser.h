@@ -66,11 +66,11 @@ namespace MT
 		{
 		}
 
-		Event(EventReset::Type resetType, bool initialState)
+		Event(EventReset::Type resetType_, bool initialState)
 			: numOfWaitingThreads(0)
 			, isInitialized(false)
 		{
-			Create(resetType, initialState);
+			Create(resetType_, initialState);
 		}
 
 		~Event()
@@ -82,10 +82,10 @@ namespace MT
 			}
 		}
 
-		void Create(EventReset::Type _resetType, bool initialState)
+		void Create(EventReset::Type resetType_, bool initialState)
 		{
 			MT_ASSERT (!isInitialized, "Event already initialized");
-			resetType = _resetType;
+			resetType = resetType_;
 
 			::InitializeCriticalSectionAndSpinCount( &criticalSection, 16 );
 			::InitializeConditionVariable( &condition );
