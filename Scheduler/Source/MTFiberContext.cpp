@@ -30,6 +30,7 @@ namespace MT
 		, stackRequirements(StackRequirements::INVALID)
 		, childrenFibersCount(0)
 		, parentFiber(nullptr)
+		, fiberIndex(UINT_MAX)
 	{
 		
 	}

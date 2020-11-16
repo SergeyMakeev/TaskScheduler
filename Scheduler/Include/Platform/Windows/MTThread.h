@@ -163,7 +163,7 @@ namespace MT
 			{
 				cpuCore = MW_MAXIMUM_PROCESSORS;
 			}
-			MT_VERIFY((cpuCore >= 0 && cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
+			MT_VERIFY((cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
 			MW_DWORD res = ::SetThreadIdealProcessor(thread, cpuCore);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != (MW_DWORD)-1, "SetThreadIdealProcessor failed!");
@@ -231,7 +231,7 @@ namespace MT
 			{
 				cpuCore = MW_MAXIMUM_PROCESSORS;
 			}
-			MT_VERIFY((cpuCore >= 0 && cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
+			MT_VERIFY((cpuCore < (uint32)GetNumberOfHardwareThreads()) || cpuCore == MW_MAXIMUM_PROCESSORS, "Invalid cpu core specified", cpuCore=MW_MAXIMUM_PROCESSORS);
 			MW_DWORD res = ::SetThreadIdealProcessor( ::GetCurrentThread(), cpuCore);
 			MT_USED_IN_ASSERT(res);
 			MT_ASSERT(res != (MW_DWORD)-1, "SetThreadIdealProcessor failed!");

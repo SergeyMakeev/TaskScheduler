@@ -101,8 +101,8 @@ namespace MT
 		MW_SYSTEM_INFO systemInfo;
 		GetSystemInfo(&systemInfo);
 
-		int pageSize = (int)systemInfo.dwPageSize;
-		int pagesCount = (int)size / pageSize;
+		size_t pageSize = systemInfo.dwPageSize;
+		size_t pagesCount = size / pageSize;
 
 		//need additional page for stack guard
 		if ((size % pageSize) > 0)

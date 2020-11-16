@@ -6,7 +6,7 @@ isPosix = false
 isVisualStudio = false
 isOSX = false
 
-if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION == "vs2008" or _ACTION == "vs2010" then
+if _ACTION == "vs2002" or _ACTION == "vs2003" or _ACTION == "vs2005" or _ACTION == "vs2008" or _ACTION == "vs2010" or _ACTION == "vs2012" then
 	isVisualStudio = true
 end
 
@@ -21,13 +21,17 @@ then
 end
 
 
-	
+
 solution "TaskScheduler"
 
 	language "C++"
 
 	location ( "Build/" .. _ACTION )
+if isVisualStudio then
+	flags {"NoManifest", "ExtraWarnings", "StaticRuntime", "NoMinimalRebuild", "FloatFast" }
+else
 	flags {"NoManifest", "ExtraWarnings", "StaticRuntime", "NoMinimalRebuild", "FloatFast", "EnableSSE2" }
+end
 	optimization_flags = { "OptimizeSpeed" }
 	targetdir("Bin")
 
@@ -39,17 +43,16 @@ if isOSX then
 	defines { "_DARWIN_C_SOURCE=1" }
 end
 
-
 if isVisualStudio then
+	defines { "_ALLOW_RTCc_IN_STL=1" }
 	debugdir ("Bin")
 end
-
 
 	local config_list = {
 		"Release",
 		"Debug",
-                "Instrumented_Release",
-                "Instrumented_Debug"
+		"Instrumented_Release",
+		"Instrumented_Debug"
 	}
 	local platform_list = {
 		"x32",
@@ -81,7 +84,8 @@ configuration "Debug"
 configuration "x32"
 if isVisualStudio then
 -- Compiler Warning (level 4) C4127. Conditional expression is constant
-        buildoptions { "/wd4127"  }
+	buildoptions { "/wd4127"  }
+	flags { "EnableSSE2" }
 else
 	buildoptions { "-std=c++11" }
   if isPosix then
@@ -101,7 +105,7 @@ end
 configuration "x64"
 if isVisualStudio then
 -- Compiler Warning (level 4) C4127. Conditional expression is constant
-        buildoptions { "/wd4127"  }
+	buildoptions { "/wd4127"  }
 else
 	buildoptions { "-std=c++11" }
   if isPosix then
@@ -207,6 +211,5 @@ project "TaskSchedulerTests"
 	if isPosix or isOSX then
 		links { "pthread" }
 	end
-
 
 
