@@ -171,3 +171,8 @@ http://www.linuxjournal.com/node/8211/print
 
 Memory Ordering in Modern Microprocessors, Part II by Paul E. McKenney
 http://www.linuxjournal.com/node/8212/print
+
+Barrier Litmus Tests and Cookbook by ARM
+https://developer.arm.com/documentation/genc007826/latest
+https://documentation-service.arm.com/static/5ece8d6a56a54774bd17a1f4
+
